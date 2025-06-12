@@ -1,3 +1,4 @@
+
 import Image from 'next/image';
 import Link from 'next/link';
 import type { Pokemon } from '@/types/pokemon';
@@ -16,7 +17,6 @@ const getTagSpecificClasses = (tag: string): string => {
   let bgColorClass = `bg-tag-${normalizedTag}`;
   let textColorClass = 'tag-text-default'; // Default to white text
 
-  // Handle tags that need black text
   const blackTextTags = ['electric', 'pla', 'fairy', 'bug', 'ice', 'normal', 'lgpe', 'mythical', 'favourite', 'water', 'grass', 'flying', 'swsh'];
   if (blackTextTags.includes(normalizedTag)) {
     textColorClass = `text-tag-${normalizedTag}`;
@@ -25,10 +25,9 @@ const getTagSpecificClasses = (tag: string): string => {
   if (normalizedTag === 'favourite') return 'tag-favourite';
   if (normalizedTag === 'starter') return 'tag-starter';
 
-  // Fallback for undefined colors or to use default badge styling
   const definedColors = ['sv', 'water', 'grass', 'dark', 'fire', 'electric', 'flying', 'pla', 'poison', 'ghost', 'swsh', 'fairy', 'dragon', 'fighting', 'steel', 'bug', 'psychic', 'rock', 'ground', 'paradox', 'ice', 'fossil', 'legendary', 'ultra-beast', 'normal', 'alpha', 'lgpe', 'pogo', 'mythical'];
   if (!definedColors.includes(normalizedTag)) {
-    return "bg-secondary text-secondary-foreground"; // Use ShadCN secondary badge style
+    return "bg-secondary text-secondary-foreground"; 
   }
 
   return `${bgColorClass} ${textColorClass}`;
@@ -36,20 +35,28 @@ const getTagSpecificClasses = (tag: string): string => {
 
 
 export function PokemonCard({ pokemon, displayFullDetail = false }: PokemonCardProps) {
+  const hasFavouriteTag = pokemon.tags.some(tag => tag.toLowerCase() === 'favourite');
+  const hasWaterTag = pokemon.tags.some(tag => tag.toLowerCase() === 'water');
+  const hasFireTag = pokemon.tags.some(tag => tag.toLowerCase() === 'fire');
+  const hasGrassTag = pokemon.tags.some(tag => tag.toLowerCase() === 'grass');
+
   return (
     <Link href={`/pokemon/${pokemon.id}`} className="block group h-full">
-      <Card className="h-full overflow-hidden transition-all duration-200 ease-in-out group-hover:scale-105 group-hover:shadow-xl hover:border-primary flex flex-col">
-        <CardHeader className="p-4">
+      <Card className={cn(
+        "h-full overflow-hidden transition-all duration-200 ease-in-out group-hover:scale-105 group-hover:shadow-xl hover:border-primary flex flex-col relative",
+        hasFavouriteTag && "animate-shimmer"
+      )}>
+        <CardHeader className="p-4 relative z-10">
           <div className="flex justify-between items-start">
             <CardTitle className="text-xl font-headline">{pokemon.name}</CardTitle>
             <ShinySparkleIcon viewed={pokemon.shinyViewed} />
           </div>
           <CardDescription className="text-sm">{pokemon.speciesName} (#{pokemon.pokedexNumber})</CardDescription>
         </CardHeader>
-        <CardContent className="p-4 pt-0 flex flex-col items-center flex-grow">
+        <CardContent className="p-4 pt-0 flex flex-col items-center flex-grow relative z-10">
           <div className="relative w-32 h-32 mb-3">
             <Image
-              src={pokemon.sprites.shiny} // Display shiny sprite by default on card
+              src={pokemon.sprites.shiny} 
               alt={`${pokemon.name} shiny sprite`}
               fill
               style={{ objectFit: 'contain' }}
@@ -79,14 +86,29 @@ export function PokemonCard({ pokemon, displayFullDetail = false }: PokemonCardP
               <Badge 
                 key={tag} 
                 className={cn("text-xs capitalize", getTagSpecificClasses(tag))}
-                variant={getTagSpecificClasses(tag).includes("bg-secondary") ? "secondary" : "default"} // Use default variant if custom bg
+                variant={getTagSpecificClasses(tag).includes("bg-secondary") ? "secondary" : "default"} 
               >
                 {tag}
               </Badge>
             ))}
           </div>
         </CardContent>
+
+        {(hasWaterTag || hasFireTag || hasGrassTag) && (
+          <div className="particle-container">
+            {hasWaterTag && Array.from({ length: 3 }).map((_, i) => (
+              <div key={`water-${pokemon.id}-${i}`} className="particle-water-drop" style={{ left: `${20 + i * 25}%`, animationDelay: `${i * 0.5}s` }} />
+            ))}
+            {hasFireTag && Array.from({ length: 4 }).map((_, i) => (
+              <div key={`fire-${pokemon.id}-${i}`} className="particle-ember" style={{ left: `${15 + i * 20}%`, bottom: `${10 + Math.random()*10}%`, animationDelay: `${i * 0.3}s` }} />
+            ))}
+            {hasGrassTag && Array.from({ length: 3 }).map((_, i) => (
+              <div key={`grass-${pokemon.id}-${i}`} className="particle-leaf" style={{ left: `${25 + i * 20}%`, animationDelay: `${i * 0.6}s`, transformOrigin: 'bottom left' }} />
+            ))}
+          </div>
+        )}
       </Card>
     </Link>
   );
 }
+    

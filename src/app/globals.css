@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -126,7 +127,6 @@ body {
   .text-tag-ice { color: black; }
   .text-tag-normal { color: black; }
   .text-tag-lgpe { color: black; }
-  /* .text-tag-pogo { color: black; } // Removed, pogo background is dark blue */
   .text-tag-mythical { color: black; }
   .text-tag-favourite { color: black !important; } /* Ensure override for gradient */
   .text-tag-water { color: black; }
@@ -138,3 +138,142 @@ body {
   /* Default tag text color if not specified above (usually white for dark backgrounds) */
   .tag-text-default { color: white; }
 }
+
+/* Animations */
+@layer utilities {
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+  .animate-shimmer::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: linear-gradient(
+      100deg,
+      transparent 20%,
+      rgba(255, 255, 255, 0.2) 40%,
+      rgba(255, 255, 255, 0.2) 60%,
+      transparent 80%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 3s infinite linear;
+    pointer-events: none;
+    z-index: 1; /* Ensure shimmer is above card content but below interactable elements like badges if they were on top */
+    border-radius: inherit; /* Inherit border-radius from parent card */
+  }
+  .dark .animate-shimmer::after {
+     background-image: linear-gradient(
+      100deg,
+      transparent 20%,
+      rgba(255, 255, 255, 0.1) 40%,
+      rgba(255, 255, 255, 0.1) 60%,
+      transparent 80%
+    );
+  }
+
+  @keyframes fall {
+    0% {
+      transform: translateY(-20px) rotate(0deg);
+      opacity: 0;
+    }
+    20% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(100px) rotate(30deg);
+      opacity: 0;
+    }
+  }
+
+  .particle-water-drop {
+    position: absolute;
+    width: 6px;
+    height: 10px;
+    background-color: theme('colors.blue.400');
+    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+    animation: fall 3s infinite ease-in-out;
+    opacity: 0;
+  }
+  .dark .particle-water-drop {
+    background-color: theme('colors.blue.600');
+  }
+
+  @keyframes rise-fade {
+    0% {
+      transform: translateY(20px) scale(0.5);
+      opacity: 0;
+    }
+    50% {
+      opacity: 0.8;
+      transform: scale(1);
+    }
+    100% {
+      transform: translateY(-60px) scale(0.3);
+      opacity: 0;
+    }
+  }
+
+  .particle-ember {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background-color: theme('colors.orange.500');
+    border-radius: 50%;
+    box-shadow: 0 0 6px 2px theme('colors.orange.400');
+    animation: rise-fade 2.5s infinite ease-out;
+    opacity: 0;
+  }
+   .dark .particle-ember {
+    background-color: theme('colors.red.500');
+    box-shadow: 0 0 6px 2px theme('colors.red.400');
+  }
+
+
+  @keyframes leaf-fall {
+    0% {
+      transform: translateY(-20px) rotate(-10deg) scale(0.8);
+      opacity: 0;
+    }
+    20% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(120px) rotate(20deg) translateX(15px) scale(1);
+      opacity: 0;
+    }
+  }
+
+  .particle-leaf {
+    position: absolute;
+    width: 10px;
+    height: 15px;
+    background-color: theme('colors.green.500');
+    border-radius: 50% 0;
+    animation: leaf-fall 4s infinite linear;
+    opacity: 0;
+  }
+  .dark .particle-leaf {
+     background-color: theme('colors.green.600');
+  }
+}
+
+/* Ensure particle container is set up for positioning */
+.particle-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: hidden; /* Clip particles within card boundaries */
+  z-index: 0; /* Behind card content but above background */
+}
+    

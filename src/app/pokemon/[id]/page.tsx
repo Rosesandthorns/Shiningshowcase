@@ -1,8 +1,10 @@
+
 import { notFound } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { PokemonDetailClient } from '@/components/client/PokemonDetailClient';
 import { getAllPokemon, getPokemonById } from '@/lib/pokemonApi';
 import { PokemonProvider } from '@/contexts/PokemonContext';
+import type { Metadata } from 'next';
 
 type PokemonDetailPageProps = {
   params: {
@@ -47,7 +49,7 @@ export default async function PokemonDetailPage({ params }: PokemonDetailPagePro
   );
 }
 
-export async function generateMetadata({ params }: PokemonDetailPageProps) {
+export async function generateMetadata({ params }: PokemonDetailPageProps): Promise<Metadata> {
   const pokemonId = parseInt(params.id, 10);
   if (isNaN(pokemonId)) {
     return { title: "Pokémon Not Found" };
@@ -57,7 +59,7 @@ export async function generateMetadata({ params }: PokemonDetailPageProps) {
     return { title: "Pokémon Not Found" };
   }
   return {
-    title: `${pokemon.name} - Rosie's Shiny Pokémon`,
-    description: `Details for ${pokemon.name}, including its shiny form.`,
+    title: `${pokemon.name} (${pokemon.speciesName}) - Rosie's Shiny Pokémon`,
+    description: `Details for shiny ${pokemon.name} (${pokemon.speciesName}). ${pokemon.description || ''}`,
   };
 }

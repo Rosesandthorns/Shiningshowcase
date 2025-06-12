@@ -1,3 +1,4 @@
+
 import { Header } from '@/components/Header';
 import { FeaturedPokemon } from '@/components/FeaturedPokemon';
 import { PokemonListClient } from '@/components/client/PokemonListClient';

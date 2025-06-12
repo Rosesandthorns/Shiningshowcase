@@ -21,7 +21,7 @@ const getTagSpecificClasses = (tag: string): string => {
   let bgColorClass = `bg-tag-${normalizedTag}`;
   let textColorClass = 'tag-text-default';
 
-  const blackTextTags = ['electric', 'pla', 'fairy', 'bug', 'ice', 'normal', 'lgpe', 'pogo', 'mythical', 'favourite'];
+  const blackTextTags = ['electric', 'pla', 'fairy', 'bug', 'ice', 'normal', 'lgpe', 'mythical', 'favourite', 'water', 'grass', 'flying', 'swsh'];
   if (blackTextTags.includes(normalizedTag)) {
     textColorClass = `text-tag-${normalizedTag}`;
   }
@@ -42,7 +42,7 @@ export function PokemonDetailClient({ pokemon: initialPokemonData }: PokemonDeta
 
   const pokemon = pokemonList.find(p => p.id === initialPokemonData.id) || initialPokemonData;
 
-  const displayAbility = pokemon.abilities && pokemon.abilities.length > 0 && pokemon.abilities[0] !== "Unknown Ability" && pokemon.abilities[0] !== "Unknown ability" // Added check for lowercase "unknown ability"
+  const displayAbility = pokemon.abilities && pokemon.abilities.length > 0 && pokemon.abilities[0] !== "Unknown Ability" && pokemon.abilities[0] !== "Unknown ability"
     ? pokemon.abilities[0]
     : "Not specified";
 
@@ -64,7 +64,6 @@ export function PokemonDetailClient({ pokemon: initialPokemonData }: PokemonDeta
                 {pokemon.speciesDescription && ` - ${pokemon.speciesDescription}`}
               </CardDescription>
             </div>
-            {/* Mark Shiny Viewed Button Removed */}
           </div>
         </CardHeader>
         <CardContent className="p-6">
@@ -74,9 +73,8 @@ export function PokemonDetailClient({ pokemon: initialPokemonData }: PokemonDeta
               <Separator className="my-6" />
             </>
           )}
-          <div className="flex justify-center mb-6"> {/* Centering the single image */}
+          <div className="flex justify-center mb-6"> 
             <div className="flex flex-col items-center p-4 border rounded-lg bg-card shadow">
-              {/* Shiny Sprite Text Removed */}
               <Image
                 src={pokemon.sprites.shiny}
                 alt={`${pokemon.name} shiny sprite`}
@@ -87,7 +85,6 @@ export function PokemonDetailClient({ pokemon: initialPokemonData }: PokemonDeta
               />
             </div>
           </div>
-          {/* Default Sprite Section Removed */}
 
           <Separator className="my-6" />
 

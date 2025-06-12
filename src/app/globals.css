@@ -126,9 +126,14 @@ body {
   .text-tag-ice { color: black; }
   .text-tag-normal { color: black; }
   .text-tag-lgpe { color: black; }
-  .text-tag-pogo { color: black; }
+  /* .text-tag-pogo { color: black; } // Removed, pogo background is dark blue */
   .text-tag-mythical { color: black; }
   .text-tag-favourite { color: black !important; } /* Ensure override for gradient */
+  .text-tag-water { color: black; }
+  .text-tag-grass { color: black; }
+  .text-tag-flying { color: black; }
+  .text-tag-swsh { color: black; }
+
 
   /* Default tag text color if not specified above (usually white for dark backgrounds) */
   .tag-text-default { color: white; }

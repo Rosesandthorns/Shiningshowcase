@@ -17,7 +17,7 @@ const getTagSpecificClasses = (tag: string): string => {
   let textColorClass = 'tag-text-default'; // Default to white text
 
   // Handle tags that need black text
-  const blackTextTags = ['electric', 'pla', 'fairy', 'bug', 'ice', 'normal', 'lgpe', 'pogo', 'mythical', 'favourite'];
+  const blackTextTags = ['electric', 'pla', 'fairy', 'bug', 'ice', 'normal', 'lgpe', 'mythical', 'favourite', 'water', 'grass', 'flying', 'swsh'];
   if (blackTextTags.includes(normalizedTag)) {
     textColorClass = `text-tag-${normalizedTag}`;
   }

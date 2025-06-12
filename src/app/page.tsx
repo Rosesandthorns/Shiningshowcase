@@ -25,7 +25,7 @@ export default async function HomePage() {
           <PokemonListClient uniqueTags={uniqueTags} />
         </main>
         <footer className="py-6 text-center text-muted-foreground text-sm">
-          Pokémon data from Rosie's collection. {/* Footer text modified */}
+          {/* Footer text removed */}
         </footer>
       </div>
     </PokemonProvider>

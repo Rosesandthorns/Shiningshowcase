@@ -166,8 +166,8 @@ body {
     background-size: 200% 100%;
     animation: shimmer 3s infinite linear;
     pointer-events: none;
-    z-index: 1; /* Ensure shimmer is above card content but below interactable elements like badges if they were on top */
-    border-radius: inherit; /* Inherit border-radius from parent card */
+    z-index: 1; 
+    border-radius: inherit; 
   }
   .dark .animate-shimmer::after {
      background-image: linear-gradient(
@@ -221,19 +221,48 @@ body {
     }
   }
 
-  .particle-ember {
+  .particle-ember-red {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background-color: theme('colors.red.500');
+    border-radius: 50%;
+    box-shadow: 0 0 6px 2px theme('colors.red.400');
+    animation: rise-fade 2.5s infinite ease-out;
+    opacity: 0;
+  }
+   .dark .particle-ember-red {
+    background-color: theme('colors.red.600');
+    box-shadow: 0 0 6px 2px theme('colors.red.500');
+  }
+
+  .particle-ember-orange {
     position: absolute;
     width: 8px;
     height: 8px;
     background-color: theme('colors.orange.500');
     border-radius: 50%;
     box-shadow: 0 0 6px 2px theme('colors.orange.400');
-    animation: rise-fade 2.5s infinite ease-out;
+    animation: rise-fade 2.8s infinite ease-out; /* Slightly different timing */
     opacity: 0;
   }
-   .dark .particle-ember {
-    background-color: theme('colors.red.500');
-    box-shadow: 0 0 6px 2px theme('colors.red.400');
+   .dark .particle-ember-orange {
+    background-color: theme('colors.orange.600');
+    box-shadow: 0 0 6px 2px theme('colors.orange.500');
+  }
+  .particle-ember-yellow {
+    position: absolute;
+    width: 7px; /* Slightly smaller */
+    height: 7px;
+    background-color: theme('colors.yellow.400');
+    border-radius: 50%;
+    box-shadow: 0 0 5px 1px theme('colors.yellow.300');
+    animation: rise-fade 2.2s infinite ease-out; /* Slightly different timing */
+    opacity: 0;
+  }
+   .dark .particle-ember-yellow {
+    background-color: theme('colors.yellow.500');
+    box-shadow: 0 0 5px 1px theme('colors.yellow.400');
   }
 
 
@@ -263,6 +292,157 @@ body {
   .dark .particle-leaf {
      background-color: theme('colors.green.600');
   }
+
+  @keyframes ghostly-wisp {
+    0% { opacity: 0; transform: translateY(20px) translateX(-10px) scale(0.8); }
+    50% { opacity: 0.3; transform: translateY(-10px) translateX(10px) scale(1.1) rotate(5deg); }
+    100% { opacity: 0; transform: translateY(-40px) translateX(-5px) scale(0.7) rotate(-5deg); }
+  }
+  .particle-ghost-wisp {
+    position: absolute;
+    width: 30px;
+    height: 40px;
+    background-color: rgba(200, 200, 255, 0.2);
+    border-radius: 50% 50% 30% 50% / 60% 60% 40% 40%;
+    animation: ghostly-wisp 5s infinite ease-in-out;
+    filter: blur(3px);
+  }
+  .dark .particle-ghost-wisp {
+    background-color: rgba(150, 150, 220, 0.25);
+  }
+
+  @keyframes fairy-swirl-anim {
+    0% { transform: rotate(0deg) scale(0.8); opacity: 0.3; }
+    50% { transform: rotate(180deg) scale(1.1); opacity: 0.7; }
+    100% { transform: rotate(360deg) scale(0.8); opacity: 0.3; }
+  }
+  .particle-fairy-swirl {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    border: 2px dashed theme('colors.pink.300');
+    border-radius: 50%;
+    animation: fairy-swirl-anim 6s infinite linear;
+  }
+  .dark .particle-fairy-swirl {
+    border: 2px dashed theme('colors.pink.400');
+  }
+
+  @keyframes normal-pulse {
+    0%, 100% { opacity: 0.4; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.1); }
+  }
+  .particle-normal-light {
+    position: absolute;
+    width: 15px;
+    height: 15px;
+    background-color: rgba(230, 230, 230, 0.7); /* Light grey, almost white */
+    border-radius: 50%;
+    animation: normal-pulse 3s infinite ease-in-out;
+    box-shadow: 0 0 10px 2px rgba(240, 240, 240, 0.5);
+  }
+  .dark .particle-normal-light {
+    background-color: rgba(200, 200, 200, 0.6);
+    box-shadow: 0 0 10px 2px rgba(220, 220, 220, 0.4);
+  }
+
+  @keyframes fist-bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+  }
+  .particle-fighting-fist svg {
+    width: 24px;
+    height: 24px;
+    fill: theme('colors.orange.500');
+    animation: fist-bob 1s infinite ease-in-out;
+  }
+  .dark .particle-fighting-fist svg {
+    fill: theme('colors.orange.400');
+  }
+
+
+  @keyframes spoon-float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-8px) rotate(10deg); }
+  }
+  .particle-psychic-spoon svg {
+    width: 22px;
+    height: 22px;
+    fill: theme('colors.purple.400');
+    animation: spoon-float 3s infinite ease-in-out;
+  }
+  .dark .particle-psychic-spoon svg {
+     fill: theme('colors.purple.300');
+  }
+
+
+  @keyframes wind-streak-anim {
+    0% { transform: translateX(-100%); opacity: 0; }
+    50% { opacity: 0.5; }
+    100% { transform: translateX(100%); opacity: 0; }
+  }
+  .particle-flying-wind {
+    position: absolute;
+    width: 60px; /* Long streak */
+    height: 2px;
+    background-color: rgba(173, 216, 230, 0.6); /* Light blueish */
+    border-radius: 1px;
+    animation: wind-streak-anim 2s infinite linear;
+  }
+  .dark .particle-flying-wind {
+    background-color: rgba(135, 206, 250, 0.5);
+  }
+
+  @keyframes poison-drip-anim {
+    0% { transform: translateY(-20px) scaleY(0.8); opacity: 0; }
+    20% { opacity: 1; }
+    90% { transform: translateY(80px) scaleY(1.2); opacity: 1;}
+    100% { transform: translateY(100px) scaleY(1); opacity: 0; }
+  }
+  .particle-poison-drop {
+    position: absolute;
+    width: 8px;
+    height: 12px;
+    background-color: theme('colors.purple.600');
+    border-radius: 50% 50% 50% 50% / 70% 70% 30% 30%; /* Blobbier */
+    animation: poison-drip-anim 3.5s infinite ease-in;
+    opacity: 0;
+  }
+  .dark .particle-poison-drop {
+    background-color: theme('colors.purple.500');
+  }
+
+  @keyframes electric-spark-anim {
+    0%, 100% { opacity: 0; transform: scale(0.5); }
+    20%, 80% { opacity: 0.8; transform: scale(1); }
+    50% { opacity: 0.3; transform: scale(0.8) rotate(15deg); }
+  }
+  .particle-electric-spark {
+    position: absolute;
+    width: 5px;
+    height: 15px; /* Thin spark */
+    background-color: theme('colors.yellow.400');
+    clip-path: polygon(50% 0%, 0% 100%, 100% 100%); /* Simple triangle for spark */
+    animation: electric-spark-anim 0.5s infinite steps(3, end);
+  }
+  .dark .particle-electric-spark {
+    background-color: theme('colors.yellow.300');
+  }
+
+  @keyframes tail-sway-anim {
+    0%, 100% { transform: rotate(-5deg); }
+    50% { transform: rotate(5deg); }
+  }
+  .particle-dragon-tail svg {
+    width: 40px;
+    height: 40px;
+    fill: theme('colors.indigo.500'); /* Example dragon color */
+    animation: tail-sway-anim 3s infinite ease-in-out;
+  }
+  .dark .particle-dragon-tail svg {
+    fill: theme('colors.indigo.400');
+  }
+
 }
 
 /* Ensure particle container is set up for positioning */
@@ -273,7 +453,7 @@ body {
   width: 100%;
   height: 100%;
   pointer-events: none;
-  overflow: hidden; /* Clip particles within card boundaries */
-  z-index: 0; /* Behind card content but above background */
+  overflow: hidden; 
+  z-index: 0; 
 }
     

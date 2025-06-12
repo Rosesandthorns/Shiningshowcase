@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -23,13 +24,17 @@ export function PokemonListClient({ uniqueTags }: PokemonListClientProps) {
   };
 
   const filteredPokemon = useMemo(() => {
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    const lowerSelectedTags = selectedTags.map(st => st.toLowerCase());
+
     return pokemonList
       .filter(p =>
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.species.toLowerCase().includes(searchTerm.toLowerCase())
+        p.name.toLowerCase().includes(lowerSearchTerm) ||
+        p.speciesName.toLowerCase().includes(lowerSearchTerm) // Changed from p.species
       )
       .filter(p =>
-        selectedTags.length === 0 || selectedTags.some(tag => p.tags.includes(tag))
+        lowerSelectedTags.length === 0 || 
+        p.tags.some(pokemonTag => lowerSelectedTags.includes(pokemonTag.toLowerCase()))
       );
   }, [pokemonList, searchTerm, selectedTags]);
 
@@ -74,3 +79,4 @@ export function PokemonListClient({ uniqueTags }: PokemonListClientProps) {
     </section>
   );
 }
+

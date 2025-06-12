@@ -1,3 +1,4 @@
+
 "use client";
 
 import Image from 'next/image';
@@ -6,11 +7,9 @@ import { usePokemon } from '@/contexts/PokemonContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ShinySparkleIcon } from '@/components/icons/ShinySparkleIcon';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Check, X } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 interface PokemonDetailClientProps {
@@ -39,24 +38,13 @@ const getTagSpecificClasses = (tag: string): string => {
 };
 
 export function PokemonDetailClient({ pokemon: initialPokemonData }: PokemonDetailClientProps) {
-  const { pokemonList, updateShinyViewed } = usePokemon();
-  const { toast } = useToast();
+  const { pokemonList } = usePokemon();
 
   const pokemon = pokemonList.find(p => p.id === initialPokemonData.id) || initialPokemonData;
 
-  const handleToggleShinyViewed = () => {
-    updateShinyViewed(pokemon.id, !pokemon.shinyViewed);
-    toast({
-      title: `Shiny ${pokemon.name} ${!pokemon.shinyViewed ? 'marked as viewed' : 'marked as not viewed'}!`,
-      description: (
-        <div className="flex items-center">
-          <ShinySparkleIcon viewed={!pokemon.shinyViewed} className="mr-2" />
-          {`You've updated the shiny status for ${pokemon.name}.`}
-        </div>
-      ),
-      duration: 3000,
-    });
-  };
+  const displayAbility = pokemon.abilities && pokemon.abilities.length > 0 && pokemon.abilities[0] !== "Unknown Ability" && pokemon.abilities[0] !== "Unknown ability" // Added check for lowercase "unknown ability"
+    ? pokemon.abilities[0]
+    : "Not specified";
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -76,11 +64,7 @@ export function PokemonDetailClient({ pokemon: initialPokemonData }: PokemonDeta
                 {pokemon.speciesDescription && ` - ${pokemon.speciesDescription}`}
               </CardDescription>
             </div>
-            <Button onClick={handleToggleShinyViewed} variant={pokemon.shinyViewed ? "secondary" : "default"} size="lg">
-              {pokemon.shinyViewed ? <X className="mr-2 h-5 w-5" /> : <Check className="mr-2 h-5 w-5" />}
-              {pokemon.shinyViewed ? 'Unmark Shiny Viewed' : 'Mark Shiny Viewed'}
-              <ShinySparkleIcon viewed={pokemon.shinyViewed} className="ml-2 h-5 w-5" />
-            </Button>
+            {/* Mark Shiny Viewed Button Removed */}
           </div>
         </CardHeader>
         <CardContent className="p-6">
@@ -90,20 +74,9 @@ export function PokemonDetailClient({ pokemon: initialPokemonData }: PokemonDeta
               <Separator className="my-6" />
             </>
           )}
-          <div className="grid md:grid-cols-2 gap-6 mb-6">
+          <div className="flex justify-center mb-6"> {/* Centering the single image */}
             <div className="flex flex-col items-center p-4 border rounded-lg bg-card shadow">
-              <h3 className="text-xl font-semibold mb-3">Default Sprite</h3>
-              <Image
-                src={pokemon.sprites.default}
-                alt={`${pokemon.name} default sprite`}
-                width={200}
-                height={200}
-                className="object-contain"
-                data-ai-hint={`${pokemon.speciesName} default sprite large`}
-              />
-            </div>
-            <div className="flex flex-col items-center p-4 border rounded-lg bg-card shadow">
-              <h3 className="text-xl font-semibold mb-3">Shiny Sprite</h3>
+              {/* Shiny Sprite Text Removed */}
               <Image
                 src={pokemon.sprites.shiny}
                 alt={`${pokemon.name} shiny sprite`}
@@ -114,6 +87,7 @@ export function PokemonDetailClient({ pokemon: initialPokemonData }: PokemonDeta
               />
             </div>
           </div>
+          {/* Default Sprite Section Removed */}
 
           <Separator className="my-6" />
 
@@ -135,7 +109,9 @@ export function PokemonDetailClient({ pokemon: initialPokemonData }: PokemonDeta
                     </span>
                   </li>
                 )}
-                {pokemon.abilities && pokemon.abilities.length > 0 && <li><strong>Abilities:</strong> {pokemon.abilities.join(', ')}</li>}
+                 <li>
+                  <strong>Ability:</strong> {displayAbility}
+                </li>
               </ul>
             </div>
             <div>

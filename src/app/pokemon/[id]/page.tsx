@@ -42,7 +42,7 @@ export default async function PokemonDetailPage({ params }: PokemonDetailPagePro
           <PokemonDetailClient pokemon={pokemon} />
         </main>
         <footer className="py-6 text-center text-muted-foreground text-sm">
-          Gotta shiny 'em all!
+          {/* Footer text removed */}
         </footer>
       </div>
     </PokemonProvider>

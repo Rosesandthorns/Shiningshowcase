@@ -164,7 +164,7 @@ body {
       transparent 80%
     );
     background-size: 200% 100%;
-    animation: shimmer 3s infinite linear;
+    animation: shimmer 5s infinite linear; /* Slowed down shimmer */
     pointer-events: none;
     z-index: 1; 
     border-radius: inherit; 
@@ -243,7 +243,7 @@ body {
     background-color: theme('colors.orange.500');
     border-radius: 50%;
     box-shadow: 0 0 6px 2px theme('colors.orange.400');
-    animation: rise-fade 2.8s infinite ease-out; /* Slightly different timing */
+    animation: rise-fade 2.8s infinite ease-out; 
     opacity: 0;
   }
    .dark .particle-ember-orange {
@@ -252,12 +252,12 @@ body {
   }
   .particle-ember-yellow {
     position: absolute;
-    width: 7px; /* Slightly smaller */
+    width: 7px; 
     height: 7px;
     background-color: theme('colors.yellow.400');
     border-radius: 50%;
     box-shadow: 0 0 5px 1px theme('colors.yellow.300');
-    animation: rise-fade 2.2s infinite ease-out; /* Slightly different timing */
+    animation: rise-fade 2.2s infinite ease-out; 
     opacity: 0;
   }
    .dark .particle-ember-yellow {
@@ -311,22 +311,25 @@ body {
     background-color: rgba(150, 150, 220, 0.25);
   }
 
-  @keyframes fairy-swirl-anim {
-    0% { transform: rotate(0deg) scale(0.8); opacity: 0.3; }
-    50% { transform: rotate(180deg) scale(1.1); opacity: 0.7; }
-    100% { transform: rotate(360deg) scale(0.8); opacity: 0.3; }
+  @keyframes fairy-dust-anim {
+    0% { opacity: 0; transform: translateY(0px) scale(0.5); }
+    50% { opacity: 0.8; transform: translateY(-15px) scale(1); }
+    100% { opacity: 0; transform: translateY(-30px) scale(0.5); }
   }
-  .particle-fairy-swirl {
+  .particle-fairy-dust {
     position: absolute;
-    width: 50px;
-    height: 50px;
-    border: 2px dashed theme('colors.pink.300');
+    width: 5px;
+    height: 5px;
+    background-color: theme('colors.pink.300');
     border-radius: 50%;
-    animation: fairy-swirl-anim 6s infinite linear;
+    box-shadow: 0 0 8px 2px theme('colors.pink.200');
+    animation: fairy-dust-anim 2.5s infinite ease-in-out;
   }
-  .dark .particle-fairy-swirl {
-    border: 2px dashed theme('colors.pink.400');
+  .dark .particle-fairy-dust {
+    background-color: theme('colors.pink.400');
+    box-shadow: 0 0 8px 2px theme('colors.pink.300');
   }
+
 
   @keyframes normal-pulse {
     0%, 100% { opacity: 0.4; transform: scale(1); }
@@ -336,7 +339,7 @@ body {
     position: absolute;
     width: 15px;
     height: 15px;
-    background-color: rgba(230, 230, 230, 0.7); /* Light grey, almost white */
+    background-color: rgba(230, 230, 230, 0.7); 
     border-radius: 50%;
     animation: normal-pulse 3s infinite ease-in-out;
     box-shadow: 0 0 10px 2px rgba(240, 240, 240, 0.5);
@@ -377,15 +380,15 @@ body {
 
 
   @keyframes wind-streak-anim {
-    0% { transform: translateX(-100%); opacity: 0; }
+    0% { transform: translateX(-100%) skewX(-20deg); opacity: 0; }
     50% { opacity: 0.5; }
-    100% { transform: translateX(100%); opacity: 0; }
+    100% { transform: translateX(100%) skewX(-20deg); opacity: 0; }
   }
   .particle-flying-wind {
     position: absolute;
-    width: 60px; /* Long streak */
+    width: 60px; 
     height: 2px;
-    background-color: rgba(173, 216, 230, 0.6); /* Light blueish */
+    background-color: rgba(173, 216, 230, 0.6); 
     border-radius: 1px;
     animation: wind-streak-anim 2s infinite linear;
   }
@@ -404,7 +407,7 @@ body {
     width: 8px;
     height: 12px;
     background-color: theme('colors.purple.600');
-    border-radius: 50% 50% 50% 50% / 70% 70% 30% 30%; /* Blobbier */
+    border-radius: 50% 50% 50% 50% / 70% 70% 30% 30%; 
     animation: poison-drip-anim 3.5s infinite ease-in;
     opacity: 0;
   }
@@ -420,9 +423,9 @@ body {
   .particle-electric-spark {
     position: absolute;
     width: 5px;
-    height: 15px; /* Thin spark */
+    height: 15px; 
     background-color: theme('colors.yellow.400');
-    clip-path: polygon(50% 0%, 0% 100%, 100% 100%); /* Simple triangle for spark */
+    clip-path: polygon(50% 0%, 0% 100%, 100% 100%); 
     animation: electric-spark-anim 0.5s infinite steps(3, end);
   }
   .dark .particle-electric-spark {
@@ -436,11 +439,83 @@ body {
   .particle-dragon-tail svg {
     width: 40px;
     height: 40px;
-    fill: theme('colors.indigo.500'); /* Example dragon color */
+    fill: theme('colors.indigo.500'); 
     animation: tail-sway-anim 3s infinite ease-in-out;
   }
   .dark .particle-dragon-tail svg {
     fill: theme('colors.indigo.400');
+  }
+
+  @keyframes fly-around {
+    0% { transform: translate(0px, 0px) rotate(0deg) scale(1); opacity: 0.7; }
+    25% { transform: translate(15px, -10px) rotate(20deg) scale(1.1); opacity: 1; }
+    50% { transform: translate(-10px, 10px) rotate(-10deg) scale(0.9); opacity: 0.8; }
+    75% { transform: translate(5px, 5px) rotate(10deg) scale(1); opacity: 0.9; }
+    100% { transform: translate(0px, 0px) rotate(0deg) scale(1); opacity: 0.7; }
+  }
+  .particle-bug-fly {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background-color: theme('colors.gray.700');
+    border-radius: 50%;
+    animation: fly-around 4s infinite ease-in-out;
+  }
+  .dark .particle-bug-fly {
+    background-color: theme('colors.gray.600');
+  }
+  .particle-bug-fly::before, .particle-bug-fly::after { /* Wings */
+    content: '';
+    position: absolute;
+    width: 5px;
+    height: 7px;
+    background-color: rgba(200, 200, 200, 0.5);
+    border-radius: 40% 60% 40% 60% / 50% 50% 50% 50%;
+    top: -2px;
+  }
+  .particle-bug-fly::before {
+    left: -3px;
+    transform: rotate(-30deg);
+  }
+  .particle-bug-fly::after {
+    right: -3px;
+    transform: rotate(30deg);
+  }
+
+  @keyframes snowflake-fall {
+    0% { transform: translateY(-20px) translateX(0px) rotate(0deg); opacity: 0; }
+    20% { opacity: 1; }
+    100% { transform: translateY(100px) translateX(10px) rotate(720deg); opacity: 0; }
+  }
+  .particle-ice-snowflake {
+    position: absolute;
+    font-size: 14px; /* Adjust size as needed */
+    color: theme('colors.blue.200');
+    animation: snowflake-fall 5s infinite linear;
+    opacity: 0;
+  }
+  .dark .particle-ice-snowflake {
+    color: theme('colors.blue.300');
+  }
+
+  .card-shield-backdrop {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%; 
+    height: 80%;
+    opacity: 0.2;
+    z-index: 0; /* Behind image, but above card background */
+    pointer-events: none;
+  }
+  .card-shield-backdrop svg {
+    width: 100%;
+    height: 100%;
+    fill: theme('colors.gray.400');
+  }
+  .dark .card-shield-backdrop svg {
+    fill: theme('colors.gray.600');
   }
 
 }

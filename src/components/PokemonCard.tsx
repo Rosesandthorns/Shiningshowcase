@@ -53,6 +53,12 @@ const DragonTailSVG = () => (
   </svg>
 );
 
+const ShieldSVG = () => (
+  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 2L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-3zm0 2.18L19 6.23V11h-7V4.18zM5 6.23L10 4.18V11H5V6.23zm0 7.77h5v5.84C6.96 18.56 5 15.06 5 12v-2zm7 5.84V14h5v2c0 3.06-1.96 6.56-5 7.82z"/>
+  </svg>
+);
+
 
 export function PokemonCard({ pokemon, displayFullDetail = false }: PokemonCardProps) {
   const [clientRendered, setClientRendered] = useState(false);
@@ -74,8 +80,24 @@ export function PokemonCard({ pokemon, displayFullDetail = false }: PokemonCardP
   const hasPoisonTag = lowerCaseTags.includes('poison');
   const hasElectricTag = lowerCaseTags.includes('electric');
   const hasDragonTag = lowerCaseTags.includes('dragon');
+  const hasBugTag = lowerCaseTags.includes('bug');
+  const hasIceTag = lowerCaseTags.includes('ice');
+  const hasSteelTag = lowerCaseTags.includes('steel');
 
   const emberTypes = ['red', 'orange', 'yellow'];
+
+  const animatedTagsCount = [
+    hasWaterTag, hasFireTag, hasGrassTag, hasGhostTag, hasFairyTag, 
+    hasNormalTag, hasFightingTag, hasPsychicTag, hasFlyingTag, 
+    hasPoisonTag, hasElectricTag, hasDragonTag, hasBugTag, hasIceTag
+  ].filter(Boolean).length;
+
+  const getAnimationDuration = (baseDuration: number) => {
+    if (animatedTagsCount <= 1) return `${baseDuration}s`;
+    const slowdownFactor = 0.2; // 20% slower for each additional tag beyond the first
+    return `${baseDuration * (1 + slowdownFactor * (animatedTagsCount - 1))}s`;
+  };
+
 
   return (
     <Link href={`/pokemon/${pokemon.id}`} className="block group h-full">
@@ -83,6 +105,11 @@ export function PokemonCard({ pokemon, displayFullDetail = false }: PokemonCardP
         "h-full overflow-hidden transition-all duration-200 ease-in-out group-hover:scale-105 group-hover:shadow-xl hover:border-primary flex flex-col relative",
         hasFavouriteTag && "animate-shimmer"
       )}>
+        {clientRendered && hasSteelTag && (
+          <div className="card-shield-backdrop">
+            <ShieldSVG />
+          </div>
+        )}
         <CardHeader className="p-4 relative z-10">
           <div className="flex justify-between items-start">
             <CardTitle className="text-xl font-headline">{pokemon.name}</CardTitle>
@@ -91,7 +118,7 @@ export function PokemonCard({ pokemon, displayFullDetail = false }: PokemonCardP
           <CardDescription className="text-sm">{pokemon.speciesName} (#{pokemon.pokedexNumber})</CardDescription>
         </CardHeader>
         <CardContent className="p-4 pt-0 flex flex-col items-center flex-grow relative z-10">
-          <div className="relative w-32 h-32 mb-3">
+          <div className="relative w-32 h-32 mb-3 z-10"> {/* Ensure image is above shield */}
             <Image
               src={pokemon.sprites.shiny} 
               alt={`${pokemon.name} shiny sprite`}
@@ -131,51 +158,58 @@ export function PokemonCard({ pokemon, displayFullDetail = false }: PokemonCardP
           </div>
         </CardContent>
 
-        {clientRendered && (hasWaterTag || hasFireTag || hasGrassTag || hasGhostTag || hasFairyTag || hasNormalTag || hasFightingTag || hasPsychicTag || hasFlyingTag || hasPoisonTag || hasElectricTag || hasDragonTag) && (
+        {clientRendered && (hasWaterTag || hasFireTag || hasGrassTag || hasGhostTag || hasFairyTag || hasNormalTag || hasFightingTag || hasPsychicTag || hasFlyingTag || hasPoisonTag || hasElectricTag || hasDragonTag || hasBugTag || hasIceTag) && (
           <div className="particle-container">
             {hasWaterTag && Array.from({ length: 3 }).map((_, i) => (
-              <div key={`water-${pokemon.id}-${i}`} className="particle-water-drop" style={{ left: `${20 + i * 25}%`, animationDelay: `${i * 0.5}s` }} />
+              <div key={`water-${pokemon.id}-${i}`} className="particle-water-drop" style={{ left: `${20 + i * 25}%`, animationDelay: `${i * 0.5}s`, animationDuration: getAnimationDuration(3) }} />
             ))}
             {hasFireTag && Array.from({ length: 4 }).map((_, i) => {
               const emberColor = emberTypes[Math.floor(Math.random() * emberTypes.length)];
-              return <div key={`fire-${pokemon.id}-${i}`} className={`particle-ember-${emberColor}`} style={{ left: `${15 + i * 20}%`, bottom: `${10 + Math.random()*10}%`, animationDelay: `${i * 0.3}s` }} />
+              const baseDurations = { red: 2.5, orange: 2.8, yellow: 2.2 };
+              return <div key={`fire-${pokemon.id}-${i}`} className={`particle-ember-${emberColor}`} style={{ left: `${15 + i * 20}%`, bottom: `${10 + Math.random()*10}%`, animationDelay: `${i * 0.3}s`, animationDuration: getAnimationDuration(baseDurations[emberColor]) }} />
             })}
             {hasGrassTag && Array.from({ length: 3 }).map((_, i) => (
-              <div key={`grass-${pokemon.id}-${i}`} className="particle-leaf" style={{ left: `${25 + i * 20}%`, animationDelay: `${i * 0.6}s`, transformOrigin: 'bottom left' }} />
+              <div key={`grass-${pokemon.id}-${i}`} className="particle-leaf" style={{ left: `${25 + i * 20}%`, animationDelay: `${i * 0.6}s`, transformOrigin: 'bottom left', animationDuration: getAnimationDuration(4) }} />
             ))}
             {hasGhostTag && Array.from({length: 2}).map((_,i) => (
-              <div key={`ghost-${pokemon.id}-${i}`} className="particle-ghost-wisp" style={{ top: `${20 + i*30}%`, left: `${10 + i*60}%`, animationDelay: `${i*0.7}s`}} />
+              <div key={`ghost-${pokemon.id}-${i}`} className="particle-ghost-wisp" style={{ top: `${20 + i*30}%`, left: `${10 + i*60}%`, animationDelay: `${i*0.7}s`, animationDuration: getAnimationDuration(5) }} />
             ))}
-            {hasFairyTag && (
-              <div className="particle-fairy-swirl" style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)', animationDelay: `${Math.random() * 0.5}s` }} />
-            )}
+            {hasFairyTag && Array.from({ length: 4 }).map((_, i) => (
+                <div key={`fairy-${pokemon.id}-${i}`} className="particle-fairy-dust" style={{ bottom: `${5 + Math.random()*10}%`, left: `${10 + i * 22 + Math.random()*10}%`, animationDelay: `${i * 0.4 + Math.random() * 0.5}s`, animationDuration: getAnimationDuration(2.5) }} />
+            ))}
             {hasNormalTag && (
-              <div className="particle-normal-light" style={{ top: '10%', right: '10%', animationDelay: `${Math.random() * 1}s` }} />
+              <div className="particle-normal-light" style={{ top: '10%', right: '10%', animationDelay: `${Math.random() * 1}s`, animationDuration: getAnimationDuration(3) }} />
             )}
             {hasFightingTag && (
               <>
-                <div className="particle-fighting-fist" style={{ position: 'absolute', left: '5%', top: '40%', animationDelay: '0s' }}><FightingFistSVG/></div>
-                <div className="particle-fighting-fist" style={{ position: 'absolute', right: '5%', top: '40%', animationDelay: '0.2s' }}><FightingFistSVG/></div>
+                <div className="particle-fighting-fist" style={{ position: 'absolute', left: '5%', top: '40%', animationDelay: '0s', animationDuration: getAnimationDuration(1) }}><FightingFistSVG/></div>
+                <div className="particle-fighting-fist" style={{ position: 'absolute', right: '5%', top: '40%', animationDelay: '0.2s', animationDuration: getAnimationDuration(1) }}><FightingFistSVG/></div>
               </>
             )}
-            {hasPsychicTag && !hasFightingTag && ( // Avoid overlap if both, though unlikely for a single mon
+            {hasPsychicTag && !hasFightingTag && ( 
               <>
-                <div className="particle-psychic-spoon" style={{ position: 'absolute', left: '10%', bottom: '20%', animationDelay: '0s' }}><PsychicSpoonSVG/></div>
-                <div className="particle-psychic-spoon" style={{ position: 'absolute', right: '10%', bottom: '25%', animationDelay: '0.3s' }}><PsychicSpoonSVG/></div>
+                <div className="particle-psychic-spoon" style={{ position: 'absolute', left: '10%', bottom: '20%', animationDelay: '0s', animationDuration: getAnimationDuration(3) }}><PsychicSpoonSVG/></div>
+                <div className="particle-psychic-spoon" style={{ position: 'absolute', right: '10%', bottom: '25%', animationDelay: '0.3s', animationDuration: getAnimationDuration(3) }}><PsychicSpoonSVG/></div>
               </>
             )}
             {hasFlyingTag && Array.from({length: 3}).map((_,i) => (
-               <div key={`fly-${pokemon.id}-${i}`} className="particle-flying-wind" style={{ top: `${30 + i*15}%`, animationDelay: `${i*0.4}s` }} />
+               <div key={`fly-${pokemon.id}-${i}`} className="particle-flying-wind" style={{ top: `${30 + i*15}%`, animationDelay: `${i*0.4}s`, animationDuration: getAnimationDuration(2) }} />
             ))}
             {hasPoisonTag && Array.from({length: 3}).map((_,i) => (
-              <div key={`poison-${pokemon.id}-${i}`} className="particle-poison-drop" style={{ left: `${20 + i * 25}%`, animationDelay: `${i * 0.6}s` }} />
+              <div key={`poison-${pokemon.id}-${i}`} className="particle-poison-drop" style={{ left: `${20 + i * 25}%`, animationDelay: `${i * 0.6}s`, animationDuration: getAnimationDuration(3.5) }} />
             ))}
             {hasElectricTag && Array.from({length: 5}).map((_,i) => (
-              <div key={`elec-${pokemon.id}-${i}`} className="particle-electric-spark" style={{ top: `${Math.random()*80 + 10}%`, left: `${Math.random()*80 + 10}%`, animationDelay: `${i*0.1}s` }} />
+              <div key={`elec-${pokemon.id}-${i}`} className="particle-electric-spark" style={{ top: `${Math.random()*80 + 10}%`, left: `${Math.random()*80 + 10}%`, animationDelay: `${i*0.1}s`, animationDuration: getAnimationDuration(0.5) }} />
             ))}
             {hasDragonTag && (
-              <div className="particle-dragon-tail" style={{ position: 'absolute', right: '5%', bottom: '5%', transformOrigin: 'top left', animationDelay: '0s' }}><DragonTailSVG /></div>
+              <div className="particle-dragon-tail" style={{ position: 'absolute', right: '5%', bottom: '5%', transformOrigin: 'top left', animationDelay: '0s', animationDuration: getAnimationDuration(3) }}><DragonTailSVG /></div>
             )}
+            {hasBugTag && Array.from({ length: 1 }).map((_, i) => ( // Typically one or two flies
+              <div key={`bug-${pokemon.id}-${i}`} className="particle-bug-fly" style={{ top: `${20 + Math.random() * 60}%`, left: `${10 + Math.random() * 70}%`, animationDelay: `${i * 1.5}s`, animationDuration: getAnimationDuration(4) }} />
+            ))}
+            {hasIceTag && Array.from({ length: 5 }).map((_, i) => (
+              <div key={`ice-${pokemon.id}-${i}`} className="particle-ice-snowflake" style={{ left: `${10 + Math.random() * 80}%`, animationDelay: `${i * 0.4 + Math.random() * 0.5}s`, animationDuration: getAnimationDuration(5) }}>❄</div>
+            ))}
           </div>
         )}
       </Card>

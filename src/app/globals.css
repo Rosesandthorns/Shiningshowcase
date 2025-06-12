@@ -109,3 +109,27 @@ body {
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
+
+/* Custom Tag Styles */
+@layer components {
+  .tag-favourite {
+    @apply bg-gradient-to-r from-tag-favourite-start via-yellow-300 to-yellow-100 text-black;
+  }
+  .tag-starter {
+     @apply bg-gradient-to-r from-tag-water via-tag-grass to-tag-fire text-white;
+  }
+  /* Define text colors for tags where background might be light */
+  .text-tag-electric { color: black; }
+  .text-tag-pla { color: black; }
+  .text-tag-fairy { color: black; }
+  .text-tag-bug { color: black; }
+  .text-tag-ice { color: black; }
+  .text-tag-normal { color: black; }
+  .text-tag-lgpe { color: black; }
+  .text-tag-pogo { color: black; }
+  .text-tag-mythical { color: black; }
+  .text-tag-favourite { color: black !important; } /* Ensure override for gradient */
+
+  /* Default tag text color if not specified above (usually white for dark backgrounds) */
+  .tag-text-default { color: white; }
+}

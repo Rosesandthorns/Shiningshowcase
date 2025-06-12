@@ -11,16 +11,37 @@ import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Check, X } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 interface PokemonDetailClientProps {
   pokemon: Pokemon;
 }
 
+const getTagSpecificClasses = (tag: string): string => {
+  const normalizedTag = tag.toLowerCase().replace(/\s+/g, '-');
+  let bgColorClass = `bg-tag-${normalizedTag}`;
+  let textColorClass = 'tag-text-default';
+
+  const blackTextTags = ['electric', 'pla', 'fairy', 'bug', 'ice', 'normal', 'lgpe', 'pogo', 'mythical', 'favourite'];
+  if (blackTextTags.includes(normalizedTag)) {
+    textColorClass = `text-tag-${normalizedTag}`;
+  }
+  
+  if (normalizedTag === 'favourite') return 'tag-favourite';
+  if (normalizedTag === 'starter') return 'tag-starter';
+  
+  const definedColors = ['sv', 'water', 'grass', 'dark', 'fire', 'electric', 'flying', 'pla', 'poison', 'ghost', 'swsh', 'fairy', 'dragon', 'fighting', 'steel', 'bug', 'psychic', 'rock', 'ground', 'paradox', 'ice', 'fossil', 'legendary', 'ultra-beast', 'normal', 'alpha', 'lgpe', 'pogo', 'mythical'];
+  if (!definedColors.includes(normalizedTag)) {
+    return "bg-secondary text-secondary-foreground";
+  }
+
+  return `${bgColorClass} ${textColorClass}`;
+};
+
 export function PokemonDetailClient({ pokemon: initialPokemonData }: PokemonDetailClientProps) {
   const { pokemonList, updateShinyViewed } = usePokemon();
   const { toast } = useToast();
 
-  // Get the latest pokemon data from context, fallback to initial if not found (e.g. direct navigation)
   const pokemon = pokemonList.find(p => p.id === initialPokemonData.id) || initialPokemonData;
 
   const handleToggleShinyViewed = () => {
@@ -50,7 +71,10 @@ export function PokemonDetailClient({ pokemon: initialPokemonData }: PokemonDeta
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <CardTitle className="text-3xl md:text-4xl font-bold font-headline">{pokemon.name}</CardTitle>
-              <CardDescription className="text-lg text-muted-foreground">{pokemon.species}</CardDescription>
+              <CardDescription className="text-lg text-muted-foreground">
+                {pokemon.speciesName} (#{pokemon.pokedexNumber})
+                {pokemon.speciesDescription && ` - ${pokemon.speciesDescription}`}
+              </CardDescription>
             </div>
             <Button onClick={handleToggleShinyViewed} variant={pokemon.shinyViewed ? "secondary" : "default"} size="lg">
               {pokemon.shinyViewed ? <X className="mr-2 h-5 w-5" /> : <Check className="mr-2 h-5 w-5" />}
@@ -60,6 +84,12 @@ export function PokemonDetailClient({ pokemon: initialPokemonData }: PokemonDeta
           </div>
         </CardHeader>
         <CardContent className="p-6">
+          {pokemon.description && (
+            <>
+              <p className="mb-6 text-card-foreground">{pokemon.description}</p>
+              <Separator className="my-6" />
+            </>
+          )}
           <div className="grid md:grid-cols-2 gap-6 mb-6">
             <div className="flex flex-col items-center p-4 border rounded-lg bg-card shadow">
               <h3 className="text-xl font-semibold mb-3">Default Sprite</h3>
@@ -69,7 +99,7 @@ export function PokemonDetailClient({ pokemon: initialPokemonData }: PokemonDeta
                 width={200}
                 height={200}
                 className="object-contain"
-                data-ai-hint={`${pokemon.name} default sprite large`}
+                data-ai-hint={`${pokemon.speciesName} default sprite large`}
               />
             </div>
             <div className="flex flex-col items-center p-4 border rounded-lg bg-card shadow">
@@ -80,7 +110,7 @@ export function PokemonDetailClient({ pokemon: initialPokemonData }: PokemonDeta
                 width={200}
                 height={200}
                 className="object-contain"
-                data-ai-hint={`${pokemon.name} shiny sprite large`}
+                data-ai-hint={`${pokemon.speciesName} shiny sprite large`}
               />
             </div>
           </div>
@@ -91,28 +121,49 @@ export function PokemonDetailClient({ pokemon: initialPokemonData }: PokemonDeta
             <div>
               <h4 className="text-lg font-semibold mb-2">Pokédex Data</h4>
               <ul className="space-y-1 text-sm">
-                <li><strong>Height:</strong> {pokemon.height / 10} m</li>
-                <li><strong>Weight:</strong> {pokemon.weight / 10} kg</li>
-                <li>
-                  <strong>Types:</strong>
-                  <span className="ml-2">
-                    {pokemon.types.map(type => (
-                      <Badge key={type} variant="outline" className="mr-1">{type}</Badge>
-                    ))}
-                  </span>
-                </li>
-                <li><strong>Abilities:</strong> {pokemon.abilities.join(', ')}</li>
+                {pokemon.level && <li><strong>Level:</strong> {pokemon.level}</li>}
+                {pokemon.nature && <li><strong>Nature:</strong> {pokemon.nature}</li>}
+                {pokemon.height && <li><strong>Height:</strong> {pokemon.height / 10} m</li>}
+                {pokemon.weight && <li><strong>Weight:</strong> {pokemon.weight / 10} kg</li>}
+                {pokemon.types && pokemon.types.length > 0 && (
+                  <li>
+                    <strong>Types:</strong>
+                    <span className="ml-2">
+                      {pokemon.types.map(type => (
+                        <Badge key={type} variant="outline" className="mr-1">{type}</Badge>
+                      ))}
+                    </span>
+                  </li>
+                )}
+                {pokemon.abilities && pokemon.abilities.length > 0 && <li><strong>Abilities:</strong> {pokemon.abilities.join(', ')}</li>}
               </ul>
             </div>
             <div>
               <h4 className="text-lg font-semibold mb-2">Tags</h4>
               <div className="flex flex-wrap gap-2">
                 {pokemon.tags.map(tag => (
-                  <Badge key={tag} variant="secondary">{tag}</Badge>
+                  <Badge 
+                    key={tag} 
+                    className={cn("text-xs capitalize", getTagSpecificClasses(tag))}
+                    variant={getTagSpecificClasses(tag).includes("bg-secondary") ? "secondary" : "default"}
+                  >
+                    {tag}
+                  </Badge>
                 ))}
               </div>
             </div>
           </div>
+          {pokemon.moveset && pokemon.moveset.length > 0 && (
+            <>
+              <Separator className="my-6" />
+              <div>
+                <h4 className="text-lg font-semibold mb-2">Moveset</h4>
+                <ul className="list-disc list-inside text-sm columns-2">
+                  {pokemon.moveset.map(move => <li key={move}>{move}</li>)}
+                </ul>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
     </div>

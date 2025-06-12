@@ -1,27 +1,66 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { usePokemon } from '@/contexts/PokemonContext';
 import { PokemonCard } from './PokemonCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from './ui/button';
 import { RefreshCw } from 'lucide-react';
+import type { Pokemon } from '@/types/pokemon';
 
 export function FeaturedPokemon() {
   const { pokemonList } = usePokemon();
-  const [dailyPokemon, setDailyPokemon] = useState(pokemonList[0]);
-  const [randomPokemon, setRandomPokemon] = useState(pokemonList[0]);
+  const [dailyPokemon, setDailyPokemon] = useState<Pokemon | null>(null);
+  const [randomPokemon, setRandomPokemon] = useState<Pokemon | null>(null);
+  const [dailyTimer, setDailyTimer] = useState<string>('');
+
+  const getDailyIndex = useCallback(() => {
+    if (pokemonList.length === 0) return 0;
+    // Use client's current date to ensure consistency for the user
+    const now = new Date(); 
+    const startOfYear = new Date(now.getFullYear(), 0, 0);
+    const diff = now.getTime() - startOfYear.getTime();
+    const oneDay = 1000 * 60 * 60 * 24;
+    const dayOfYear = Math.floor(diff / oneDay);
+    return dayOfYear % pokemonList.length;
+  }, [pokemonList.length]);
+
+  const updateDailyTimer = useCallback(() => {
+    const now = new Date();
+    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
+    const diff = tomorrow.getTime() - now.getTime();
+
+    if (diff <= 0) { // Should refresh daily pokemon
+      if (pokemonList.length > 0) {
+        setDailyPokemon(pokemonList[getDailyIndex()]);
+      }
+      // Recalculate for next day
+      const nextTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2, 0, 0, 0);
+      const nextDiff = nextTomorrow.getTime() - now.getTime();
+      const hours = Math.floor((nextDiff / (1000 * 60 * 60)) % 24);
+      const minutes = Math.floor((nextDiff / (1000 * 60)) % 60);
+      const seconds = Math.floor((nextDiff / 1000) % 60);
+      setDailyTimer(`${hours}h ${minutes}m ${seconds}s`);
+      return;
+    }
+
+    const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+    const minutes = Math.floor((diff / (1000 * 60)) % 60);
+    const seconds = Math.floor((diff / 1000) % 60);
+    setDailyTimer(`${hours}h ${minutes}m ${seconds}s`);
+  }, [pokemonList, getDailyIndex]);
+
 
   useEffect(() => {
     if (pokemonList.length > 0) {
-      // Daily Pokémon logic (simple, based on day of year)
-      const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
-      setDailyPokemon(pokemonList[dayOfYear % pokemonList.length]);
-      
-      // Initial random Pokémon
+      setDailyPokemon(pokemonList[getDailyIndex()]);
       setRandomPokemon(pokemonList[Math.floor(Math.random() * pokemonList.length)]);
+      updateDailyTimer(); // Initial timer set
+      const timerId = setInterval(updateDailyTimer, 1000);
+      return () => clearInterval(timerId);
     }
-  }, [pokemonList]);
+  }, [pokemonList, getDailyIndex, updateDailyTimer]);
+
 
   const pickNewRandomPokemon = () => {
     if (pokemonList.length > 0) {
@@ -29,8 +68,15 @@ export function FeaturedPokemon() {
     }
   };
 
-  if (pokemonList.length === 0) {
-    return null; // Or a loading state
+  if (pokemonList.length === 0 || (!dailyPokemon && !randomPokemon)) {
+    return (
+      <section aria-labelledby="featured-pokemon-title" className="mb-8">
+        <h2 id="featured-pokemon-title" className="text-2xl font-bold mb-6 text-center font-headline">
+          Featured Pokémon
+        </h2>
+        <p className="text-center text-muted-foreground">Loading featured Pokémon...</p>
+      </section>
+    );
   }
 
   return (
@@ -43,9 +89,10 @@ export function FeaturedPokemon() {
           <Card className="shadow-lg">
             <CardHeader>
               <CardTitle className="text-xl font-headline">Daily Pokémon</CardTitle>
+              {dailyTimer && <p className="text-sm text-muted-foreground">Next update in: {dailyTimer}</p>}
             </CardHeader>
             <CardContent>
-              <PokemonCard pokemon={dailyPokemon} />
+              <PokemonCard pokemon={dailyPokemon} displayFullDetail={true} />
             </CardContent>
           </Card>
         )}
@@ -58,7 +105,7 @@ export function FeaturedPokemon() {
               </Button>
             </CardHeader>
             <CardContent>
-              <PokemonCard pokemon={randomPokemon} />
+              <PokemonCard pokemon={randomPokemon} displayFullDetail={true} />
             </CardContent>
           </Card>
         )}

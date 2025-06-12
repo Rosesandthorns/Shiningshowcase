@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { ThemeProvider } from "next-themes";
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
@@ -20,8 +21,10 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
-        {children}
-        <Toaster />
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+          {children}
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );

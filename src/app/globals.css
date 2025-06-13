@@ -164,7 +164,7 @@ body {
       transparent 80%
     );
     background-size: 200% 100%;
-    animation: shimmer 5s infinite linear; /* Slowed down shimmer */
+    animation: shimmer 8s infinite linear; /* Slowed down shimmer from 5s to 8s */
     pointer-events: none;
     z-index: 1; 
     border-radius: inherit; 
@@ -312,22 +312,24 @@ body {
   }
 
   @keyframes fairy-dust-anim {
-    0% { opacity: 0; transform: translateY(0px) scale(0.5); }
-    50% { opacity: 0.8; transform: translateY(-15px) scale(1); }
-    100% { opacity: 0; transform: translateY(-30px) scale(0.5); }
+    0% { opacity: 0; transform: translateY(10px) scale(0.5) rotate(0deg); } /* Start lower */
+    25% { opacity: 0.8; transform: translateY(-5px) scale(1) rotate(15deg); }
+    50% { opacity: 0.6; transform: translateY(0px) scale(0.8) rotate(-10deg); }
+    75% { opacity: 0.8; transform: translateY(-10px) scale(1.1) rotate(5deg); }
+    100% { opacity: 0; transform: translateY(15px) scale(0.5) rotate(-15deg); } /* End lower */
   }
   .particle-fairy-dust {
     position: absolute;
-    width: 5px;
-    height: 5px;
+    width: 6px; /* Slightly larger */
+    height: 6px;
     background-color: theme('colors.pink.300');
     border-radius: 50%;
-    box-shadow: 0 0 8px 2px theme('colors.pink.200');
-    animation: fairy-dust-anim 2.5s infinite ease-in-out;
+    box-shadow: 0 0 10px 3px theme('colors.pink.200'); /* Enhanced glow */
+    animation: fairy-dust-anim 3.5s infinite ease-in-out; /* Slower, more whimsical */
   }
   .dark .particle-fairy-dust {
     background-color: theme('colors.pink.400');
-    box-shadow: 0 0 8px 2px theme('colors.pink.300');
+    box-shadow: 0 0 10px 3px theme('colors.pink.300');
   }
 
 
@@ -483,15 +485,15 @@ body {
   }
 
   @keyframes snowflake-fall {
-    0% { transform: translateY(-20px) translateX(0px) rotate(0deg); opacity: 0; }
-    20% { opacity: 1; }
-    100% { transform: translateY(100px) translateX(10px) rotate(720deg); opacity: 0; }
+    0% { transform: translateY(-15px) translateX(0px) rotate(0deg); opacity: 0; }
+    20% { opacity: 0.8; }
+    100% { transform: translateY(100px) translateX(5px) rotate(180deg); opacity: 0; }
   }
   .particle-ice-snowflake {
     position: absolute;
-    font-size: 14px; /* Adjust size as needed */
+    font-size: 14px; 
     color: theme('colors.blue.200');
-    animation: snowflake-fall 5s infinite linear;
+    animation: snowflake-fall 8s infinite linear; /* Increased base duration */
     opacity: 0;
   }
   .dark .particle-ice-snowflake {
@@ -506,7 +508,7 @@ body {
     width: 80%; 
     height: 80%;
     opacity: 0.2;
-    z-index: 0; /* Behind image, but above card background */
+    z-index: 0; 
     pointer-events: none;
   }
   .card-shield-backdrop svg {
@@ -516,6 +518,42 @@ body {
   }
   .dark .card-shield-backdrop svg {
     fill: theme('colors.gray.600');
+  }
+
+  @keyframes rock-fall-anim {
+    0% { transform: translateY(-20px) scale(0.7); opacity: 0; }
+    20% { opacity: 1; transform: scale(1); }
+    100% { transform: translateY(90px) scale(0.5); opacity: 0; }
+  }
+  .particle-rock-pebble {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background-color: theme('colors.gray.500');
+    border-radius: 2px; 
+    animation: rock-fall-anim 3s infinite ease-in;
+    opacity: 0;
+  }
+  .dark .particle-rock-pebble {
+    background-color: theme('colors.gray.600');
+  }
+
+  @keyframes dark-wisp-anim {
+    0% { opacity: 0; transform: translateY(10px) translateX(-5px) scale(0.9); }
+    50% { opacity: 0.4; transform: translateY(-10px) translateX(5px) scale(1) rotate(-3deg); }
+    100% { opacity: 0; transform: translateY(-30px) translateX(-2px) scale(0.8) rotate(3deg); }
+  }
+  .particle-dark-wisp {
+    position: absolute;
+    width: 25px;
+    height: 35px;
+    background-color: rgba(50, 50, 70, 0.25);
+    border-radius: 60% 40% 50% 50% / 50% 50% 60% 40%;
+    animation: dark-wisp-anim 6s infinite ease-in-out;
+    filter: blur(2px);
+  }
+  .dark .particle-dark-wisp {
+    background-color: rgba(30, 30, 50, 0.3);
   }
 
 }

@@ -2,8 +2,31 @@
 import { fullPokemonData } from '@/data/pokemon';
 import type { Pokemon } from '@/types/pokemon';
 
+// In-memory cache
+const evolutionChainCache = new Map<number, string[]>();
+const speciesDetailCache = new Map<string, any>();
+
 // Simulate API delay
 // const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function fetchWithCache(url: string, cache: Map<string, any>): Promise<any> {
+    if (cache.has(url)) {
+        return cache.get(url);
+    }
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`API call failed: ${response.status}`);
+        }
+        const data = await response.json();
+        cache.set(url, data);
+        return data;
+    } catch (error) {
+        console.error(`Fetch error for ${url}:`, error);
+        throw error;
+    }
+}
+
 
 export async function getAllPokemon(): Promise<Pokemon[]> {
   const pokemonWithSprites = await Promise.all(
@@ -11,12 +34,7 @@ export async function getAllPokemon(): Promise<Pokemon[]> {
       const isPlaceholder = pokemon.sprites.shiny.includes('placehold.co') || pokemon.sprites.shiny.includes('via.placeholder.com');
       if (isPlaceholder && pokemon.pokedexNumber > 0) {
         try {
-          const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${pokemon.pokedexNumber}`);
-          if (!response.ok) {
-            console.error(`Failed to fetch data for Pokedex #${pokemon.pokedexNumber}`);
-            return pokemon; // Return original data on fetch error
-          }
-          const data = await response.json();
+          const data = await getPokemonSpeciesDetails(pokemon.pokedexNumber.toString());
           const shinySprite = data?.sprites?.front_shiny;
 
           if (shinySprite) {
@@ -30,8 +48,6 @@ export async function getAllPokemon(): Promise<Pokemon[]> {
           }
         } catch (error) {
           console.error(`Error fetching sprite for Pokedex #${pokemon.pokedexNumber}:`, error);
-          // If fetching fails for any reason (network error, API down, etc.),
-          // return the original pokemon data with the placeholder.
           return pokemon;
         }
       }
@@ -65,4 +81,49 @@ export async function getUniqueTags(): Promise<string[]> {
   
   // Sort by the lowercase version for consistent ordering, but return the display casing
   return uniqueDisplayTags.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+}
+
+
+export async function getPokemonSpeciesDetails(pokemonIdentifier: string | number): Promise<any> {
+    const url = `https://pokeapi.co/api/v2/pokemon/${pokemonIdentifier.toString().toLowerCase()}`;
+    return fetchWithCache(url, speciesDetailCache);
+}
+
+
+async function parseEvolutionChain(chain: any): Promise<string[]> {
+    let evoChain: string[] = [];
+    let current = chain;
+    while (current) {
+        evoChain.push(current.species.name);
+        if (current.evolves_to.length > 0) {
+            // This handles branching evolutions, but for this app we'll just take the first.
+            // A more complex app might need to handle all branches.
+            current = current.evolves_to[0];
+        } else {
+            current = null;
+        }
+    }
+    return evoChain;
+}
+
+export async function getEvolutionChainByPokedexNumber(pokedexNumber: number): Promise<string[]> {
+    if (evolutionChainCache.has(pokedexNumber)) {
+        return evolutionChainCache.get(pokedexNumber)!;
+    }
+
+    try {
+        const speciesUrl = `https://pokeapi.co/api/v2/pokemon-species/${pokedexNumber}/`;
+        const speciesData = await fetchWithCache(speciesUrl, speciesDetailCache);
+        
+        const evolutionChainUrl = speciesData.evolution_chain.url;
+        const evolutionChainData = await fetchWithCache(evolutionChainUrl, new Map()); // Use a temp cache for the chain data itself
+
+        const evolutionLine = await parseEvolutionChain(evolutionChainData.chain);
+        
+        evolutionChainCache.set(pokedexNumber, evolutionLine);
+        return evolutionLine;
+    } catch (error) {
+        console.error(`Failed to get evolution chain for Pokedex #${pokedexNumber}:`, error);
+        return [];
+    }
 }

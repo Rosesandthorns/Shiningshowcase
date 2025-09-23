@@ -20,4 +20,5 @@ export interface Pokemon {
   level?: string | number;
   nature?: string;
   moveset?: string[];
+  isPlaceholder?: boolean;
 }

@@ -9,6 +9,7 @@ import { ShinySparkleIcon } from '@/components/icons/ShinySparkleIcon';
 import { cn } from '@/lib/utils';
 import React, { useEffect, useState, useRef } from 'react';
 import { useOnScreen } from '@/hooks/useOnScreen';
+import { usePokemon } from '@/contexts/PokemonContext';
 
 interface PokemonCardProps {
   pokemon: Pokemon;
@@ -65,6 +66,17 @@ const ShieldSVG = () => (
 export function PokemonCard({ pokemon, displayFullDetail = false }: PokemonCardProps) {
   const ref = useRef<HTMLDivElement>(null);
   const isVisible = useOnScreen(ref);
+  const { showEvolutionLine } = usePokemon();
+
+  const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (pokemon.isPlaceholder) {
+      e.preventDefault();
+      return;
+    }
+    // Prevent link navigation to trigger context function
+    e.preventDefault();
+    showEvolutionLine(pokemon);
+  };
 
   const lowerCaseTags = pokemon.tags.map(t => t.toLowerCase());
   const hasFavouriteTag = lowerCaseTags.includes('favourite');
@@ -101,14 +113,22 @@ export function PokemonCard({ pokemon, displayFullDetail = false }: PokemonCardP
     return `${baseDuration * (1 + slowdownFactor * (animatedTagsCount - 1))}s`;
   };
 
+  const CardWrapper = ({ children }: { children: React.ReactNode }) => {
+    if (pokemon.isPlaceholder) {
+        return <div className="block group h-full">{children}</div>;
+    }
+    return <Link href={`/pokemon/${pokemon.id}`} onClick={(e) => { e.preventDefault(); }} className="block group h-full">{children}</Link>;
+  };
 
   return (
-    <Link href={`/pokemon/${pokemon.id}`} className="block group h-full">
+    <CardWrapper>
+        <div onClick={handleCardClick} className="cursor-pointer h-full">
       <Card ref={ref} className={cn(
-        "h-full overflow-hidden transition-all duration-200 ease-in-out group-hover:scale-105 group-hover:shadow-xl hover:border-primary flex flex-col relative group-hover:z-20",
-        hasFavouriteTag && "animate-shimmer"
+        "h-full overflow-hidden transition-all duration-200 ease-in-out flex flex-col relative",
+        !pokemon.isPlaceholder && "group-hover:scale-105 group-hover:shadow-xl hover:border-primary group-hover:z-20",
+        hasFavouriteTag && !pokemon.isPlaceholder && "animate-shimmer"
       )}>
-        {isVisible && hasSteelTag && (
+        {isVisible && hasSteelTag && !pokemon.isPlaceholder && (
           <div className="card-shield-backdrop">
             <ShieldSVG />
           </div>
@@ -116,17 +136,17 @@ export function PokemonCard({ pokemon, displayFullDetail = false }: PokemonCardP
         <CardHeader className="p-4 relative z-10">
           <div className="flex justify-between items-start">
             <CardTitle className="text-xl font-headline">{pokemon.name}</CardTitle>
-            <ShinySparkleIcon viewed={pokemon.shinyViewed} />
+            {!pokemon.isPlaceholder && <ShinySparkleIcon viewed={pokemon.shinyViewed} />}
           </div>
           <CardDescription className="text-sm">{pokemon.speciesName} (#{pokemon.pokedexNumber})</CardDescription>
         </CardHeader>
         <CardContent className="p-4 pt-0 flex flex-col items-center flex-grow relative z-10">
           <div className="relative w-32 h-32 mb-3 z-10"> 
             <Image
-              src={pokemon.sprites.shiny} 
+              src={pokemon.isPlaceholder ? pokemon.sprites.default : pokemon.sprites.shiny} 
               alt={`${pokemon.name} shiny sprite`}
               fill
-              style={{ objectFit: 'contain' }}
+              style={{ objectFit: 'contain', filter: pokemon.isPlaceholder ? 'brightness(0) invert(0.1)' : 'none' }}
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               data-ai-hint={`${pokemon.speciesName} shiny sprite`}
             />
@@ -134,7 +154,7 @@ export function PokemonCard({ pokemon, displayFullDetail = false }: PokemonCardP
           {displayFullDetail && pokemon.description && (
             <p className="text-xs text-muted-foreground mb-2 text-center">{pokemon.description}</p>
           )}
-          {displayFullDetail && (
+          {displayFullDetail && !pokemon.isPlaceholder && (
             <div className="text-xs text-muted-foreground mb-2 w-full">
               {pokemon.level && <p><strong>Level:</strong> {pokemon.level}</p>}
               {pokemon.nature && <p><strong>Nature:</strong> {pokemon.nature}</p>}
@@ -161,7 +181,7 @@ export function PokemonCard({ pokemon, displayFullDetail = false }: PokemonCardP
           </div>
         </CardContent>
 
-        {isVisible && (hasWaterTag || hasFireTag || hasGrassTag || hasGhostTag || hasFairyTag || hasNormalTag || hasFightingTag || hasPsychicTag || hasFlyingTag || hasPoisonTag || hasElectricTag || hasDragonTag || hasBugTag || hasIceTag || hasRockTag || hasDarkTag) && (
+        {isVisible && !pokemon.isPlaceholder && (hasWaterTag || hasFireTag || hasGrassTag || hasGhostTag || hasFairyTag || hasNormalTag || hasFightingTag || hasPsychicTag || hasFlyingTag || hasPoisonTag || hasElectricTag || hasDragonTag || hasBugTag || hasIceTag || hasRockTag || hasDarkTag) && (
           <div className="particle-container">
             {hasWaterTag && Array.from({ length: 3 }).map((_, i) => (
               <div key={`water-${pokemon.id}-${i}`} className="particle-water-drop" style={{ left: `${20 + i * 25}%`, animationDelay: `${i * 0.5}s`, animationDuration: getAnimationDuration(3) }} />
@@ -222,7 +242,8 @@ export function PokemonCard({ pokemon, displayFullDetail = false }: PokemonCardP
           </div>
         )}
       </Card>
-    </Link>
+      </div>
+    </CardWrapper>
   );
 }
     

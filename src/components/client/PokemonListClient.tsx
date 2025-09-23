@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -7,13 +8,14 @@ import { PokemonCard } from '@/components/PokemonCard';
 import { SearchBar } from '@/components/SearchBar';
 import { FilterControls } from '@/components/FilterControls';
 import { Skeleton } from '@/components/ui/skeleton';
+import { EvolutionLineView } from '@/components/EvolutionLineView';
 
 interface PokemonListClientProps {
   uniqueTags: string[];
 }
 
 export function PokemonListClient({ uniqueTags }: PokemonListClientProps) {
-  const { pokemonList, isLoading } = usePokemon();
+  const { pokemonList, isLoading, evolutionLine, isEvolutionLoading } = usePokemon();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
@@ -53,6 +55,21 @@ export function PokemonListClient({ uniqueTags }: PokemonListClientProps) {
         </div>
       </section>
     );
+  }
+
+  if (isEvolutionLoading) {
+    return (
+        <section aria-busy="true" className="text-center py-10">
+             <div className="flex justify-center items-center mb-4">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+             </div>
+            <p className="text-muted-foreground text-lg">Loading evolution line...</p>
+        </section>
+    );
+  }
+
+  if (evolutionLine) {
+    return <EvolutionLineView evolutionLine={evolutionLine} />;
   }
   
   return (

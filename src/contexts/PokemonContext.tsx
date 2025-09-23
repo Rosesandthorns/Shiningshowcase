@@ -8,6 +8,7 @@ interface PokemonContextType {
   pokemonList: Pokemon[];
   isLoading: boolean;
   evolutionLine: Pokemon[] | null;
+  selectedPokemonId: number | null;
   showEvolutionLine: (pokemon: Pokemon) => Promise<void>;
   clearEvolutionLine: () => void;
   isEvolutionLoading: boolean;
@@ -19,6 +20,7 @@ export const PokemonProvider = ({ children, initialPokemon }: { children: ReactN
   const [pokemonList, setPokemonList] = useState<Pokemon[]>(initialPokemon);
   const [isLoading, setIsLoading] = useState(true);
   const [evolutionLine, setEvolutionLine] = useState<Pokemon[] | null>(null);
+  const [selectedPokemonId, setSelectedPokemonId] = useState<number | null>(null);
   const [isEvolutionLoading, setIsEvolutionLoading] = useState(false);
 
   useEffect(() => {
@@ -29,6 +31,7 @@ export const PokemonProvider = ({ children, initialPokemon }: { children: ReactN
   const showEvolutionLine = async (pokemon: Pokemon) => {
     if (pokemon.pokedexNumber === 0) return;
     setIsEvolutionLoading(true);
+    setSelectedPokemonId(pokemon.id);
 
     try {
         const speciesNames = await getEvolutionChainByPokedexNumber(pokemon.pokedexNumber);
@@ -75,12 +78,14 @@ export const PokemonProvider = ({ children, initialPokemon }: { children: ReactN
 
   const clearEvolutionLine = () => {
     setEvolutionLine(null);
+    setSelectedPokemonId(null);
   };
 
   const value = {
     pokemonList,
     isLoading,
     evolutionLine,
+    selectedPokemonId,
     showEvolutionLine,
     clearEvolutionLine,
     isEvolutionLoading

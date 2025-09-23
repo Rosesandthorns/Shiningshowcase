@@ -9,9 +9,10 @@ import { ArrowLeft } from "lucide-react";
 
 interface EvolutionLineViewProps {
     evolutionLine: Pokemon[];
+    selectedPokemonId: number | null;
 }
 
-export function EvolutionLineView({ evolutionLine }: EvolutionLineViewProps) {
+export function EvolutionLineView({ evolutionLine, selectedPokemonId }: EvolutionLineViewProps) {
     const { clearEvolutionLine } = usePokemon();
 
     return (
@@ -25,7 +26,10 @@ export function EvolutionLineView({ evolutionLine }: EvolutionLineViewProps) {
             <div className="flex overflow-x-auto gap-6 pb-4 px-4">
                 {evolutionLine.map((pokemon, index) => (
                     <div key={pokemon.isPlaceholder ? `${pokemon.pokedexNumber}-${index}` : pokemon.id} className="w-64 flex-shrink-0">
-                        <PokemonCard pokemon={pokemon} />
+                        <PokemonCard 
+                            pokemon={pokemon} 
+                            displayFullDetail={pokemon.id === selectedPokemonId}
+                        />
                     </div>
                 ))}
             </div>

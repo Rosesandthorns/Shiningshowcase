@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -15,7 +14,7 @@ interface PokemonListClientProps {
 }
 
 export function PokemonListClient({ uniqueTags }: PokemonListClientProps) {
-  const { pokemonList, isLoading, evolutionLine, isEvolutionLoading } = usePokemon();
+  const { pokemonList, isLoading, evolutionLine, isEvolutionLoading, selectedPokemonId } = usePokemon();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
@@ -69,7 +68,7 @@ export function PokemonListClient({ uniqueTags }: PokemonListClientProps) {
   }
 
   if (evolutionLine) {
-    return <EvolutionLineView evolutionLine={evolutionLine} />;
+    return <EvolutionLineView evolutionLine={evolutionLine} selectedPokemonId={selectedPokemonId} />;
   }
   
   return (

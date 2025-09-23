@@ -19,7 +19,8 @@ export default async function ListPage() {
 
     const processedPokedex: PokedexEntry[] = nationalPokedexData.map(entry => {
         const isCaught = caughtPokedexNumbers.has(entry.pokedexNumber);
-        const isShinyLocked = shinyLockedPokemon.includes(entry.speciesName.toLowerCase());
+        // Standardize the species name to match the format in the shinyLockedPokemon list (e.g., "Walking Wake" -> "walking-wake")
+        const isShinyLocked = shinyLockedPokemon.includes(entry.speciesName.toLowerCase().replace(' ', '-'));
         
         let status: 'caught' | 'uncaught' | 'shiny-locked' = 'uncaught';
         if (isShinyLocked) {

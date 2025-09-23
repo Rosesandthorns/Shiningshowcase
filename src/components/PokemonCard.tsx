@@ -1,4 +1,5 @@
 
+
 import Image from 'next/image';
 import Link from 'next/link';
 import type { Pokemon } from '@/types/pokemon';
@@ -104,7 +105,7 @@ export function PokemonCard({ pokemon, displayFullDetail = false }: PokemonCardP
   return (
     <Link href={`/pokemon/${pokemon.id}`} className="block group h-full">
       <Card ref={ref} className={cn(
-        "h-full overflow-hidden transition-all duration-200 ease-in-out group-hover:scale-105 group-hover:shadow-xl hover:border-primary flex flex-col relative",
+        "h-full overflow-hidden transition-all duration-200 ease-in-out group-hover:scale-105 group-hover:shadow-xl hover:border-primary flex flex-col relative group-hover:z-20",
         hasFavouriteTag && "animate-shimmer"
       )}>
         {isVisible && hasSteelTag && (

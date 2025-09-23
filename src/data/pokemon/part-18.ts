@@ -22,7 +22,7 @@ export const userPokemonData: UserPokemon[] = [
   { nickname: "Charger", species: "#0466 - Electivire", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Electric", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Reef", species: "#0864 - Cursola", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Ghost", "SwSh"], level: "?", nature: "?", moveset: [] },
   { nickname: "Vira", species: "#0640 - Virizion", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Grass", "Fighting", "Legendary", "SwSh"], level: "?", nature: "?", moveset: [] },
-  { nickname: "Nightsky", species: "#0037 - Alolan Vulpix", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Ice", "SV"], level: "?", nature: "?", moveset: [] },
+  { nickname: "Nightsky", species: "#0037 - Vulpix-alola", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Ice", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Gary", species: "#0130 - Gyarados", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Water", "Flying", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Exeggcute", species: "#0102 - Exeggcute", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Grass", "Psychic", "SV"], level: "?", nature: "?", moveset: [] }, // Corrected type
   { nickname: "Stantler", species: "#0234 - Stantler", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Normal", "SV"], level: "?", nature: "?", moveset: [] },

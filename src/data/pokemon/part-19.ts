@@ -4,7 +4,7 @@ import type { UserPokemon } from '../pokemon';
 export const userPokemonData: UserPokemon[] = [
   { nickname: "Baguette", species: "#0354 - Banette", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Ghost", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Tini", species: "#0226 - Mantyke", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Water", "Flying", "SwSh"], level: "?", nature: "?", moveset: [] }, // Corrected species to Mantyke
-  { nickname: "Lin", species: "#0264 - Galarian Linoone", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Dark", "Normal", "Swsh"], level: "?", nature: "?", moveset: [] }, // Corrected species name
+  { nickname: "Lin", species: "#0264 - Linoone-galar", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Dark", "Normal", "Swsh"], level: "?", nature: "?", moveset: [] }, // Corrected species name
   { nickname: "Bello", species: "#0182 - Bellossom", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Grass", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "En Garde", species: "#0282 - Gardevoir", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Psychic", "Fairy", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Ribo", species: "#0743 - Ribombee", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Bug", "Fairy", "SV"], level: "?", nature: "?", moveset: [] },
@@ -19,7 +19,7 @@ export const userPokemonData: UserPokemon[] = [
   { nickname: "Xure", species: "#0611 - Fraxure", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Dragon", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Noisa", species: "#0714 - Noibat", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Flying", "Dragon", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Cyclaz", species: "#0967 - Cyclizar", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Dragon", "Normal", "SV"], level: "?", nature: "?", moveset: [] },
-  { nickname: "Starride", species: "#0263 - Galarian Zigzagoon", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Dark", "Normal", "Swsh"], level: "?", nature: "?", moveset: [] },
+  { nickname: "Starride", species: "#0263 - Zigzagoon-galar", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Dark", "Normal", "Swsh"], level: "?", nature: "?", moveset: [] },
   { nickname: "Bishup", species: "#0625 - Bisharp", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Dark", "Steel", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Cloak", species: "#0886 - Drakloak", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Dragon", "Ghost", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Telly", species: "#0498 - Tepig", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Fire", "Starter", "SV"], level: "?", nature: "?", moveset: [] }

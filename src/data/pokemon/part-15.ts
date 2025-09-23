@@ -12,7 +12,7 @@ export const userPokemonData: UserPokemon[] = [
   { nickname: "Galla", species: "#0055 - Golduck", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Water", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Electron", species: "#0082 - Magneton", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Electric", "Steel", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Goose", species: "#0102 - Exeggcute", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Grass", "Psychic", "SV"], level: "?", nature: "?", moveset: [] },
-  { nickname: "Duck", species: "#0103 - Alolan Exeggutor", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Grass", "Dragon", "SV"], level: "?", nature: "?", moveset: [] },
+  { nickname: "Duck", species: "#0103 - Exeggutor-alola", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Grass", "Dragon", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Bio", species: "#0152 - Chikorita", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Grass", "Starter", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Foilage", species: "#0153 - Bayleef", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Grass", "Starter", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Beachball", species: "#0183 - Marill", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Water", "Fairy", "SV"], level: "?", nature: "?", moveset: [] },

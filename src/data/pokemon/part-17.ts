@@ -23,7 +23,7 @@ export const userPokemonData: UserPokemon[] = [
   { nickname: "Titan", species: "#0975 - Cetitan", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Ice", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Paris", species: "#0046 - Paras", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Grass", "Bug", "PLA"], level: "?", nature: "?", moveset: [] },
   { nickname: "Charlie", species: "#0077 - Ponyta", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Fire", "PLA"], level: "?", nature: "?", moveset: [] },
-  { nickname: "Seaweed", species: "#0503 - Hisuian Samurott", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Water", "Dark", "PLA", "Starter"], level: "?", nature: "?", moveset: [] }, // Added Starter tag
+  { nickname: "Seaweed", species: "#0503 - Samurott-hisui", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Water", "Dark", "PLA", "Starter"], level: "?", nature: "?", moveset: [] }, // Added Starter tag
   { nickname: "Wisder", species: "#0899 - Wyrdeer", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Normal", "Psychic", "PLA"], level: "?", nature: "?", moveset: [] },
   { nickname: "Machette", species: "#0900 - Kleavor", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Bug", "Rock", "PLA"], level: "?", nature: "?", moveset: [] },
   { nickname: "Wally", species: "#0365 - Walrein", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Ice", "Water", "PLA"], level: "?", nature: "?", moveset: [] },

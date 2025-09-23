@@ -19,6 +19,7 @@ import { userPokemonData as part16 } from './pokemon/part-16';
 import { userPokemonData as part17 } from './pokemon/part-17';
 import { userPokemonData as part18 } from './pokemon/part-18';
 import { userPokemonData as part19 } from './pokemon/part-19';
+import { userPokemonData as part20 } from './pokemon/part-20';
 
 // Helper function to parse species string like "#475 - Gallade"
 const parseSpeciesString = (speciesString: string): { pokedexNumber: number, speciesName: string } => {
@@ -73,6 +74,7 @@ const userPokemonData: UserPokemon[] = [
   ...part17,
   ...part18,
   ...part19,
+  ...part20,
 ];
 
 export const mockPokemonData: Pokemon[] = userPokemonData.map((pkm, index) => {

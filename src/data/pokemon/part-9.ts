@@ -16,8 +16,8 @@ export const userPokemonData: UserPokemon[] = [
   { nickname: "Dasie", species: "#0970 - Glimmora", description: "Plaeholder", imageUrl: "https://www.serebii.net/Shiny/SV/new/970.png", tags: ["Rock", "Poison", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Electrode", species: "#0101 - Hisuian Electrode", description: "Plaeholder", imageUrl: "https://www.serebii.net/Shiny/SV/new/101-h.png", tags: ["Electric", "Grass", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Rufflet", species: "#0627 - Rufflet", description: "Plaeholder", imageUrl: "https://www.serebii.net/Shiny/SV/new/627.png", tags: ["Normal", "Flying", "Pla"], level: "?", nature: "?", moveset: [] },
-  { nickname: "Abra", species: "#0063 - Abra", description: "Plaeholder", imageUrl: "https://www.serebii.net/Shiny/SWSH/063.png", tags: ["Psychic", "PLA"], level: "?", nature: "?", moveset: [] },
-  { nickname: "Kadabra", species: "#0064 - Kadabra", description: "Plaeholder", imageUrl: "https://www.serebii.net/Shiny/SWSH/064.png", tags: ["Psychic", "PLA"], level: "?", nature: "?", moveset: [] },
+  { nickname: "Abra", species: "#0063 - Abra", description: "Plaeholder", imageUrl: "https://www.serebii.net/Shiny/SWSH/063.png", tags: ["Psychic", "PLA"], level: "15", nature: "Modest", moveset: ["Teleport"], ability: "None" },
+  { nickname: "Kadabra", species: "#0064 - Kadabra", description: "Plaeholder", imageUrl: "https://www.serebii.net/Shiny/SWSH/064.png", tags: ["Psychic", "PLA"], level: "62", nature: "Rash", moveset: ["Psycho Cut", "Zen Headbutt", "Recover", "Psychic"], ability: "None" },
   { nickname: "Chance", species: "#0113 - Chansey", description: "Plaeholder", imageUrl: "https://www.serebii.net/Shiny/SV/new/113.png", tags: ["Normal", "SV"], level: "?", nature: "?", moveset: [] }, // Corrected Chansey Pokedex and image
   { nickname: "Flop", species: "#0130 - Gyarados", description: "Plaeholder", imageUrl: "https://www.serebii.net/Shiny/SV/new/130.png", tags: ["Water", "Flying", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Darky", species: "#0198 - Murkrow", description: "Plaeholder", imageUrl: "https://www.serebii.net/Shiny/SV/new/198.png", tags: ["Dark", "Flying", "SV"], level: "?", nature: "?", moveset: [] },
@@ -28,3 +28,5 @@ export const userPokemonData: UserPokemon[] = [
   { nickname: "Gul", species: "#0316 - Gulpin", description: "Placeholder", imageUrl: "https://www.serebii.net/Shiny/SV/new/316.png", tags: ["Poison", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Twig", species: "#0387 - Turtwig", description: "Plaeholder", imageUrl: "https://www.serebii.net/Shiny/SV/new/387.png", tags: ["Grass", "PLA", "Starter"], level: "?", nature: "?", moveset: [] },
 ];
+
+    

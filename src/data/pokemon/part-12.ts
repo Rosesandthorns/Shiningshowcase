@@ -8,7 +8,7 @@ export const userPokemonData: UserPokemon[] = [
   { nickname: "Sky", species: "#0841 - Flapple", description: "Placeholder", imageUrl: "https://www.serebii.net/Shiny/SV/new/841.png", tags: ["Grass", "Dragon", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Indigo", species: "#0937 - Ceruledge", description: "Placeholder", imageUrl: "https://www.serebii.net/Shiny/SV/new/937.png", tags: ["Fire", "Ghost", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Noodle", species: "#0944 - Shroodle", description: "Placeholder", imageUrl: "https://www.serebii.net/Shiny/SV/new/944.png", tags: ["Poison", "Normal", "SV"], level: "?", nature: "?", moveset: [] },
-  { nickname: "Hocus", species: "#0065 - Alakazam", description: "Placeholder", imageUrl: "https://www.serebii.net/Shiny/PLA/065.png", tags: ["Psychic", "PLA"], level: "?", nature: "?", moveset: [] },
+  { nickname: "Hocus", species: "#0065 - Alakazam", description: "Placeholder", imageUrl: "https://www.serebii.net/Shiny/PLA/065.png", tags: ["Psychic", "PLA"], level: "24", nature: "Brave", moveset: ["Teleport", "Confusion"], ability: "None" },
   { nickname: "Tessa", species: "#0365 - Walrein", description: "Placeholder", imageUrl: "https://www.serebii.net/Shiny/PLA/365.png", tags: ["Ice", "Water", "PLA"], level: "?", nature: "?", moveset: [] },
   { nickname: "Tabba", species: "#0901 - Ursaluna", description: "Placeholder", imageUrl: "https://www.serebii.net/Shiny/SV/new/901.png", tags: ["Ground", "Normal", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Husk", species: "#0947 - Brambleghast", description: "Placeholder", imageUrl: "https://www.serebii.net/Shiny/SV/new/947.png", tags: ["Grass", "Ghost", "SV"], level: "?", nature: "?", moveset: [] },
@@ -28,3 +28,5 @@ export const userPokemonData: UserPokemon[] = [
   { nickname: "Alta", species: "#0334 - Altaria", description: "Placeholder", imageUrl: "https://www.serebii.net/Shiny/SV/new/334.png", tags: ["Dragon", "Flying", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Girl Boss", species: "#0443 - Gible", description: "Placeholder", imageUrl: "https://www.serebii.net/Shiny/SV/new/443.png", tags: ["Dragon", "Ground", "SV"], level: "?", nature: "?", moveset: [] },
 ];
+
+    

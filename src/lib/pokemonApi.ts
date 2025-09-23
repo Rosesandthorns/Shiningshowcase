@@ -30,7 +30,9 @@ export async function getAllPokemon(): Promise<Pokemon[]> {
           }
         } catch (error) {
           console.error(`Error fetching sprite for Pokedex #${pokemon.pokedexNumber}:`, error);
-          return pokemon; // Return original data on network or parsing error
+          // If fetching fails for any reason (network error, API down, etc.),
+          // return the original pokemon data with the placeholder.
+          return pokemon;
         }
       }
       return pokemon;

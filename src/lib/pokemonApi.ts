@@ -15,7 +15,7 @@ export const shinyLockedPokemon = [
     'victini', 'keldeo', 'meloetta', 'hoopa', 'volcanion', 'magearna',
     'marshadow', 'zarude', 'enamorus-incarnate',
     'pecharunt', 'ogerpon', 'miraidon', 'koraidon', 'ting-lu', 'chien-pao', 
-    'wo-chien', 'chi-yu', 'gimmighoul', 'gholdengo', 'cosmog', 'cosmoem',
+    'wo-chien', 'chi-yu', 'cosmog', 'cosmoem',
     'gouging-fire', 'raging-bolt', 'iron-boulder', 'iron-crown', 'terapagos',
     'okidogi', 'munkidori', 'fezandipiti',
     'walking-wake', 'iron-leaves',
@@ -23,7 +23,7 @@ export const shinyLockedPokemon = [
     'kubfu', 'urshifu-single-strike', 'urshifu-rapid-strike',
     'eternatus',
     'zacian', 'zamazenta',
-    'zeraora'
+    'zeraora', 'iron-hands'
 ];
 
 
@@ -73,7 +73,7 @@ export async function getAllPokemon(): Promise<Pokemon[]> {
           }
         } catch (error) {
           // Log the error but don't re-throw, so the app can continue with the placeholder
-          console.error(`Error fetching sprite for ${pokemon.speciesName} (${pokemon.pokedexNumber}). It might have a specific form name not yet handled.`, error);
+          console.error(`Error fetching sprite for ${pokemon.speciesName} (${pokemon.pokedexNumber}). It might have a specific form name not yet handled.`);
           return pokemon;
         }
       }

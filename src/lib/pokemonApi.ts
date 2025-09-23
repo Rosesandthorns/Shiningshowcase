@@ -20,7 +20,7 @@ export const shinyLockedPokemon = [
     'kubfu', 'urshifu-single-strike', 'urshifu-rapid-strike',
     'eternatus',
     'zacian', 'zamazenta',
-    'zeraora', 'iron-hands',
+    'zeraora',
     'enamorus-incarnate',
     'okidogi', 'munkidori', 'fezandipiti', 'terapagos',
     'walking-wake', 'iron-leaves',

@@ -13,17 +13,18 @@ const nationalPokedexCache: PokedexEntry[] = [];
 
 export const shinyLockedPokemon = [
     'victini', 'keldeo', 'meloetta', 'hoopa', 'volcanion', 'magearna',
-    'marshadow', 'zarude', 'enamorus-incarnate',
+    'marshadow', 'zarude',
     'pecharunt', 'ogerpon', 'miraidon', 'koraidon', 'ting-lu', 'chien-pao', 
     'wo-chien', 'chi-yu', 'cosmog', 'cosmoem',
-    'gouging-fire', 'raging-bolt', 'iron-boulder', 'iron-crown', 'terapagos',
-    'okidogi', 'munkidori', 'fezandipiti',
-    'walking-wake', 'iron-leaves',
     'glastrier', 'spectrier', 'calyrex',
     'kubfu', 'urshifu-single-strike', 'urshifu-rapid-strike',
     'eternatus',
     'zacian', 'zamazenta',
-    'zeraora', 'iron-hands'
+    'zeraora', 'iron-hands',
+    'enamorus-incarnate',
+    'okidogi', 'munkidori', 'fezandipiti', 'terapagos',
+    'walking-wake', 'iron-leaves',
+    'gouging-fire', 'raging-bolt', 'iron-boulder', 'iron-crown'
 ];
 
 

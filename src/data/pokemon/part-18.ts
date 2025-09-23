@@ -3,7 +3,7 @@ import type { UserPokemon } from '../pokemon';
 
 export const userPokemonData: UserPokemon[] = [
   { nickname: "Skore", species: "#0451 - Skorupi", description: "Placeholder", imageUrl: "https://www.serebii.net/Shiny/PLA/451.png", tags: ["Poison", "Bug", "PLA"], level: "?", nature: "?", moveset: [] },
-  { nickname: "Haunt", species: "#0055 - Golduck", description: "Placeholder", imageUrl: "https://www.serebii.net/Shiny/SV/new/055.png", tags: ["Water", "SV"], level: "?", nature: "?", moveset: [] },
+  { nickname: "Haunt", species: "#0055 - Golduck", description: "Placeholder", imageUrl: "https://www.serebii.net/Shiny/SV/new/055.png", tags: ["Water", "SV"], level: "52", nature: "Hasty", ability: "Damp", moveset: ["Psych Up", "Amnesia", "Hydro Pump", "Wonder Room"] },
   { nickname: "King", species: "#0076 - Golem", description: "Placeholder", imageUrl: "https://www.serebii.net/Shiny/SV/new/076.png", tags: ["Rock", "Ground", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Dewlong", species: "#0087 - Dewgong", description: "Placeholder", imageUrl: "https://www.serebii.net/Shiny/SV/new/087.png", tags: ["Water", "Ice", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Shells", species: "#0090 - Shellder", description: "Placeholder", imageUrl: "https://www.serebii.net/Shiny/SV/new/090.png", tags: ["Water", "SV"], level: "?", nature: "?", moveset: [] },

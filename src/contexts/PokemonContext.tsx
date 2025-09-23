@@ -35,22 +35,25 @@ export const PokemonProvider = ({ children, initialPokemon }: { children: ReactN
 
     try {
         const speciesNames = await getEvolutionChainByPokedexNumber(pokemon.pokedexNumber);
+        
         if (speciesNames.length === 0) {
           // If the API fails or there's no chain, just show the single clicked pokemon
           setEvolutionLine([pokemon]);
           return;
         }
 
-        const evolutionDetails = await Promise.all(
-            speciesNames.map(async (speciesName) => {
-                const caughtPokemon = pokemonList.find(p => p.speciesName.toLowerCase() === speciesName.toLowerCase());
-                if (caughtPokemon) {
-                    return caughtPokemon;
-                } else {
-                    // Create a placeholder
+        const evolutionDetailsPromises = speciesNames.map(async (speciesName) => {
+            // Find all caught pokemon matching the species name
+            const caughtPokemon = pokemonList.filter(p => p.speciesName.toLowerCase() === speciesName.toLowerCase());
+            
+            if (caughtPokemon.length > 0) {
+                return caughtPokemon;
+            } else {
+                // Create a placeholder
+                try {
                     const speciesDetails = await getPokemonSpeciesDetails(speciesName);
-                    return {
-                        id: speciesDetails.id,
+                    return [{
+                        id: speciesDetails.id, // Use pokedex number as a stable ID for placeholders
                         name: 'Not Yet Caught',
                         pokedexNumber: speciesDetails.id,
                         speciesName: speciesName.charAt(0).toUpperCase() + speciesName.slice(1),
@@ -63,11 +66,24 @@ export const PokemonProvider = ({ children, initialPokemon }: { children: ReactN
                         types: speciesDetails.types.map((t: any) => t.type.name),
                         abilities: [],
                         isPlaceholder: true,
-                    } as Pokemon;
+                    } as Pokemon];
+                } catch (e) {
+                    console.error("Failed to fetch species details for placeholder:", speciesName, e);
+                    return []; // Return empty array on failure to create placeholder
                 }
-            })
-        );
-        setEvolutionLine(evolutionDetails);
+            }
+        });
+
+        const evolutionDetailsNested = await Promise.all(evolutionDetailsPromises);
+        const evolutionDetailsFlat = evolutionDetailsNested.flat();
+
+        // Sort the final flat list by pokedex number
+        evolutionDetailsFlat.sort((a, b) => a.pokedexNumber - b.pokedexNumber);
+
+        // Remove duplicates just in case (e.g. multiple of the same placeholder)
+        const uniqueEvolutionDetails = Array.from(new Map(evolutionDetailsFlat.map(p => [p.isPlaceholder ? p.pokedexNumber : p.id, p])).values());
+
+        setEvolutionLine(uniqueEvolutionDetails);
     } catch (error) {
         console.error("Failed to build evolution line:", error);
         setEvolutionLine([pokemon]); // Fallback to just showing the clicked pokemon

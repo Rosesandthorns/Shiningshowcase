@@ -47,6 +47,7 @@ export async function getAllPokemon(): Promise<Pokemon[]> {
             };
           }
         } catch (error) {
+          // Log the error but don't re-throw, so the app can continue with the placeholder
           console.error(`Error fetching sprite for Pokedex #${pokemon.pokedexNumber}:`, error);
           return pokemon;
         }
@@ -90,19 +91,20 @@ export async function getPokemonSpeciesDetails(pokemonIdentifier: string | numbe
 }
 
 
-async function parseEvolutionChain(chain: any): Promise<string[]> {
-    let evoChain: string[] = [];
-    let current = chain;
-    while (current) {
-        evoChain.push(current.species.name);
-        if (current.evolves_to.length > 0) {
-            // This handles branching evolutions, but for this app we'll just take the first.
-            // A more complex app might need to handle all branches.
-            current = current.evolves_to[0];
-        } else {
-            current = null;
+function parseEvolutionChain(chain: any): string[] {
+    const evoChain: string[] = [];
+    
+    function traverse(chainNode: any) {
+        if (!chainNode) return;
+        evoChain.push(chainNode.species.name);
+        if (chainNode.evolves_to && chainNode.evolves_to.length > 0) {
+            chainNode.evolves_to.forEach((evolution: any) => {
+                traverse(evolution);
+            });
         }
     }
+    
+    traverse(chain);
     return evoChain;
 }
 
@@ -118,7 +120,7 @@ export async function getEvolutionChainByPokedexNumber(pokedexNumber: number): P
         const evolutionChainUrl = speciesData.evolution_chain.url;
         const evolutionChainData = await fetchWithCache(evolutionChainUrl, new Map()); // Use a temp cache for the chain data itself
 
-        const evolutionLine = await parseEvolutionChain(evolutionChainData.chain);
+        const evolutionLine = parseEvolutionChain(evolutionChainData.chain);
         
         evolutionChainCache.set(pokedexNumber, evolutionLine);
         return evolutionLine;

@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { ShinySparkleIcon } from '@/components/icons/ShinySparkleIcon';
 import { cn } from '@/lib/utils';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import { useOnScreen } from '@/hooks/useOnScreen';
 
 interface PokemonCardProps {
   pokemon: Pokemon;
@@ -61,10 +62,8 @@ const ShieldSVG = () => (
 
 
 export function PokemonCard({ pokemon, displayFullDetail = false }: PokemonCardProps) {
-  const [clientRendered, setClientRendered] = useState(false);
-  useEffect(() => {
-    setClientRendered(true);
-  }, []);
+  const ref = useRef<HTMLDivElement>(null);
+  const isVisible = useOnScreen(ref);
 
   const lowerCaseTags = pokemon.tags.map(t => t.toLowerCase());
   const hasFavouriteTag = lowerCaseTags.includes('favourite');
@@ -104,11 +103,11 @@ export function PokemonCard({ pokemon, displayFullDetail = false }: PokemonCardP
 
   return (
     <Link href={`/pokemon/${pokemon.id}`} className="block group h-full">
-      <Card className={cn(
+      <Card ref={ref} className={cn(
         "h-full overflow-hidden transition-all duration-200 ease-in-out group-hover:scale-105 group-hover:shadow-xl hover:border-primary flex flex-col relative",
         hasFavouriteTag && "animate-shimmer"
       )}>
-        {clientRendered && hasSteelTag && (
+        {isVisible && hasSteelTag && (
           <div className="card-shield-backdrop">
             <ShieldSVG />
           </div>
@@ -161,7 +160,7 @@ export function PokemonCard({ pokemon, displayFullDetail = false }: PokemonCardP
           </div>
         </CardContent>
 
-        {clientRendered && (hasWaterTag || hasFireTag || hasGrassTag || hasGhostTag || hasFairyTag || hasNormalTag || hasFightingTag || hasPsychicTag || hasFlyingTag || hasPoisonTag || hasElectricTag || hasDragonTag || hasBugTag || hasIceTag || hasRockTag || hasDarkTag) && (
+        {isVisible && (hasWaterTag || hasFireTag || hasGrassTag || hasGhostTag || hasFairyTag || hasNormalTag || hasFightingTag || hasPsychicTag || hasFlyingTag || hasPoisonTag || hasElectricTag || hasDragonTag || hasBugTag || hasIceTag || hasRockTag || hasDarkTag) && (
           <div className="particle-container">
             {hasWaterTag && Array.from({ length: 3 }).map((_, i) => (
               <div key={`water-${pokemon.id}-${i}`} className="particle-water-drop" style={{ left: `${20 + i * 25}%`, animationDelay: `${i * 0.5}s`, animationDuration: getAnimationDuration(3) }} />

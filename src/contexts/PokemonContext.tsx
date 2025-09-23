@@ -34,23 +34,31 @@ export const PokemonProvider = ({ children, initialPokemon }: { children: ReactN
     setSelectedPokemonId(pokemon.id);
 
     try {
-        const { speciesNames, speciesDetailsList } = await getEvolutionChainByPokedexNumber(pokemon.pokedexNumber);
+        const { speciesDetailsList: unsortedSpeciesDetails } = await getEvolutionChainByPokedexNumber(pokemon.pokedexNumber);
         
-        if (speciesNames.length === 0) {
+        if (unsortedSpeciesDetails.length === 0) {
           setEvolutionLine([pokemon]);
           return;
         }
 
+        // Sort species by their order in the evolution chain
+        const speciesDetailsList = unsortedSpeciesDetails.sort((a, b) => a.order - b.order);
+
         const evolutionDetailsPromises = speciesDetailsList.map(async (speciesDetail) => {
+            const apiVarietyNames = speciesDetail.varieties.map((v: any) => v.pokemon.name);
+
             // Find all caught pokemon matching the species name (and its varieties)
             const caughtPokemon = pokemonList.filter(p => {
-              return speciesDetail.varieties.some((v: any) => v.pokemon.name === p.speciesName.toLowerCase().replace(' ', '-'));
+              const normalizedUserSpeciesName = p.speciesName.toLowerCase().replace(/[\s\.]+/g, '-');
+              // Check if the user's pokemon species name matches any of the API variety names
+              // This handles cases like 'raichu-alola' vs 'Alolan Raichu'
+              return apiVarietyNames.includes(normalizedUserSpeciesName);
             });
             
             if (caughtPokemon.length > 0) {
                 return caughtPokemon.map(p => ({
                     ...p,
-                    isShinyLocked: shinyLockedPokemon.includes(p.speciesName.toLowerCase().replace(' ', '-'))
+                    isShinyLocked: shinyLockedPokemon.includes(p.speciesName.toLowerCase().replace(/[\s\.]+/g, '-'))
                 }));
             } else {
                 // Create a placeholder
@@ -85,7 +93,7 @@ export const PokemonProvider = ({ children, initialPokemon }: { children: ReactN
         const evolutionDetailsNested = await Promise.all(evolutionDetailsPromises);
         const evolutionDetailsFlat = evolutionDetailsNested.flat();
 
-        // Sort the final flat list by pokedex number, then by form if applicable
+        // Sort the final flat list by pokedex number (which now reflects evolution order), then by form
         evolutionDetailsFlat.sort((a, b) => {
           if (a.pokedexNumber !== b.pokedexNumber) {
             return a.pokedexNumber - b.pokedexNumber;

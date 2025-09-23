@@ -22,7 +22,7 @@ export function EvolutionLineView({ evolutionLine }: EvolutionLineViewProps) {
             <h2 className="text-2xl font-bold mb-6 text-center font-headline">
                 Evolution Line
             </h2>
-            <div className="flex justify-center overflow-x-auto gap-6 pb-4">
+            <div className="flex overflow-x-auto gap-6 pb-4 px-4">
                 {evolutionLine.map((pokemon, index) => (
                     <div key={pokemon.isPlaceholder ? `${pokemon.pokedexNumber}-${index}` : pokemon.id} className="w-64 flex-shrink-0">
                         <PokemonCard pokemon={pokemon} />

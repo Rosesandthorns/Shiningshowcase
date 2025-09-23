@@ -46,9 +46,9 @@ export function PokemonListClient({ uniqueTags }: PokemonListClientProps) {
           <Skeleton className="h-20 w-full mb-6" />
         </div>
         <h2 id="pokemon-list-title" className="text-2xl font-bold mb-6 text-center font-headline">All Pokémon</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="flex gap-6 overflow-hidden">
           {Array.from({ length: 8 }).map((_, i) => (
-            <Skeleton key={i} className="h-64 w-full rounded-lg" />
+            <Skeleton key={i} className="h-64 w-60 flex-shrink-0 rounded-lg" />
           ))}
         </div>
       </section>
@@ -66,9 +66,11 @@ export function PokemonListClient({ uniqueTags }: PokemonListClientProps) {
         All Pokémon ({filteredPokemon.length})
       </h2>
       {filteredPokemon.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="flex overflow-x-auto gap-6 pb-4">
           {filteredPokemon.map(pokemon => (
-            <PokemonCard key={pokemon.id} pokemon={pokemon} />
+            <div key={pokemon.id} className="w-64 flex-shrink-0">
+              <PokemonCard pokemon={pokemon} />
+            </div>
           ))}
         </div>
       ) : (
@@ -79,4 +81,3 @@ export function PokemonListClient({ uniqueTags }: PokemonListClientProps) {
     </section>
   );
 }
-

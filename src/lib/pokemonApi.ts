@@ -12,7 +12,7 @@ const nationalPokedexCache: PokedexEntry[] = [];
 // const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const shinyLockedPokemon = [
-    'victini', 'keldeo', 'meloetta', 'genesect', 'hoopa', 'volcanion', 'magearna',
+    'victini', 'keldeo', 'meloetta', 'genesect', 'diancie', 'hoopa', 'volcanion', 'magearna',
     'marshadow', 'zarude',
     'pecharunt', 'ogerpon', 'miraidon', 'koraidon', 'ting-lu', 'chien-pao', 
     'wo-chien', 'chi-yu', 'cosmog', 'cosmoem',

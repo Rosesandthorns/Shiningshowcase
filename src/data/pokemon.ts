@@ -151,7 +151,7 @@ const userPokemonData: UserPokemon[] = [
   { nickname: "Sushie", species: "#0978 - Tatsugiri", description: "Placeholder", imageUrl: "https://www.serebii.net/Shiny/SV/new/978.png", tags: ["Water", "Dragon", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Spook", species: "#0979 - Annihilape", description: "Placeholder", imageUrl: "https://www.serebii.net/Shiny/SV/new/979.png", tags: ["Ghost", "Fighting", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Fari", species: "#0981 - Farigiraf", description: "Placeholder", imageUrl: "https://www.serebii.net/Shiny/SV/new/981.png", tags: ["Normal", "Psychic", "SV"], level: "?", nature: "?", moveset: [] }, // Added Psychic type
-  { nickname: "Dudun", species: "#0982 - Dudunsparce", description: "Placeholder", imageUrl: "https://www.serebii.net/Shiny/SV/new/982.png", tags: ["Normal", "SV"], level: "?", nature: "?", moveset: [] },
+  { nickname: "Dudun", species: "#0982 - Dudunsparce-two-segment", description: "Placeholder", imageUrl: "https://www.serebii.net/Shiny/SV/new/982.png", tags: ["Normal", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Sharpie", species: "#0983 - Kingambit", description: "Placeholder", imageUrl: "https://www.serebii.net/Shiny/SV/new/983.png", tags: ["Dark", "Steel", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Silver", species: "#0990 - Iron Treads", description: "Placeholder", imageUrl: "https://www.serebii.net/Shiny/SV/new/990.png", tags: ["Steel", "Ground", "SV", "Paradox"], level: "?", nature: "?", moveset: [] }, // Added Paradox tag
   { nickname: "Chrome", species: "#0991 - Iron Bundle", description: "Placeholder", imageUrl: "https://www.serebii.net/Shiny/SV/new/991.png", tags: ["Ice", "Water", "SV", "Paradox"], level: "?", nature: "?", moveset: [] }, // Added Paradox tag
@@ -309,8 +309,8 @@ const userPokemonData: UserPokemon[] = [
   { nickname: "Theo", species: "#0811 - Thwackey", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Grass", "Starter", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Shade", species: "#0157 - Hisuian Typhlosion", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Fire", "Ghost", "Starter", "PLA"], level: "?", nature: "?", moveset: [] },
   { nickname: "Journey", species: "#0874 - Stonjourner", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Rock", "SV"], level: "?", nature: "?", moveset: [] },
-  { nickname: "Rory", species: "#0931 - Squawkabilly", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Normal", "Flying", "SV"], level: "?", nature: "?", moveset: [] },
-  { nickname: "Ori", species: "#0741 - Oricorio", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Flying", "Fire", "SV"], level: "?", nature: "?", moveset: [] },
+  { nickname: "Rory", species: "#0931 - Squawkabilly-blue-plumage", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Normal", "Flying", "SV"], level: "?", nature: "?", moveset: [] },
+  { nickname: "Ori", species: "#0741 - Oricorio-baile", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Flying", "Fire", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Wyrm", species: "#0840 - Applin", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Grass", "Dragon", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Sky", species: "#0841 - Flapple", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Grass", "Dragon", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Indigo", species: "#0937 - Ceruledge", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Fire", "Ghost", "SV"], level: "?", nature: "?", moveset: [] },
@@ -327,7 +327,7 @@ const userPokemonData: UserPokemon[] = [
   { nickname: "Pako", species: "#0765 - Oranguru", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Normal", "Psychic", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Cupa", species: "#0247 - Pupitar", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Rock", "Ground", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Latte", species: "#0924 - Tandemaus", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Normal", "SV"], level: "?", nature: "?", moveset: [] },
-  { nickname: "Dunny", species: "#0982 - Dudunsparce", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Normal", "SV"], level: "?", nature: "?", moveset: [] }, // Species was Dudunsparce, image shows it.
+  { nickname: "Dunny", species: "#0982 - Dudunsparce-two-segment", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Normal", "SV"], level: "?", nature: "?", moveset: [] }, // Species was Dudunsparce, image shows it.
   { nickname: "Flutter", species: "#0987 - Flutter Mane", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Ghost", "Fairy", "SV", "Paradox"], level: "?", nature: "?", moveset: [] },
   { nickname: "Brood", species: "#0985 - Scream Tail", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Fairy", "Psychic", "Paradox", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Virtue", species: "#0049 - Venomoth", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["bug", "Poison", "SV"], level: "?", nature: "?", moveset: [] },
@@ -367,7 +367,7 @@ const userPokemonData: UserPokemon[] = [
   { nickname: "Razor", species: "#0461 - Weavile", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Dark", "Ice", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Steel", species: "#0208 - Steelix", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Ground", "Steel", "PLA"], level: "?", nature: "?", moveset: [] },
   { nickname: "Blackberry", species: "#0571 - Hisuian Zoroark", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Normal", "Ghost", "Alpha", "PLA"], level: "?", nature: "?", moveset: [] },
-  { nickname: "Reaper", species: "#0487 - Giratina", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Ghost", "Dragon", "Legendary", "SwSh"], level: "?", nature: "?", moveset: [] },
+  { nickname: "Reaper", species: "#0487 - Giratina-origin", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Ghost", "Dragon", "Legendary", "SwSh"], level: "?", nature: "?", moveset: [] },
   { nickname: "Ashen", species: "#0038 - Ninetales", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Fire", "Alpha", "PLA"], level: "?", nature: "?", moveset: [] },
   { nickname: "Pumpkin", species: "#0041 - Zubat", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Poison", "Flying", "PLA"], level: "?", nature: "?", moveset: [] },
   { nickname: "Batty", species: "#0042 - Golbat", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Poison", "Flying", "PLA"], level: "?", nature: "?", moveset: [] },
@@ -409,7 +409,7 @@ const userPokemonData: UserPokemon[] = [
   { nickname: "Meltan", species: "#0808 - Meltan", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Steel", "Mythical", "PoGo"], level: "?", nature: "?", moveset: [] },
   { nickname: "Sweet", species: "#0134 - Vaporeon", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Water", "SV"], level: "?", nature: "?", moveset: [] }, // Corrected species name
   { nickname: "Essence", species: "#0677 - Espurr", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Psychic", "SV"], level: "?", nature: "?", moveset: [] },
-  { nickname: "Meow Meow", species: "#0678 - Meowstic", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Psychic", "SV"], level: "?", nature: "?", moveset: [] },
+  { nickname: "Meow Meow", species: "#0678 - Meowstic-female", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Psychic", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Champion", species: "#0068 - Machamp", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Fighting", "PLA"], level: "?", nature: "?", moveset: [] },
   { nickname: "Sunny", species: "#0136 - Flareon", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Fire", "PLA"], level: "?", nature: "?", moveset: [] },
   { nickname: "Anchove", species: "#0223 - Remoraid", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Water", "PLA"], level: "?", nature: "?", moveset: [] },
@@ -421,7 +421,7 @@ const userPokemonData: UserPokemon[] = [
   { nickname: "Waffles", species: "#0780 - Drampa", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Normal", "Dragon", "SwSh"], level: "?", nature: "?", moveset: [] }, // Corrected species name
   { nickname: "Ragnarock", species: "#0075 - Graveler", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Rock", "Ground", "Alpha", "PLA"], level: "?", nature: "?", moveset: [] },
   { nickname: "Vector", species: "#0071 - Victreebel", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Grass", "Poison", "SV"], level: "?", nature: "?", moveset: [] },
-  { nickname: "Blaine", species: "#0778 - Mimikyu", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Ghost", "Fairy", "SV"], level: "?", nature: "?", moveset: [] },
+  { nickname: "Blaine", species: "#0778 - Mimikyu-disguised", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Ghost", "Fairy", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Sunshine", species: "#0695 - Heliolisk", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Electric", "Normal", "SwSh"], level: "?", nature: "?", moveset: [] },
   { nickname: "Granitarus", species: "#0408 - Cranidos", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Rock", "Fossil", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Stega", species: "#0409 - Rampardos", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Rock", "Fossil", "SV"], level: "?", nature: "?", moveset: [] },
@@ -566,3 +566,5 @@ mockPokemonData.forEach(pkm => {
 });
 
 export const fullPokemonData: Pokemon[] = finalUniquePokemonData;
+
+    

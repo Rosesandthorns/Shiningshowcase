@@ -20,7 +20,7 @@ export const shinyLockedPokemon = [
     'kubfu', 'urshifu-single-strike', 'urshifu-rapid-strike',
     'eternatus',
     'zacian', 'zamazenta',
-    'zeraora', 'enamorus-incarnate',
+    'zeraora', 'enamorus-incarnate', 'enamorus',
     'okidogi', 'munkidori', 'fezandipiti', 'terapagos',
     'walking-wake', 'iron-leaves',
     'gouging-fire', 'raging-bolt', 'iron-boulder', 'iron-crown'
@@ -73,7 +73,7 @@ export async function getAllPokemon(): Promise<Pokemon[]> {
           }
         } catch (error) {
           // Log the error but don't re-throw, so the app can continue with the placeholder
-          console.error(`Error fetching sprite for ${pokemon.speciesName} (${pokemon.pokedexNumber}). It might have a specific form name not yet handled.`);
+          console.warn(`Could not fetch sprite for ${pokemon.speciesName} (${pokemon.pokedexNumber}). It might have a specific form name not yet handled or not exist in the API.`);
           return pokemon;
         }
       }

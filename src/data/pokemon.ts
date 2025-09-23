@@ -50,6 +50,7 @@ export interface UserPokemon {
   level?: string | number;
   nature?: string;
   moveset?: string[];
+  ability?: string;
 }
 
 const userPokemonData: UserPokemon[] = [
@@ -102,7 +103,7 @@ export const mockPokemonData: Pokemon[] = userPokemonData.map((pkm, index) => {
     height: 0,
     weight: 0,
     types: types.length > 0 ? types : ["Unknown"],
-    abilities: ["Unknown Ability"],
+    abilities: pkm.ability ? [pkm.ability] : ["Unknown Ability"],
     description: pkm.description,
     level: pkm.level || "?",
     nature: pkm.nature || "?",

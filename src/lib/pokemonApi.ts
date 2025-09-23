@@ -20,7 +20,7 @@ export const shinyLockedPokemon = [
     'kubfu', 'urshifu-single-strike', 'urshifu-rapid-strike',
     'eternatus',
     'zacian', 'zamazenta',
-    'zeraora', 'enamorus-incarnate', 'enamorus',
+    'zeraora', 'enamorus', 'enamorus-incarnate',
     'okidogi', 'munkidori', 'fezandipiti', 'terapagos',
     'walking-wake', 'iron-leaves',
     'gouging-fire', 'raging-bolt', 'iron-boulder', 'iron-crown'
@@ -52,35 +52,33 @@ export async function getPokemonDetailsByName(name: string): Promise<any> {
 
 
 export async function getAllPokemon(): Promise<Pokemon[]> {
-  const pokemonWithSprites = await Promise.all(
+  const pokemonWithDetails = await Promise.all(
     fullPokemonData.map(async (pokemon) => {
+      let updatedPokemon = { ...pokemon };
       const isPlaceholder = pokemon.sprites.shiny.includes('placehold.co') || pokemon.sprites.shiny.includes('via.placeholder.com');
-      if (isPlaceholder && pokemon.pokedexNumber > 0) {
-        try {
-          // Use the species name to handle forms like 'Alolan Raichu' -> 'raichu-alola'
-          const apiName = pokemon.speciesName.toLowerCase().replace(/\s+/g, '-').replace('.', '');
-          const data = await getPokemonDetailsByName(apiName);
-          const shinySprite = data?.sprites?.front_shiny;
-
-          if (shinySprite) {
-            return {
-              ...pokemon,
-              sprites: {
-                ...pokemon.sprites,
-                shiny: shinySprite,
-              },
-            };
-          }
-        } catch (error) {
-          // Log the error but don't re-throw, so the app can continue with the placeholder
-          console.warn(`Could not fetch sprite for ${pokemon.speciesName} (${pokemon.pokedexNumber}). It might have a specific form name not yet handled or not exist in the API.`);
-          return pokemon;
+      
+      try {
+        // Use the species name to handle forms like 'Alolan Raichu' -> 'raichu-alola'
+        const apiName = pokemon.speciesName.toLowerCase().replace(/\s+/g, '-').replace('.', '');
+        const data = await getPokemonDetailsByName(apiName);
+        
+        if (data) {
+          updatedPokemon.sprites = {
+            default: data.sprites?.front_default || updatedPokemon.sprites.default,
+            shiny: isPlaceholder 
+              ? (data.sprites?.front_shiny || updatedPokemon.sprites.shiny) 
+              : updatedPokemon.sprites.shiny,
+          };
+          updatedPokemon.types = data.types.map((t: any) => t.type.name);
+          updatedPokemon.abilities = data.abilities.map((a: any) => a.ability.name);
         }
+      } catch (error) {
+        console.warn(`Could not fetch full details for ${pokemon.speciesName}. Using fallback data.`);
       }
-      return pokemon;
+      return updatedPokemon;
     })
   );
-  return pokemonWithSprites;
+  return pokemonWithDetails;
 }
 
 

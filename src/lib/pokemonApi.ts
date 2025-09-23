@@ -15,8 +15,15 @@ export const shinyLockedPokemon = [
     'victini', 'keldeo', 'meloetta', 'hoopa', 'volcanion', 'magearna',
     'marshadow', 'zarude', 'enamorus-incarnate',
     'pecharunt', 'ogerpon', 'miraidon', 'koraidon', 'ting-lu', 'chien-pao', 
-    'wo-chien', 'chi-yu', 'gimmighoul', 'gholdengo', 'cosmog', 'cosmoem'
-    // Kubfu, Urshifu, etc. can be shiny hunted in SwSh DLC, so not locked here.
+    'wo-chien', 'chi-yu', 'gimmighoul', 'gholdengo', 'cosmog', 'cosmoem',
+    'gouging-fire', 'raging-bolt', 'iron-boulder', 'iron-crown', 'terapagos',
+    'okidogi', 'munkidori', 'fezandipiti',
+    'walking-wake', 'iron-leaves',
+    'glastrier', 'spectrier', 'calyrex',
+    'kubfu', 'urshifu-single-strike', 'urshifu-rapid-strike',
+    'eternatus',
+    'zacian', 'zamazenta',
+    'zeraora'
 ];
 
 

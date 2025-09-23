@@ -3,8 +3,9 @@ import { fullPokemonData } from '@/data/pokemon';
 import type { Pokemon } from '@/types/pokemon';
 
 // In-memory cache
-const evolutionChainCache = new Map<number, string[]>();
+const evolutionChainCache = new Map<number, { speciesNames: string[], speciesDetailsList: any[] }>();
 const speciesDetailCache = new Map<string, any>();
+const pokemonDetailCache = new Map<string, any>();
 
 // Simulate API delay
 // const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -16,7 +17,7 @@ async function fetchWithCache(url: string, cache: Map<string, any>): Promise<any
     try {
         const response = await fetch(url);
         if (!response.ok) {
-            throw new Error(`API call failed: ${response.status}`);
+            throw new Error(`API call failed for ${url}: ${response.status}`);
         }
         const data = await response.json();
         cache.set(url, data);
@@ -27,6 +28,11 @@ async function fetchWithCache(url: string, cache: Map<string, any>): Promise<any
     }
 }
 
+export async function getPokemonDetailsByName(name: string): Promise<any> {
+    const url = `https://pokeapi.co/api/v2/pokemon/${name.toLowerCase()}`;
+    return fetchWithCache(url, pokemonDetailCache);
+}
+
 
 export async function getAllPokemon(): Promise<Pokemon[]> {
   const pokemonWithSprites = await Promise.all(
@@ -34,7 +40,9 @@ export async function getAllPokemon(): Promise<Pokemon[]> {
       const isPlaceholder = pokemon.sprites.shiny.includes('placehold.co') || pokemon.sprites.shiny.includes('via.placeholder.com');
       if (isPlaceholder && pokemon.pokedexNumber > 0) {
         try {
-          const data = await getPokemonSpeciesDetails(pokemon.pokedexNumber.toString());
+          // Use the species name to handle forms like 'Alolan Raichu' -> 'raichu-alola'
+          const apiName = pokemon.speciesName.toLowerCase().replace(' ', '-').replace('.', '');
+          const data = await getPokemonDetailsByName(apiName);
           const shinySprite = data?.sprites?.front_shiny;
 
           if (shinySprite) {
@@ -48,7 +56,7 @@ export async function getAllPokemon(): Promise<Pokemon[]> {
           }
         } catch (error) {
           // Log the error but don't re-throw, so the app can continue with the placeholder
-          console.error(`Error fetching sprite for Pokedex #${pokemon.pokedexNumber}:`, error);
+          console.error(`Error fetching sprite for ${pokemon.speciesName}:`, error);
           return pokemon;
         }
       }
@@ -84,31 +92,34 @@ export async function getUniqueTags(): Promise<string[]> {
   return uniqueDisplayTags.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
 }
 
-
-export async function getPokemonSpeciesDetails(pokemonIdentifier: string | number): Promise<any> {
-    const url = `https://pokeapi.co/api/v2/pokemon/${pokemonIdentifier.toString().toLowerCase()}`;
+export async function getPokemonSpeciesDetailsByUrl(url: string): Promise<any> {
     return fetchWithCache(url, speciesDetailCache);
 }
 
-
-function parseEvolutionChain(chain: any): string[] {
-    const evoChain: string[] = [];
+async function parseEvolutionChain(chain: any): Promise<{ speciesNames: string[], speciesDetailsList: any[] }> {
+    const speciesNames: string[] = [];
+    const speciesDetailsPromises: Promise<any>[] = [];
     
-    function traverse(chainNode: any) {
+    async function traverse(chainNode: any) {
         if (!chainNode) return;
-        evoChain.push(chainNode.species.name);
+        
+        speciesNames.push(chainNode.species.name);
+        speciesDetailsPromises.push(getPokemonSpeciesDetailsByUrl(chainNode.species.url));
+
         if (chainNode.evolves_to && chainNode.evolves_to.length > 0) {
-            chainNode.evolves_to.forEach((evolution: any) => {
-                traverse(evolution);
-            });
+            for (const evolution of chainNode.evolves_to) {
+                await traverse(evolution);
+            }
         }
     }
     
-    traverse(chain);
-    return evoChain;
+    await traverse(chain);
+    const speciesDetailsList = await Promise.all(speciesDetailsPromises);
+
+    return { speciesNames, speciesDetailsList };
 }
 
-export async function getEvolutionChainByPokedexNumber(pokedexNumber: number): Promise<string[]> {
+export async function getEvolutionChainByPokedexNumber(pokedexNumber: number): Promise<{ speciesNames: string[], speciesDetailsList: any[] }> {
     if (evolutionChainCache.has(pokedexNumber)) {
         return evolutionChainCache.get(pokedexNumber)!;
     }
@@ -120,12 +131,13 @@ export async function getEvolutionChainByPokedexNumber(pokedexNumber: number): P
         const evolutionChainUrl = speciesData.evolution_chain.url;
         const evolutionChainData = await fetchWithCache(evolutionChainUrl, new Map()); // Use a temp cache for the chain data itself
 
-        const evolutionLine = parseEvolutionChain(evolutionChainData.chain);
+        const { speciesNames, speciesDetailsList } = await parseEvolutionChain(evolutionChainData.chain);
         
-        evolutionChainCache.set(pokedexNumber, evolutionLine);
-        return evolutionLine;
+        const result = { speciesNames, speciesDetailsList };
+        evolutionChainCache.set(pokedexNumber, result);
+        return result;
     } catch (error) {
         console.error(`Failed to get evolution chain for Pokedex #${pokedexNumber}:`, error);
-        return [];
+        return { speciesNames: [], speciesDetailsList: [] };
     }
 }

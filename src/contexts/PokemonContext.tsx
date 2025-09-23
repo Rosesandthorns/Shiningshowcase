@@ -2,7 +2,7 @@
 "use client";
 import type { Pokemon } from '@/types/pokemon';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { getEvolutionChainByPokedexNumber, getPokemonSpeciesDetails } from '@/lib/pokemonApi';
+import { getEvolutionChainByPokedexNumber, getPokemonSpeciesDetailsByUrl, getPokemonDetailsByName } from '@/lib/pokemonApi';
 
 interface PokemonContextType {
   pokemonList: Pokemon[];
@@ -34,36 +34,43 @@ export const PokemonProvider = ({ children, initialPokemon }: { children: ReactN
     setSelectedPokemonId(pokemon.id);
 
     try {
-        const speciesNames = await getEvolutionChainByPokedexNumber(pokemon.pokedexNumber);
+        const { speciesNames, speciesDetailsList } = await getEvolutionChainByPokedexNumber(pokemon.pokedexNumber);
         
         if (speciesNames.length === 0) {
-          // If the API fails or there's no chain, just show the single clicked pokemon
           setEvolutionLine([pokemon]);
           return;
         }
 
-        const evolutionDetailsPromises = speciesNames.map(async (speciesName) => {
-            // Find all caught pokemon matching the species name
-            const caughtPokemon = pokemonList.filter(p => p.speciesName.toLowerCase() === speciesName.toLowerCase());
+        const evolutionDetailsPromises = speciesDetailsList.map(async (speciesDetail) => {
+            const speciesName = speciesDetail.name;
+            // Find all caught pokemon matching the species name (and its varieties)
+            const caughtPokemon = pokemonList.filter(p => {
+              const pSpeciesNameLower = p.speciesName.toLowerCase().replace(' ', '-');
+              // This handles cases like "Zorua" vs "Hisuian Zorua"
+              return speciesDetail.varieties.some((v: any) => v.pokemon.name === pSpeciesNameLower);
+            });
             
             if (caughtPokemon.length > 0) {
                 return caughtPokemon;
             } else {
                 // Create a placeholder
                 try {
-                    const speciesDetails = await getPokemonSpeciesDetails(speciesName);
+                    // We already have species details, let's get the specific pokemon details for sprite
+                    const pokemonDetails = await getPokemonDetailsByName(speciesDetail.varieties[0].pokemon.name);
+                    const displayName = speciesDetail.name.split('-').map(n => n.charAt(0).toUpperCase() + n.slice(1)).join(' ');
+
                     return [{
-                        id: speciesDetails.id, // Use pokedex number as a stable ID for placeholders
+                        id: speciesDetail.id, // Use pokedex number as a stable ID for placeholders
                         name: 'Not Yet Caught',
-                        pokedexNumber: speciesDetails.id,
-                        speciesName: speciesName.charAt(0).toUpperCase() + speciesName.slice(1),
+                        pokedexNumber: speciesDetail.id,
+                        speciesName: displayName,
                         sprites: {
-                            default: speciesDetails.sprites.front_default || `https://placehold.co/96x96.png`,
-                            shiny: speciesDetails.sprites.front_shiny || `https://placehold.co/96x96.png`,
+                            default: pokemonDetails.sprites.front_default || `https://placehold.co/96x96.png`,
+                            shiny: pokemonDetails.sprites.front_shiny || `https://placehold.co/96x96.png`,
                         },
                         tags: [],
                         shinyViewed: false,
-                        types: speciesDetails.types.map((t: any) => t.type.name),
+                        types: pokemonDetails.types.map((t: any) => t.type.name),
                         abilities: [],
                         isPlaceholder: true,
                     } as Pokemon];
@@ -77,11 +84,17 @@ export const PokemonProvider = ({ children, initialPokemon }: { children: ReactN
         const evolutionDetailsNested = await Promise.all(evolutionDetailsPromises);
         const evolutionDetailsFlat = evolutionDetailsNested.flat();
 
-        // Sort the final flat list by pokedex number
-        evolutionDetailsFlat.sort((a, b) => a.pokedexNumber - b.pokedexNumber);
-
-        // Remove duplicates just in case (e.g. multiple of the same placeholder)
-        const uniqueEvolutionDetails = Array.from(new Map(evolutionDetailsFlat.map(p => [p.isPlaceholder ? p.pokedexNumber : p.id, p])).values());
+        // Sort the final flat list by pokedex number, then by form if applicable
+        evolutionDetailsFlat.sort((a, b) => {
+          if (a.pokedexNumber !== b.pokedexNumber) {
+            return a.pokedexNumber - b.pokedexNumber;
+          }
+          // Simple sort for forms, could be made more robust if needed
+          return a.speciesName.localeCompare(b.speciesName);
+        });
+        
+        // Remove duplicates
+        const uniqueEvolutionDetails = Array.from(new Map(evolutionDetailsFlat.map(p => [p.isPlaceholder ? `${p.pokedexNumber}-${p.speciesName}` : p.id, p])).values());
 
         setEvolutionLine(uniqueEvolutionDetails);
     } catch (error) {

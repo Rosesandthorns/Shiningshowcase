@@ -56,7 +56,7 @@ export async function getAllPokemon(): Promise<Pokemon[]> {
           }
         } catch (error) {
           // Log the error but don't re-throw, so the app can continue with the placeholder
-          console.error(`Error fetching sprite for ${pokemon.speciesName}:`, error);
+          console.error(`Error fetching sprite for ${pokemon.speciesName}. It might have a specific form name not yet handled.`, error);
           return pokemon;
         }
       }

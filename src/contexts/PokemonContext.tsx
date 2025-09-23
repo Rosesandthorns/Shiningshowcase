@@ -46,13 +46,13 @@ export const PokemonProvider = ({ children, initialPokemon }: { children: ReactN
 
         const evolutionDetailsPromises = speciesDetailsList.map(async (speciesDetail) => {
             const apiVarietyNames = speciesDetail.varieties.map((v: any) => v.pokemon.name);
+            const apiSpeciesName = speciesDetail.name;
 
             // Find all caught pokemon matching the species name (and its varieties)
             const caughtPokemon = pokemonList.filter(p => {
               const normalizedUserSpeciesName = p.speciesName.toLowerCase().replace(/[\s\.]+/g, '-');
-              // Check if the user's pokemon species name matches any of the API variety names
-              // This handles cases like 'raichu-alola' vs 'Alolan Raichu'
-              return apiVarietyNames.includes(normalizedUserSpeciesName);
+              // Check if the user's pokemon species name matches the main species name OR any of the API variety names
+              return normalizedUserSpeciesName === apiSpeciesName || apiVarietyNames.includes(normalizedUserSpeciesName);
             });
             
             if (caughtPokemon.length > 0) {

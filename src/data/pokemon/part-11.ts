@@ -1,0 +1,30 @@
+
+import type { UserPokemon } from '../pokemon';
+
+export const userPokemonData: UserPokemon[] = [
+  { nickname: "Shockasaur", species: "#0880 - Dracozolt", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Electric", "Dragon", "Swsh", "Fossil"], level: "?", nature: "?", moveset: [] },
+  { nickname: "Wiskers", species: "#0882 - Dracovish", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Fossil", "Water", "Dragon", "Swsh", "Favourite"], level: "?", nature: "?", moveset: [] },
+  { nickname: "Shelly", species: "#0139 - Omastar", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Rock", "Water", "SwSh", "Fossil"], level: "?", nature: "?", moveset: [] },
+  { nickname: "Aero", species: "#0142 - Aerodactyl", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Rock", "Flying", "SwSh", "Fossil"], level: "?", nature: "?", moveset: [] },
+  { nickname: "Icicle", species: "#0881 - Arctozolt", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Electric", "Ice", "SwSh", "Fossil"], level: "?", nature: "?", moveset: [] },
+  { nickname: "Frox", species: "#0883 - Arctovish", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Water", "Ice", "SwSh", "Fossil"], level: "?", nature: "?", moveset: [] },
+  { nickname: "Fishius", species: "#0883 - Arctovish", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Water", "Ice", "SwSh", "Fossil"], level: "?", nature: "?", moveset: [] },
+  { nickname: "Spike", species: "#0028 - Sandslash", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Ground", "SV"], level: "?", nature: "?", moveset: [] },
+  { nickname: "Rocky", species: "#0074 - Geodude", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Rock", "Ground", "SV"], level: "?", nature: "?", moveset: [] },
+  { nickname: "Gem", species: "#0356 - Dusclops", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Ghost", "SV"], level: "?", nature: "?", moveset: [] },
+  { nickname: "Mustard", species: "#0749 - Mudbray", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Ground", "SV"], level: "?", nature: "?", moveset: [] },
+  { nickname: "Clay", species: "#0750 - Mudsdale", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Ground", "SV"], level: "?", nature: "?", moveset: [] },
+  { nickname: "Foilage", species: "#0069 - Bellsprout", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Grass", "Poison", "SV"], level: "?", nature: "?", moveset: [] },
+  { nickname: "Diamond", species: "#0703 - Carbink", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Rock", "Fairy", "SV"], level: "?", nature: "?", moveset: [] },
+  { nickname: "Pike", species: "#0731 - Pikipek", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Normal", "Flying", "SV"], level: "?", nature: "?", moveset: [] },
+  { nickname: "Sarry", species: "#0070 - Weepinbell", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Grass", "Poison", "SV"], level: "?", nature: "?", moveset: [] },
+  { nickname: "Honey", species: "#0749 - Mudbray", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Ground", "SV"], level: "?", nature: "?", moveset: [] },
+  { nickname: "Morka", species: "#0877 - Morpeko", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Electric", "Dark", "SV"], level: "?", nature: "?", moveset: [] },
+  { nickname: "Sugar", species: "#0861 - Grimmsnarl", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Dark", "Fairy", "Favourite", "SV"], level: "?", nature: "?", moveset: [] },
+  { nickname: "Star", species: "#0396 - Starly", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Normal", "Flying", "SV"], level: "?", nature: "?", moveset: [] },
+  { nickname: "Mozart", species: "#0402 - Kricketune", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Bug", "SV"], level: "?", nature: "?", moveset: [] },
+  { nickname: "Fergus", species: "#0590 - Foongus", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Grass", "Poison", "SV"], level: "?", nature: "?", moveset: [] },
+  { nickname: "Theo", species: "#0811 - Thwackey", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Grass", "Starter", "SV"], level: "?", nature: "?", moveset: [] },
+  { nickname: "Shade", species: "#0157 - Hisuian Typhlosion", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Fire", "Ghost", "Starter", "PLA"], level: "?", nature: "?", moveset: [] },
+  { nickname: "Journey", species: "#0874 - Stonjourner", description: "Placeholder", imageUrl: "https://via.placeholder.com/200x200.png", tags: ["Rock", "SV"], level: "?", nature: "?", moveset: [] },
+];

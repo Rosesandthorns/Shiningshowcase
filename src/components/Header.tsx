@@ -1,3 +1,4 @@
+
 import Link from 'next/link';
 import { Sparkles } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
@@ -12,7 +13,7 @@ export function Header() {
         </Link>
         <nav className="flex items-center gap-2 md:gap-4">
           <Link href="/" className="text-sm md:text-base hover:underline">Home</Link>
-          {/* <Link href="/showcase" className="text-sm md:text-base hover:underline">Showcase</Link>  // Showcase page not yet implemented */}
+          <Link href="/list" className="text-sm md:text-base hover:underline">List</Link>
           <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" rel="noopener noreferrer" className="text-sm md:text-base hover:underline">Others</a>
           <ThemeToggle />
         </nav>

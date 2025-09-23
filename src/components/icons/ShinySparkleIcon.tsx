@@ -1,12 +1,25 @@
-import { Sparkles } from 'lucide-react';
+
+import { Sparkles, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ShinySparkleIconProps {
   viewed: boolean;
   className?: string;
+  isShinyLocked?: boolean;
 }
 
-export function ShinySparkleIcon({ viewed, className }: ShinySparkleIconProps) {
+export function ShinySparkleIcon({ viewed, className, isShinyLocked = false }: ShinySparkleIconProps) {
+  if (isShinyLocked) {
+    return (
+       <Star
+        className={cn(
+          'h-5 w-5 transition-colors text-yellow-500 fill-yellow-400',
+          className
+        )}
+      />
+    )
+  }
+
   return (
     <Sparkles
       className={cn(

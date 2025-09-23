@@ -2,7 +2,7 @@
 "use client";
 import type { Pokemon } from '@/types/pokemon';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { getEvolutionChainByPokedexNumber, getPokemonSpeciesDetailsByUrl, getPokemonDetailsByName } from '@/lib/pokemonApi';
+import { getEvolutionChainByPokedexNumber, getPokemonSpeciesDetailsByUrl, getPokemonDetailsByName, shinyLockedPokemon } from '@/lib/pokemonApi';
 
 interface PokemonContextType {
   pokemonList: Pokemon[];
@@ -42,21 +42,21 @@ export const PokemonProvider = ({ children, initialPokemon }: { children: ReactN
         }
 
         const evolutionDetailsPromises = speciesDetailsList.map(async (speciesDetail) => {
-            const speciesName = speciesDetail.name;
             // Find all caught pokemon matching the species name (and its varieties)
             const caughtPokemon = pokemonList.filter(p => {
-              const pSpeciesNameLower = p.speciesName.toLowerCase().replace(' ', '-');
-              // This handles cases like "Zorua" vs "Hisuian Zorua"
-              return speciesDetail.varieties.some((v: any) => v.pokemon.name === pSpeciesNameLower);
+              return speciesDetail.varieties.some((v: any) => v.pokemon.name === p.speciesName.toLowerCase().replace(' ', '-'));
             });
             
             if (caughtPokemon.length > 0) {
-                return caughtPokemon;
+                return caughtPokemon.map(p => ({
+                    ...p,
+                    isShinyLocked: shinyLockedPokemon.includes(p.speciesName.toLowerCase().replace(' ', '-'))
+                }));
             } else {
                 // Create a placeholder
                 try {
-                    // We already have species details, let's get the specific pokemon details for sprite
-                    const pokemonDetails = await getPokemonDetailsByName(speciesDetail.varieties[0].pokemon.name);
+                    const primaryVariety = speciesDetail.varieties.find((v:any) => v.is_default) || speciesDetail.varieties[0];
+                    const pokemonDetails = await getPokemonDetailsByName(primaryVariety.pokemon.name);
                     const displayName = speciesDetail.name.split('-').map(n => n.charAt(0).toUpperCase() + n.slice(1)).join(' ');
 
                     return [{
@@ -73,9 +73,10 @@ export const PokemonProvider = ({ children, initialPokemon }: { children: ReactN
                         types: pokemonDetails.types.map((t: any) => t.type.name),
                         abilities: [],
                         isPlaceholder: true,
+                        isShinyLocked: shinyLockedPokemon.includes(primaryVariety.pokemon.name),
                     } as Pokemon];
                 } catch (e) {
-                    console.error("Failed to fetch species details for placeholder:", speciesName, e);
+                    console.error("Failed to fetch species details for placeholder:", speciesDetail.name, e);
                     return []; // Return empty array on failure to create placeholder
                 }
             }

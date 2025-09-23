@@ -1,3 +1,4 @@
+
 export interface PokemonSprite {
   default: string;
   shiny: string;
@@ -21,4 +22,12 @@ export interface Pokemon {
   nature?: string;
   moveset?: string[];
   isPlaceholder?: boolean;
+  isShinyLocked?: boolean;
+}
+
+export interface PokedexEntry {
+  pokedexNumber: number;
+  speciesName: string;
+  sprite: string;
+  status: 'caught' | 'uncaught' | 'shiny-locked';
 }

@@ -1,14 +1,24 @@
 
 import { fullPokemonData } from '@/data/pokemon';
-import type { Pokemon } from '@/types/pokemon';
+import type { Pokemon, PokedexEntry } from '@/types/pokemon';
 
 // In-memory cache
 const evolutionChainCache = new Map<number, { speciesNames: string[], speciesDetailsList: any[] }>();
 const speciesDetailCache = new Map<string, any>();
 const pokemonDetailCache = new Map<string, any>();
+const nationalPokedexCache: PokedexEntry[] = [];
 
 // Simulate API delay
 // const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+export const shinyLockedPokemon = [
+    'victini', 'keldeo', 'meloetta', 'hoopa', 'volcanion', 'magearna',
+    'marshadow', 'zarude', 'enamorus-incarnate',
+    'pecharunt', 'ogerpon', 'miraidon', 'koraidon', 'ting-lu', 'chien-pao', 
+    'wo-chien', 'chi-yu', 'gimmighoul', 'gholdengo', 'cosmog', 'cosmoem'
+    // Kubfu, Urshifu, etc. can be shiny hunted in SwSh DLC, so not locked here.
+];
+
 
 async function fetchWithCache(url: string, cache: Map<string, any>): Promise<any> {
     if (cache.has(url)) {
@@ -41,7 +51,7 @@ export async function getAllPokemon(): Promise<Pokemon[]> {
       if (isPlaceholder && pokemon.pokedexNumber > 0) {
         try {
           // Use the species name to handle forms like 'Alolan Raichu' -> 'raichu-alola'
-          const apiName = pokemon.speciesName.toLowerCase().replace(' ', '-').replace('.', '');
+          const apiName = pokemon.speciesName.toLowerCase().replace(/\s+/g, '-').replace('.', '');
           const data = await getPokemonDetailsByName(apiName);
           const shinySprite = data?.sprites?.front_shiny;
 
@@ -56,7 +66,7 @@ export async function getAllPokemon(): Promise<Pokemon[]> {
           }
         } catch (error) {
           // Log the error but don't re-throw, so the app can continue with the placeholder
-          console.error(`Error fetching sprite for ${pokemon.speciesName}. It might have a specific form name not yet handled.`, error);
+          console.error(`Error fetching sprite for ${pokemon.speciesName} (${pokemon.pokedexNumber}). It might have a specific form name not yet handled.`, error);
           return pokemon;
         }
       }
@@ -139,5 +149,44 @@ export async function getEvolutionChainByPokedexNumber(pokedexNumber: number): P
     } catch (error) {
         console.error(`Failed to get evolution chain for Pokedex #${pokedexNumber}:`, error);
         return { speciesNames: [], speciesDetailsList: [] };
+    }
+}
+
+export async function getNationalPokedex(): Promise<PokedexEntry[]> {
+    if (nationalPokedexCache.length > 0) {
+        return nationalPokedexCache;
+    }
+    try {
+        const response = await fetch('https://pokeapi.co/api/v2/pokemon-species?limit=1025');
+        if (!response.ok) {
+            throw new Error('Failed to fetch national pokedex list');
+        }
+        const data = await response.json();
+        
+        const entries: PokedexEntry[] = await Promise.all(data.results.map(async (species: { name: string, url: string }) => {
+            const urlParts = species.url.split('/');
+            const pokedexNumber = parseInt(urlParts[urlParts.length - 2]);
+            const sprite = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokedexNumber}.png`;
+
+            // Capitalize name
+            const speciesName = species.name
+                .split('-')
+                .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+                .join(' ');
+            
+            return {
+                pokedexNumber,
+                speciesName: speciesName,
+                sprite,
+                status: 'uncaught'
+            };
+        }));
+        
+        nationalPokedexCache.push(...entries);
+        return entries;
+
+    } catch (error) {
+        console.error("Could not fetch National Pokedex:", error);
+        return [];
     }
 }

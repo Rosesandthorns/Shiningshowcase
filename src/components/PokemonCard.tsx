@@ -69,7 +69,7 @@ export function PokemonCard({ pokemon, displayFullDetail = false }: PokemonCardP
   const { showEvolutionLine } = usePokemon();
 
   const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (pokemon.isPlaceholder) {
+    if (pokemon.isPlaceholder || pokemon.isShinyLocked) {
       e.preventDefault();
       return;
     }
@@ -114,19 +114,31 @@ export function PokemonCard({ pokemon, displayFullDetail = false }: PokemonCardP
   };
 
   const CardWrapper = ({ children }: { children: React.ReactNode }) => {
-    if (pokemon.isPlaceholder) {
+    if (pokemon.isPlaceholder || pokemon.isShinyLocked) {
         return <div className="block group h-full">{children}</div>;
     }
     return <Link href={`/pokemon/${pokemon.id}`} onClick={(e) => { e.preventDefault(); }} className="block group h-full">{children}</Link>;
   };
 
+  let imageToShow = pokemon.sprites.shiny;
+  let imageFilters = 'none';
+
+  if (pokemon.isPlaceholder) {
+      imageToShow = pokemon.sprites.default;
+      imageFilters = 'brightness(0) invert(0.1)';
+  } else if (pokemon.isShinyLocked) {
+      imageToShow = pokemon.sprites.default;
+  }
+
+
   return (
     <CardWrapper>
-        <div onClick={handleCardClick} className="cursor-pointer h-full">
+        <div onClick={handleCardClick} className={cn("cursor-pointer h-full", (pokemon.isPlaceholder || pokemon.isShinyLocked) && "cursor-not-allowed")}>
       <Card ref={ref} className={cn(
         "h-full overflow-hidden transition-all duration-200 ease-in-out flex flex-col relative",
-        !pokemon.isPlaceholder && "group-hover:scale-105 group-hover:shadow-xl hover:border-primary group-hover:z-20",
-        hasFavouriteTag && !pokemon.isPlaceholder && "animate-shimmer"
+        !pokemon.isPlaceholder && !pokemon.isShinyLocked && "group-hover:scale-105 group-hover:shadow-xl hover:border-primary group-hover:z-20",
+        hasFavouriteTag && !pokemon.isPlaceholder && !pokemon.isShinyLocked && "animate-shimmer",
+        pokemon.isShinyLocked && "border-yellow-500 bg-yellow-300/20"
       )}>
         {isVisible && hasSteelTag && !pokemon.isPlaceholder && (
           <div className="card-shield-backdrop">
@@ -136,17 +148,17 @@ export function PokemonCard({ pokemon, displayFullDetail = false }: PokemonCardP
         <CardHeader className="p-4 relative z-10">
           <div className="flex justify-between items-start">
             <CardTitle className="text-xl font-headline">{pokemon.name}</CardTitle>
-            {!pokemon.isPlaceholder && <ShinySparkleIcon viewed={pokemon.shinyViewed} />}
+            {!pokemon.isPlaceholder && <ShinySparkleIcon viewed={pokemon.shinyViewed} isShinyLocked={!!pokemon.isShinyLocked} />}
           </div>
           <CardDescription className="text-sm">{pokemon.speciesName} (#{pokemon.pokedexNumber})</CardDescription>
         </CardHeader>
         <CardContent className="p-4 pt-0 flex flex-col items-center flex-grow relative z-10">
           <div className="relative w-32 h-32 mb-3 z-10"> 
             <Image
-              src={pokemon.isPlaceholder ? pokemon.sprites.default : pokemon.sprites.shiny} 
+              src={imageToShow} 
               alt={`${pokemon.name} shiny sprite`}
               fill
-              style={{ objectFit: 'contain', filter: pokemon.isPlaceholder ? 'brightness(0) invert(0.1)' : 'none' }}
+              style={{ objectFit: 'contain', filter: imageFilters }}
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               data-ai-hint={`${pokemon.speciesName} shiny sprite`}
             />
@@ -181,7 +193,7 @@ export function PokemonCard({ pokemon, displayFullDetail = false }: PokemonCardP
           </div>
         </CardContent>
 
-        {isVisible && !pokemon.isPlaceholder && (hasWaterTag || hasFireTag || hasGrassTag || hasGhostTag || hasFairyTag || hasNormalTag || hasFightingTag || hasPsychicTag || hasFlyingTag || hasPoisonTag || hasElectricTag || hasDragonTag || hasBugTag || hasIceTag || hasRockTag || hasDarkTag) && (
+        {isVisible && !pokemon.isPlaceholder && !pokemon.isShinyLocked && (hasWaterTag || hasFireTag || hasGrassTag || hasGhostTag || hasFairyTag || hasNormalTag || hasFightingTag || hasPsychicTag || hasFlyingTag || hasPoisonTag || hasElectricTag || hasDragonTag || hasBugTag || hasIceTag || hasRockTag || hasDarkTag) && (
           <div className="particle-container">
             {hasWaterTag && Array.from({ length: 3 }).map((_, i) => (
               <div key={`water-${pokemon.id}-${i}`} className="particle-water-drop" style={{ left: `${20 + i * 25}%`, animationDelay: `${i * 0.5}s`, animationDuration: getAnimationDuration(3) }} />

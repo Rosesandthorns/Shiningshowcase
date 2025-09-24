@@ -57,29 +57,30 @@ export async function getAllPokemon(): Promise<Pokemon[]> {
       let updatedPokemon = { ...pokemon };
       const isPlaceholder = pokemon.sprites.shiny.includes('placehold.co') || pokemon.sprites.shiny.includes('via.placeholder.com');
       
-      try {
-        // Use the species name to handle forms like 'Alolan Raichu' -> 'raichu-alola'
-        let apiName = pokemon.speciesName.toLowerCase().replace(/\s+/g, '-').replace('.', '');
+      // Only fetch if it's a placeholder image, to reduce API calls
+      if (isPlaceholder) {
+        try {
+          // Use the species name to handle forms like 'Alolan Raichu' -> 'raichu-alola'
+          let apiName = pokemon.speciesName.toLowerCase().replace(/\s+/g, '-').replace('.', '');
 
-        // Specific fix for Minior, as 'minior' is not a valid API endpoint
-        if (apiName === 'minior') {
-            apiName = 'minior-red';
-        }
+          // Specific fix for Minior, as 'minior' is not a valid API endpoint
+          if (apiName === 'minior') {
+              apiName = 'minior-red';
+          }
 
-        const data = await getPokemonDetailsByName(apiName);
-        
-        if (data) {
-          updatedPokemon.sprites = {
-            default: data.sprites?.front_default || updatedPokemon.sprites.default,
-            shiny: isPlaceholder 
-              ? (data.sprites?.front_shiny || updatedPokemon.sprites.shiny) 
-              : updatedPokemon.sprites.shiny,
-          };
-          updatedPokemon.types = data.types.map((t: any) => t.type.name);
-          updatedPokemon.abilities = data.abilities.map((a: any) => a.ability.name);
+          const data = await getPokemonDetailsByName(apiName);
+          
+          if (data) {
+            updatedPokemon.sprites = {
+              default: data.sprites?.front_default || updatedPokemon.sprites.default,
+              shiny: data.sprites?.front_shiny || updatedPokemon.sprites.shiny,
+            };
+            updatedPokemon.types = data.types.map((t: any) => t.type.name);
+            updatedPokemon.abilities = data.abilities.map((a: any) => a.ability.name);
+          }
+        } catch (error) {
+          console.warn(`Could not fetch full details for ${pokemon.speciesName}. Using fallback data. Error: ${error}`);
         }
-      } catch (error) {
-        console.warn(`Could not fetch full details for ${pokemon.speciesName}. Using fallback data. Error: ${error}`);
       }
       return updatedPokemon;
     })

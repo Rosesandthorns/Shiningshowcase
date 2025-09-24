@@ -12,7 +12,7 @@ const nationalPokedexCache: PokedexEntry[] = [];
 // const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const shinyLockedPokemon = [
-    'victini', 'keldeo', 'meloetta', 'genesect', 'diancie', 'hoopa', 'volcanion', 'magearna',
+    'victini', 'keldeo', 'meloetta', 'diancie', 'genesect', 'hoopa', 'volcanion', 'magearna',
     'marshadow', 'zarude',
     'pecharunt', 'ogerpon', 'miraidon', 'koraidon', 'ting-lu', 'chien-pao', 
     'wo-chien', 'chi-yu', 'cosmog', 'cosmoem',
@@ -59,7 +59,13 @@ export async function getAllPokemon(): Promise<Pokemon[]> {
       
       try {
         // Use the species name to handle forms like 'Alolan Raichu' -> 'raichu-alola'
-        const apiName = pokemon.speciesName.toLowerCase().replace(/\s+/g, '-').replace('.', '');
+        let apiName = pokemon.speciesName.toLowerCase().replace(/\s+/g, '-').replace('.', '');
+
+        // Specific fix for Minior, as 'minior' is not a valid API endpoint
+        if (apiName === 'minior') {
+            apiName = 'minior-red';
+        }
+
         const data = await getPokemonDetailsByName(apiName);
         
         if (data) {
@@ -73,7 +79,7 @@ export async function getAllPokemon(): Promise<Pokemon[]> {
           updatedPokemon.abilities = data.abilities.map((a: any) => a.ability.name);
         }
       } catch (error) {
-        console.warn(`Could not fetch full details for ${pokemon.speciesName}. Using fallback data.`);
+        console.warn(`Could not fetch full details for ${pokemon.speciesName}. Using fallback data. Error: ${error}`);
       }
       return updatedPokemon;
     })

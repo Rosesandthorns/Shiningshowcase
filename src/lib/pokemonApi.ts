@@ -17,13 +17,14 @@ export const shinyLockedPokemon = [
     'pecharunt', 'ogerpon', 'miraidon', 'koraidon', 'ting-lu', 'chien-pao', 
     'wo-chien', 'chi-yu', 'cosmog', 'cosmoem',
     'glastrier', 'spectrier', 'calyrex',
-    'kubfu', 'urshifu-single-strike', 'urshifu-rapid-strike',
+    'kubfu', 'urshifu', 'urshifu-single-strike', 'urshifu-rapid-strike',
     'eternatus',
     'zacian', 'zamazenta',
     'zeraora', 'enamorus', 'enamorus-incarnate',
     'okidogi', 'munkidori', 'fezandipiti', 'terapagos',
     'walking-wake', 'iron-leaves',
-    'gouging-fire', 'raging-bolt', 'iron-boulder', 'iron-crown'
+    'gouging-fire', 'raging-bolt', 'iron-boulder', 'iron-crown',
+    '719'
 ];
 
 

@@ -1,7 +1,7 @@
 
 import { Header } from '@/components/Header';
 import { AnalyticsDashboardClient } from '@/components/client/AnalyticsDashboardClient';
-import { getAllPokemon, getNationalPokedex } from '@/lib/pokemonApi';
+import { getAllPokemon } from '@/lib/pokemonApi';
 import type { Metadata } from 'next';
 import type { Pokemon } from '@/types/pokemon';
 
@@ -49,9 +49,9 @@ async function calculateAnalytics(allPokemon: Pokemon[]) {
     const alphaCount = allPokemon.filter(p => p.tags.map(t => t.toLowerCase()).includes('alpha')).length;
 
     // Gen-Specific Dex
-    const uniquePokemon = [...new Map(allPokemon.map(p => [p.pokedexNumber, p])).values()];
+    const uniquePokemonByPokedexNumber = [...new Map(allPokemon.map(p => [p.pokedexNumber, p])).values()];
     const genCompletion = Object.entries(generationRanges).map(([gen, range]) => {
-        const caughtInGen = uniquePokemon.filter(p => p.pokedexNumber >= range.start && p.pokedexNumber <= range.end).length;
+        const caughtInGen = uniquePokemonByPokedexNumber.filter(p => p.pokedexNumber >= range.start && p.pokedexNumber <= range.end).length;
         return {
             name: gen,
             caught: caughtInGen,
@@ -75,12 +75,13 @@ async function calculateAnalytics(allPokemon: Pokemon[]) {
     const remainingShinies = totalPossiblePokemon - uniqueShinyPokemonCount;
 
     // Duplicates
-    const nicknameCounts = allPokemon.reduce((acc, p) => {
+    const speciesCounts = allPokemon.reduce((acc, p) => {
         acc[p.speciesName] = (acc[p.speciesName] || 0) + 1;
         return acc;
     }, {} as Record<string, number>);
-    const duplicates = Object.entries(nicknameCounts).filter(([, count]) => count > 1);
-    const mostCommonDuplicate = duplicates.sort(([, a], [, b]) => b - a)[0]?.[0] || 'N/A';
+    const duplicateList = Object.entries(speciesCounts).filter(([, count]) => count > 1);
+    const totalDuplicates = duplicateList.reduce((sum, [, count]) => sum + (count - 1), 0);
+    const mostCommonDuplicate = duplicateList.sort(([, a], [, b]) => b - a)[0]?.[0] || 'N/A';
 
     // Averages
     const pokemonWithLevels = allPokemon.filter(p => typeof p.level === 'number' || (typeof p.level === 'string' && !isNaN(parseInt(p.level))));
@@ -100,7 +101,7 @@ async function calculateAnalytics(allPokemon: Pokemon[]) {
         nationalDexCompletion,
         evolutionLineCompletion: 0, // Placeholder
         remainingShinies,
-        duplicateShinies: duplicates.length,
+        duplicateShinies: totalDuplicates,
         mostCommonDuplicate,
         averageLevel,
         averageMoves,

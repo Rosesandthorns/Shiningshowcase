@@ -2,7 +2,7 @@
 "use client";
 import type { Pokemon } from '@/types/pokemon';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { getEvolutionChainByPokedexNumber, getPokemonSpeciesDetailsByUrl, getPokemonDetailsByName, shinyLockedPokemon } from '@/lib/pokemonApi';
+import { getEvolutionChainByPokedexNumber, getNationalPokedex, shinyLockedPokemon } from '@/lib/pokemonApi';
 
 interface PokemonContextType {
   pokemonList: Pokemon[];
@@ -34,6 +34,7 @@ export const PokemonProvider = ({ children, initialPokemon }: { children: ReactN
     setSelectedPokemonId(pokemon.id);
 
     try {
+        const nationalPokedex = await getNationalPokedex();
         const { speciesDetailsList: unsortedSpeciesDetails } = await getEvolutionChainByPokedexNumber(pokemon.pokedexNumber);
         
         if (unsortedSpeciesDetails.length === 0) {
@@ -41,74 +42,64 @@ export const PokemonProvider = ({ children, initialPokemon }: { children: ReactN
           return;
         }
 
-        // Sort species by their order in the evolution chain
         const speciesDetailsList = unsortedSpeciesDetails.sort((a, b) => a.order - b.order);
 
         const evolutionDetailsPromises = speciesDetailsList.map(async (speciesDetail) => {
             const apiVarietyNames = speciesDetail.varieties.map((v: any) => v.pokemon.name);
             const apiSpeciesName = speciesDetail.name;
 
-            // Find all caught pokemon matching the species name (and its varieties)
             const caughtPokemon = pokemonList.filter(p => {
-              const normalizedUserSpeciesName = p.speciesName.toLowerCase().replace(/[\s\.]+/g, '-');
-              // Check if the user's pokemon species name matches the main species name OR any of the API variety names
-              return normalizedUserSpeciesName === apiSpeciesName || apiVarietyNames.includes(normalizedUserSpeciesName);
+              const normalizedUserSpeciesName = p.speciesName.toLowerCase().replace(/[\s.'é]+/g, '-');
+              return apiVarietyNames.includes(normalizedUserSpeciesName) || apiSpeciesName === normalizedUserSpeciesName;
             });
             
             if (caughtPokemon.length > 0) {
                 return caughtPokemon.map(p => ({
                     ...p,
-                    isShinyLocked: shinyLockedPokemon.includes(p.speciesName.toLowerCase().replace(/[\s\.]+/g, '-'))
+                    isShinyLocked: shinyLockedPokemon.includes(p.speciesName.toLowerCase().replace(/[\s.'é]+/g, '-'))
                 }));
             } else {
-                // Create a placeholder
-                try {
-                    const primaryVariety = speciesDetail.varieties.find((v:any) => v.is_default) || speciesDetail.varieties[0];
-                    const pokemonDetails = await getPokemonDetailsByName(primaryVariety.pokemon.name);
-                    const displayName = speciesDetail.name.split('-').map(n => n.charAt(0).toUpperCase() + n.slice(1)).join(' ');
+                const pokedexNumber = speciesDetail.id;
+                const nationalPokedexEntry = nationalPokedex.find(entry => entry.pokedexNumber === pokedexNumber);
 
-                    return [{
-                        id: speciesDetail.id, // Use pokedex number as a stable ID for placeholders
+                if (nationalPokedexEntry) {
+                     return [{
+                        id: pokedexNumber,
                         name: 'Not Yet Caught',
-                        pokedexNumber: speciesDetail.id,
-                        speciesName: displayName,
+                        pokedexNumber: pokedexNumber,
+                        speciesName: nationalPokedexEntry.speciesName,
                         sprites: {
-                            default: pokemonDetails.sprites.front_default || `https://placehold.co/96x96.png`,
-                            shiny: pokemonDetails.sprites.front_shiny || `https://placehold.co/96x96.png`,
+                            default: nationalPokedexEntry.sprite,
+                            shiny: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${pokedexNumber}.png`,
                         },
                         tags: [],
                         shinyViewed: false,
-                        types: pokemonDetails.types.map((t: any) => t.type.name),
+                        types: [], 
                         abilities: [],
                         isPlaceholder: true,
-                        isShinyLocked: shinyLockedPokemon.includes(primaryVariety.pokemon.name),
+                        isShinyLocked: shinyLockedPokemon.includes(nationalPokedexEntry.speciesName.toLowerCase().replace(/[\s.'é]+/g, '-')),
                     } as Pokemon];
-                } catch (e) {
-                    console.error("Failed to fetch species details for placeholder:", speciesDetail.name, e);
-                    return []; // Return empty array on failure to create placeholder
                 }
+                return []; // Return empty if no national dex entry found
             }
         });
 
         const evolutionDetailsNested = await Promise.all(evolutionDetailsPromises);
         const evolutionDetailsFlat = evolutionDetailsNested.flat();
 
-        // Sort the final flat list by pokedex number (which now reflects evolution order), then by form
         evolutionDetailsFlat.sort((a, b) => {
           if (a.pokedexNumber !== b.pokedexNumber) {
             return a.pokedexNumber - b.pokedexNumber;
           }
-          // Simple sort for forms, could be made more robust if needed
           return a.speciesName.localeCompare(b.speciesName);
         });
         
-        // Remove duplicates
         const uniqueEvolutionDetails = Array.from(new Map(evolutionDetailsFlat.map(p => [p.isPlaceholder ? `${p.pokedexNumber}-${p.speciesName}` : p.id, p])).values());
 
         setEvolutionLine(uniqueEvolutionDetails);
     } catch (error) {
         console.error("Failed to build evolution line:", error);
-        setEvolutionLine([pokemon]); // Fallback to just showing the clicked pokemon
+        setEvolutionLine([pokemon]);
     } finally {
         setIsEvolutionLoading(false);
     }

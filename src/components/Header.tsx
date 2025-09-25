@@ -8,7 +8,7 @@ export function Header() {
     <header className="bg-primary text-primary-foreground shadow-md">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <Link href="/" className="text-xl md:text-2xl font-bold font-headline flex items-center gap-2 hover:opacity-90 transition-opacity">
-          <Image src="/images/RSP-Icon.png" alt="Rosie's Shiny Pokémon Logo" width={28} height={28} className="h-7 w-7" />
+          <Image src="/RSP-Icon.png" alt="Rosie's Shiny Pokémon Logo" width={28} height={28} className="h-7 w-7" />
           Rosie's Shiny Pokémon
         </Link>
         <nav className="flex items-center gap-2 md:gap-4">

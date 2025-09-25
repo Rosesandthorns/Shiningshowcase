@@ -14,6 +14,7 @@ export function Header() {
         <nav className="flex items-center gap-2 md:gap-4">
           <Link href="/" className="text-sm md:text-base hover:underline">Home</Link>
           <Link href="/list" className="text-sm md:text-base hover:underline">List</Link>
+          <Link href="/analytics" className="text-sm md:text-base hover:underline">Analytics</Link>
           <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" rel="noopener noreferrer" className="text-sm md:text-base hover:underline">Others</a>
           <ThemeToggle />
         </nav>

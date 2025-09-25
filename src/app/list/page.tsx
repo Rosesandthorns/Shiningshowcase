@@ -44,7 +44,7 @@ export default async function ListPage() {
                     <NationalPokedexClient initialPokedex={processedPokedex} />
                 </main>
                 <footer className="py-6 text-center text-muted-foreground text-sm">
-                    {/* Footer */}
+                    © 2025 Rosie. All rights reserved.
                 </footer>
             </div>
         </PokemonProvider>

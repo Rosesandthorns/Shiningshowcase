@@ -127,7 +127,7 @@ export default async function AnalyticsPage() {
                 <AnalyticsDashboardClient initialData={analyticsData} />
             </main>
              <footer className="py-6 text-center text-muted-foreground text-sm">
-                {/* Footer */}
+                © 2025 Rosie. All rights reserved.
             </footer>
         </div>
     );

@@ -56,31 +56,31 @@ export async function getAllPokemon(): Promise<Pokemon[]> {
   const pokemonWithDetails = await Promise.all(
     fullPokemonData.map(async (pokemon) => {
       let updatedPokemon = { ...pokemon };
-      const isPlaceholder = pokemon.sprites.shiny.includes('placehold.co') || pokemon.sprites.shiny.includes('via.placeholder.com');
+      const isPlaceholderImage = !pokemon.sprites.shiny || pokemon.sprites.shiny.includes('placehold.co') || pokemon.sprites.shiny.includes('via.placeholder.com');
       
-      // Only fetch if it's a placeholder image, to reduce API calls
-      if (isPlaceholder) {
+      if (isPlaceholderImage) {
         try {
-          // Use the species name to handle forms like 'Alolan Raichu' -> 'raichu-alola'
-          let apiName = pokemon.speciesName.toLowerCase().replace(/\s+/g, '-').replace('.', '');
-
-          // Specific fix for Minior, as 'minior' is not a valid API endpoint
-          if (apiName === 'minior') {
-              apiName = 'minior-red';
-          }
-
-          const data = await getPokemonDetailsByName(apiName);
+          let apiName = pokemon.speciesName.toLowerCase().replace(/[\s.'é]+/g, '-');
           
-          if (data) {
+          const response = await getPokemonDetailsByName(apiName);
+          
+          if (response) {
             updatedPokemon.sprites = {
-              default: data.sprites?.front_default || updatedPokemon.sprites.default,
-              shiny: data.sprites?.front_shiny || updatedPokemon.sprites.shiny,
+              default: response.sprites?.front_default || updatedPokemon.sprites.default,
+              shiny: response.sprites?.front_shiny || response.sprites?.front_default || updatedPokemon.sprites.shiny,
             };
-            updatedPokemon.types = data.types.map((t: any) => t.type.name);
-            updatedPokemon.abilities = data.abilities.map((a: any) => a.ability.name);
+            updatedPokemon.types = response.types.map((t: any) => t.type.name);
+            updatedPokemon.abilities = response.abilities.map((a: any) => a.ability.name.replace('-', ' '));
+            updatedPokemon.height = response.height;
+            updatedPokemon.weight = response.weight;
           }
         } catch (error) {
-          console.warn(`Could not fetch full details for ${pokemon.speciesName}. Using fallback data. Error: ${error}`);
+          console.warn(`Could not fetch full details for ${pokemon.speciesName}. Using fallback sprite. Error: ${error}`);
+          // Use the reliable default sprite from PokeAPI if all else fails
+          if (pokemon.pokedexNumber > 0) {
+            updatedPokemon.sprites.default = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.pokedexNumber}.png`;
+            updatedPokemon.sprites.shiny = updatedPokemon.sprites.default; // Fallback shiny to default
+          }
         }
       }
       return updatedPokemon;
@@ -91,27 +91,23 @@ export async function getAllPokemon(): Promise<Pokemon[]> {
 
 
 export async function getPokemonById(id: number): Promise<Pokemon | undefined> {
-  // We need to fetch all to get potential API sprites
   const allPokemon = await getAllPokemon();
   return allPokemon.find(p => p.id === id);
 }
 
 export async function getUniqueTags(): Promise<string[]> {
-  // await delay(50);
   const allTags = fullPokemonData.flatMap(p => p.tags);
   
-  // Use a Map to store the first encountered casing for each unique lowercase tag
   const tagMap = new Map<string, string>();
   allTags.forEach(tag => {
     const lowerCaseTag = tag.toLowerCase();
     if (!tagMap.has(lowerCaseTag)) {
-      tagMap.set(lowerCaseTag, tag); // Store original casing
+      tagMap.set(lowerCaseTag, tag);
     }
   });
   
   const uniqueDisplayTags = Array.from(tagMap.values());
   
-  // Sort by the lowercase version for consistent ordering, but return the display casing
   return uniqueDisplayTags.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
 }
 
@@ -152,7 +148,7 @@ export async function getEvolutionChainByPokedexNumber(pokedexNumber: number): P
         const speciesData = await fetchWithCache(speciesUrl, speciesDetailCache);
         
         const evolutionChainUrl = speciesData.evolution_chain.url;
-        const evolutionChainData = await fetchWithCache(evolutionChainUrl, new Map()); // Use a temp cache for the chain data itself
+        const evolutionChainData = await fetchWithCache(evolutionChainUrl, new Map());
 
         const { speciesNames, speciesDetailsList } = await parseEvolutionChain(evolutionChainData.chain);
         
@@ -181,7 +177,6 @@ export async function getNationalPokedex(): Promise<PokedexEntry[]> {
             const pokedexNumber = parseInt(urlParts[urlParts.length - 2]);
             const sprite = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokedexNumber}.png`;
 
-            // Capitalize name
             const speciesName = species.name
                 .split('-')
                 .map(part => part.charAt(0).toUpperCase() + part.slice(1))

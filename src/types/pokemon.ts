@@ -4,6 +4,15 @@ export interface PokemonSprite {
   shiny: string;
 }
 
+export interface StatsSet {
+  hp: number;
+  attack: number;
+  defense: number;
+  spAttack: number;
+  spDefense: number;
+  speed: number;
+}
+
 export interface Pokemon {
   id: number;
   name: string; // Was nickname in user's data, used as primary display name
@@ -23,6 +32,9 @@ export interface Pokemon {
   moveset?: string[];
   isPlaceholder?: boolean;
   isShinyLocked?: boolean;
+  ball?: string;
+  ivs?: StatsSet;
+  evs?: StatsSet;
 }
 
 export interface PokedexEntry {

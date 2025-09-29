@@ -2,7 +2,7 @@
 import type { UserPokemon } from '../pokemon';
 
 export const userPokemonData: UserPokemon[] = [
-  { nickname: "Chop", species: "#475 - Gallade", description: "This is Chop, probably my most used pokemon ever. Chop was caught in SV and has been my false swiper ever since, and runs heal pulse, false swipe, hypnosis, and psychic, and has the abiltiy Sharpness to make false swipe stronger.", imageUrl: "https://static.wikia.nocookie.net/shiny-pokemon/images/2/2d/Gallade.png", tags: ["Favourite", "Fighting", "Psychic", "SV"], level: "?", nature: "?", moveset: ["Heal Pulse", "False Swipe", "Hypnosis", "Psychic"]},
+  { nickname: "Chop", species: "#475 - Gallade", description: "This is Chop, probably my most used pokemon ever. Chop was caught in SV and has been my false swiper ever since, and runs heal pulse, false swipe, hypnosis, and psychic, and has the abiltiy Sharpness to make false swipe stronger.", imageUrl: "https://static.wikia.nocookie.net/shiny-pokemon/images/2/2d/Gallade.png", tags: ["Favourite", "Fighting", "Psychic", "SV"], level: "?", nature: "?", moveset: ["Heal Pulse", "False Swipe", "Hypnosis", "Psychic"], ball: "Quick Ball", ivs: { hp: 31, attack: 31, defense: 31, spAttack: 31, spDefense: 31, speed: 31 }, evs: { attack: 252, speed: 252, hp: 4 }},
   { nickname: "Chedder", species: "#0805 - Stakataka", description: "This Yellow Wall Was Caught In The SWSH DlC, after 55 encounters", imageUrl: "https://www.serebii.net/Shiny/SWSH/805.png", tags: ["Favourite", "Ultra Beast", "Rock", "Steel", "SwSh"], level: "?", nature: "?", moveset: [] },
   { nickname: "Moonlight", species: "#609 - Chandelure", description: "My first hunt getting back into shiny hunting after a 6 month break", imageUrl: "https://www.serebii.net/Shiny/SWSH/609.png", tags: ["Favourite", "Fire", "Ghost", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Jiggly", species: "#0039 - Jigglypuff", description: "I dont remember this one", imageUrl: "https://www.serebii.net/Shiny/SWSH/039.png", tags: ["Fairy", "Normal", "SV"], level: "28", nature: "Sassy", moveset: ["Round", "Rest", "Body Slam", "Mimic"], ability: "Cute Charm" },
@@ -28,5 +28,3 @@ export const userPokemonData: UserPokemon[] = [
   { nickname: "Iggly", species: "#0174 - Igglybuff", description: "Aww, what a cuti- wait why do you have competitive and copycat- Found in Paldea", imageUrl: "https://www.serebii.net/Shiny/SV/new/174.png", tags: ["Normal", "Fairy", "SV"], level: "?", nature: "?", moveset: [] },
   { nickname: "Fluffy", species: "#0179 - Mareep", description: "Fluffy is what would happen if cotten candy was alive, found in Paldea", imageUrl: "https://www.serebii.net/Shiny/SV/new/179.png", tags: ["Electric", "SV"], level: "?", nature: "?", moveset: [] },
 ];
-
-    

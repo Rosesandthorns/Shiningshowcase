@@ -1,5 +1,5 @@
 
-import type { Pokemon } from '@/types/pokemon';
+import type { Pokemon, StatsSet } from '@/types/pokemon';
 import { userPokemonData as part1 } from './pokemon/part-1';
 import { userPokemonData as part2 } from './pokemon/part-2';
 import { userPokemonData as part3 } from './pokemon/part-3';
@@ -52,6 +52,9 @@ export interface UserPokemon {
   nature?: string;
   moveset?: string[];
   ability?: string;
+  ball?: string;
+  ivs?: Partial<StatsSet>;
+  evs?: Partial<StatsSet>;
 }
 
 const userPokemonData: UserPokemon[] = [
@@ -90,6 +93,7 @@ export const mockPokemonData: Pokemon[] = userPokemonData.map((pkm, index) => {
      shinySprite = `https://placehold.co/200x200.png`;
   }
 
+  const defaultStats: StatsSet = { hp: 0, attack: 0, defense: 0, spAttack: 0, spDefense: 0, speed: 0 };
 
   return {
     id: pkm.idUnique !== undefined ? pkm.idUnique : index + 1000, // Fallback ID for entries without idUnique
@@ -110,6 +114,9 @@ export const mockPokemonData: Pokemon[] = userPokemonData.map((pkm, index) => {
     level: pkm.level || "?",
     nature: pkm.nature || "?",
     moveset: pkm.moveset || [],
+    ball: pkm.ball,
+    ivs: { ...defaultStats, ...pkm.ivs },
+    evs: { ...defaultStats, ...pkm.evs },
   };
 });
 

@@ -2,7 +2,7 @@
 "use client";
 
 import Image from 'next/image';
-import type { Pokemon } from '@/types/pokemon';
+import type { Pokemon, StatsSet } from '@/types/pokemon';
 import { usePokemon } from '@/contexts/PokemonContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -36,6 +36,24 @@ const getTagSpecificClasses = (tag: string): string => {
 
   return `${bgColorClass} ${textColorClass}`;
 };
+
+const StatDisplay = ({ title, stats }: { title: string, stats?: StatsSet }) => {
+  if (!stats || Object.values(stats).every(val => val === 0)) return null;
+  return (
+    <div>
+      <h4 className="text-lg font-semibold mb-2">{title}</h4>
+      <div className="grid grid-cols-3 gap-x-4 gap-y-1 text-sm">
+        <span>HP: {stats.hp}</span>
+        <span>Atk: {stats.attack}</span>
+        <span>Def: {stats.defense}</span>
+        <span>Sp. Atk: {stats.spAttack}</span>
+        <span>Sp. Def: {stats.spDefense}</span>
+        <span>Speed: {stats.speed}</span>
+      </div>
+    </div>
+  );
+};
+
 
 export function PokemonDetailClient({ pokemon: initialPokemonData }: PokemonDetailClientProps) {
   const { pokemonList } = usePokemon();
@@ -94,6 +112,7 @@ export function PokemonDetailClient({ pokemon: initialPokemonData }: PokemonDeta
               <ul className="space-y-1 text-sm">
                 {pokemon.level && <li><strong>Level:</strong> {pokemon.level}</li>}
                 {pokemon.nature && <li><strong>Nature:</strong> {pokemon.nature}</li>}
+                {pokemon.ball && <li><strong>Ball:</strong> {pokemon.ball}</li>}
                 {pokemon.height && <li><strong>Height:</strong> {pokemon.height / 10} m</li>}
                 {pokemon.weight && <li><strong>Weight:</strong> {pokemon.weight / 10} kg</li>}
                 {pokemon.types && pokemon.types.length > 0 && (
@@ -126,6 +145,17 @@ export function PokemonDetailClient({ pokemon: initialPokemonData }: PokemonDeta
               </div>
             </div>
           </div>
+          
+          {(pokemon.ivs || pokemon.evs) && (Object.values(pokemon.ivs || {}).some(v => v > 0) || Object.values(pokemon.evs || {}).some(v => v > 0)) && (
+            <>
+              <Separator className="my-6" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <StatDisplay title="IVs" stats={pokemon.ivs} />
+                <StatDisplay title="EVs" stats={pokemon.evs} />
+              </div>
+            </>
+          )}
+
           {pokemon.moveset && pokemon.moveset.length > 0 && (
             <>
               <Separator className="my-6" />

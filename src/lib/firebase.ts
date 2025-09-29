@@ -1,11 +1,16 @@
 // Import the functions you need from the SDKs you need
-import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAnalytics, isSupported } from "firebase/analytics";
-import type { FirebaseApp } from "firebase/app";
-import type { Analytics } from "firebase/analytics";
+import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
+import { getAnalytics, isSupported, type Analytics } from "firebase/analytics";
+import { 
+  getAuth, 
+  onAuthStateChanged, 
+  GoogleAuthProvider, 
+  signInWithPopup, 
+  signOut,
+  type User
+} from "firebase/auth";
 
 // Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyC1zFQdXY-jTB30pwXPefQBb2wYbNY9LVM",
   authDomain: "shiningshowcase-5e120.firebaseapp.com",
@@ -34,4 +39,33 @@ if (typeof window !== 'undefined') {
     });
 }
 
-export { app, analytics };
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+
+const signInWithGoogle = async () => {
+  try {
+    const result = await signInWithPopup(auth, provider);
+    return result.user;
+  } catch (error) {
+    console.error("Error during sign in:", error);
+    return null;
+  }
+};
+
+const signOutUser = async () => {
+  try {
+    await signOut(auth);
+  } catch (error) {
+    console.error("Error during sign out:", error);
+  }
+};
+
+export { 
+  app, 
+  analytics, 
+  auth, 
+  onAuthStateChanged,
+  signInWithGoogle,
+  signOutUser,
+  type User
+};

@@ -2,6 +2,8 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { ThemeToggle } from './ThemeToggle';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
+import { ChevronDown } from 'lucide-react';
 
 export function Header() {
   return (
@@ -15,7 +17,30 @@ export function Header() {
           <Link href="/" className="text-sm md:text-base hover:underline">Home</Link>
           <Link href="/list" className="text-sm md:text-base hover:underline">List</Link>
           <Link href="/analytics" className="text-sm md:text-base hover:underline">Analytics</Link>
-          <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" rel="noopener noreferrer" className="text-sm md:text-base hover:underline">Others</a>
+          <Link href="/collections" className="text-sm md:text-base hover:underline">Collections</Link>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center text-sm md:text-base hover:underline outline-none">
+              Others
+              <ChevronDown className="h-4 w-4 ml-1" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem asChild>
+                <Link href="/profile">My Profile</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/search">Search</Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+               <DropdownMenuItem asChild>
+                <Link href="/signin">Sign In</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/signout">Sign Out</Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <ThemeToggle />
         </nav>
       </div>

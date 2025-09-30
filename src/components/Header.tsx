@@ -49,7 +49,6 @@ export function Header() {
           <Link href="/" className="text-sm md:text-base hover:underline">Home</Link>
           <Link href="/list" className="text-sm md:text-base hover:underline">List</Link>
           <Link href="/analytics" className="text-sm md:text-base hover:underline">Analytics</Link>
-          <Link href="/collections" className="text-sm md:text-base hover:underline">Collections</Link>
           
           <DropdownMenu>
             <DropdownMenuTrigger className="flex items-center text-sm md:text-base hover:underline outline-none">

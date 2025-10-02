@@ -6,11 +6,15 @@ import { Header } from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { signInWithGoogle } from "@/lib/firebase";
+import { auth, googleProvider, signInWithRedirect } from "@/lib/firebase";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ProfilePage() {
     const { user, loading } = useAuth();
+
+    const handleSignIn = async () => {
+        await signInWithRedirect(auth, googleProvider);
+    };
 
     if (loading) {
         return (
@@ -22,9 +26,9 @@ export default function ProfilePage() {
                             <Skeleton className="h-8 w-48 mx-auto mb-2" />
                             <Skeleton className="h-5 w-64 mx-auto" />
                         </CardHeader>
-                        <CardContent className="flex flex-col items-center space-y-4">
+                        <CardContent className="flex flex-col items-center space-y-4 pt-6">
                             <Skeleton className="h-24 w-24 rounded-full" />
-                            <div className="space-y-2 text-center">
+                            <div className="space-y-2 text-center w-full flex flex-col items-center">
                                <Skeleton className="h-6 w-40" />
                                <Skeleton className="h-4 w-56" />
                             </div>
@@ -46,7 +50,7 @@ export default function ProfilePage() {
                             <CardDescription>You must be signed in to view your profile.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <Button onClick={signInWithGoogle}>Sign In with Google</Button>
+                            <Button onClick={handleSignIn}>Sign In with Google</Button>
                         </CardContent>
                     </Card>
                 </main>
@@ -63,7 +67,7 @@ export default function ProfilePage() {
                         <CardTitle className="text-3xl font-bold font-headline">My Profile</CardTitle>
                         <CardDescription>Your personal account details.</CardDescription>
                     </CardHeader>
-                    <CardContent className="flex flex-col items-center space-y-4">
+                    <CardContent className="flex flex-col items-center space-y-4 pt-6">
                         <Avatar className="w-24 h-24 border-4 border-primary">
                             <AvatarImage src={user.photoURL || undefined} alt={user.displayName || 'User'} />
                             <AvatarFallback>

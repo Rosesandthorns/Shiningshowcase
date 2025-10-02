@@ -20,13 +20,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user && !loading) { // Avoid toast on initial load
-        toast({
-          title: "Signed In",
-          description: `Welcome back, ${user.displayName}!`,
-        });
+      if (user) {
+        // Check if this is the first load vs. a state change
+        if (loading) {
+           toast({
+            title: "Signed In",
+            description: `Welcome back, ${user.displayName}!`,
+          });
+        }
+        setUser(user);
+      } else {
+        setUser(null);
       }
-      setUser(user);
       setLoading(false);
     });
 
@@ -55,7 +60,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading: false }}>
+    <AuthContext.Provider value={{ user, loading }}>
       {children}
     </AuthContext.Provider>
   );

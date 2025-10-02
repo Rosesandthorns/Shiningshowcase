@@ -7,25 +7,41 @@ import { ThemeToggle } from './ThemeToggle';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { ChevronDown, LogIn, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { signInWithGoogle, signOutUser } from '@/lib/firebase';
+import { auth, signInWithRedirect, signOut, googleProvider } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 
 export function Header() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const { toast } = useToast();
 
   const handleSignIn = async () => {
-    // We don't get the user back immediately with redirect
-    // The onAuthStateChanged listener will handle the UI update.
-    await signInWithGoogle();
+    try {
+      await signInWithRedirect(auth, googleProvider);
+    } catch (error) {
+      console.error("Error during sign in:", error);
+      toast({
+        variant: "destructive",
+        title: "Sign In Failed",
+        description: "Could not sign you in with Google. Please try again.",
+      });
+    }
   };
 
   const handleSignOut = async () => {
-    await signOutUser();
-    toast({
-      title: "Signed Out",
-      description: "You have been successfully signed out.",
-    });
+    try {
+      await signOut(auth);
+      toast({
+        title: "Signed Out",
+        description: "You have been successfully signed out.",
+      });
+    } catch (error) {
+       console.error("Error during sign out:", error);
+       toast({
+        variant: "destructive",
+        title: "Sign Out Failed",
+        description: "Could not sign you out. Please try again.",
+      });
+    }
   };
 
   return (
@@ -46,7 +62,7 @@ export function Header() {
               <ChevronDown className="h-4 w-4 ml-1" />
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              {user && (
+              {!loading && user && (
                 <DropdownMenuItem asChild>
                   <Link href="/profile">My Profile</Link>
                 </DropdownMenuItem>
@@ -55,17 +71,17 @@ export function Header() {
                 <Link href="/search">Search</Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              {user ? (
+              {!loading && user ? (
                 <DropdownMenuItem onClick={handleSignOut}>
                   <LogOut className="mr-2 h-4 w-4" />
                   Sign Out
                 </DropdownMenuItem>
-              ) : (
+              ) : !loading ? (
                 <DropdownMenuItem onClick={handleSignIn}>
                   <LogIn className="mr-2 h-4 w-4" />
                   Sign In
                 </DropdownMenuItem>
-              )}
+              ) : null }
             </DropdownMenuContent>
           </DropdownMenu>
 

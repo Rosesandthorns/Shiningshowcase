@@ -41,35 +41,16 @@ if (typeof window !== 'undefined') {
 }
 
 const auth = getAuth(app);
-const provider = new GoogleAuthProvider();
+const googleProvider = new GoogleAuthProvider();
 
-const signInWithGoogle = async () => {
-  try {
-    // Using signInWithRedirect is more robust in some sandboxed environments.
-    await signInWithRedirect(auth, provider);
-    // The user will be redirected to Google and then back to your app.
-    // The user object is handled by the onAuthStateChanged listener.
-    return null; 
-  } catch (error) {
-    console.error("Error during sign in:", error);
-    return null;
-  }
-};
-
-const signOutUser = async () => {
-  try {
-    await signOut(auth);
-  } catch (error) {
-    console.error("Error during sign out:", error);
-  }
-};
 
 export { 
   app, 
   analytics, 
   auth, 
   onAuthStateChanged,
-  signInWithGoogle,
-  signOutUser,
+  signInWithRedirect,
+  signOut,
+  googleProvider,
   type User
 };

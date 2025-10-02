@@ -13,6 +13,7 @@ export default function ProfilePage() {
     const { user, loading } = useAuth();
 
     const handleSignIn = async () => {
+        sessionStorage.setItem('justLoggedIn', 'true');
         await signInWithRedirect(auth, googleProvider);
     };
 

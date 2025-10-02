@@ -11,7 +11,7 @@ interface AuthContextType {
   loading: boolean;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType>({ user: null, loading: true });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -20,23 +20,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+      setLoading(false);
       if (user) {
-        // Check if this is the first load vs. a state change
-        if (loading) {
-           toast({
+        // This check prevents the toast from showing on every page load
+        // A more robust way would be to check getRedirectResult, but this is simpler
+        if (sessionStorage.getItem('justLoggedIn')) {
+          toast({
             title: "Signed In",
             description: `Welcome back, ${user.displayName}!`,
           });
+          sessionStorage.removeItem('justLoggedIn');
         }
-        setUser(user);
-      } else {
-        setUser(null);
       }
-      setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [loading, toast]);
+  }, [toast]);
 
   if (loading) {
      return (

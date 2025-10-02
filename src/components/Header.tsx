@@ -7,7 +7,7 @@ import { ThemeToggle } from './ThemeToggle';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { ChevronDown, LogIn, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { auth, signInWithRedirect, signOut, googleProvider } from '@/lib/firebase';
+import { auth, googleProvider, signInWithRedirect, signOut } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 
 export function Header() {
@@ -16,6 +16,7 @@ export function Header() {
 
   const handleSignIn = async () => {
     try {
+      sessionStorage.setItem('justLoggedIn', 'true');
       await signInWithRedirect(auth, googleProvider);
     } catch (error) {
       console.error("Error during sign in:", error);
@@ -24,6 +25,7 @@ export function Header() {
         title: "Sign In Failed",
         description: "Could not sign you in with Google. Please try again.",
       });
+      sessionStorage.removeItem('justLoggedIn');
     }
   };
 

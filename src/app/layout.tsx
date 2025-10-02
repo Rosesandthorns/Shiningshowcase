@@ -7,8 +7,8 @@ import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { UserProvider } from '@/firebase/auth/use-user';
 
 export const metadata: Metadata = {
-  title: "Rosie's Shiny Pokémon",
-  description: 'Discover and track shiny Pokémon!',
+  title: "Shining Showcase",
+  description: 'Track, view, and analyze your shiny Pokémon collection!',
 };
 
 export default function RootLayout({
@@ -37,3 +37,5 @@ export default function RootLayout({
     </html>
   );
 }
+
+    

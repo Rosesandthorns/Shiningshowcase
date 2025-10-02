@@ -36,7 +36,7 @@ export async function updateUserProfile(
   const { displayName, photoFile, bannerFile } = data;
   const userDocRef = doc(firestore, 'users', user.uid);
 
-  const authUpdateData: { displayName?: string; photoURL?: string } = {};
+  const authUpdateData: { displayName?: string } = {};
   const firestoreUpdateData: { displayName?: string; photoURL?: string; bannerURL?: string } = {};
 
   if (displayName && displayName !== user.displayName) {
@@ -46,7 +46,7 @@ export async function updateUserProfile(
 
   if (photoFile) {
     const photoURL = await fileToDataUrl(photoFile);
-    authUpdateData.photoURL = photoURL;
+    // We only save the large data URL to Firestore.
     firestoreUpdateData.photoURL = photoURL;
   }
 
@@ -55,12 +55,13 @@ export async function updateUserProfile(
     firestoreUpdateData.bannerURL = bannerURL;
   }
 
-  // Update Firebase Authentication profile if there's anything to update
+  // Update Firebase Authentication profile only if displayName changed.
+  // We do NOT update the photoURL here because of length limitations.
   if (Object.keys(authUpdateData).length > 0) {
     await updateProfile(user, authUpdateData);
   }
 
-  // Update Firestore document
+  // Update Firestore document with all data (including large image strings).
   if (Object.keys(firestoreUpdateData).length > 0) {
     await setDoc(userDocRef, firestoreUpdateData, { merge: true });
   }

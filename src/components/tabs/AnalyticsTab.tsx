@@ -1,6 +1,9 @@
+
+'use client';
 import { AnalyticsDashboardClient } from '@/components/client/AnalyticsDashboardClient';
 import { getAllPokemon } from '@/lib/pokemonApi';
 import type { Pokemon } from '@/types/pokemon';
+import { useEffect, useState } from 'react';
 
 // Define Pokedex number ranges for each generation
 const generationRanges: Record<string, { start: number; end: number, total: number }> = {
@@ -15,7 +18,7 @@ const generationRanges: Record<string, { start: number; end: number, total: numb
     Paldea: { start: 906, end: 1025, total: 120 },
 };
 
-async function calculateAnalytics(allPokemon: Pokemon[]) {
+function calculateAnalytics(allPokemon: Pokemon[]) {
     // Type Frequency
     const typeCounts = allPokemon.flatMap(p => p.types).reduce((acc, type) => {
         if (type === 'Unknown') return acc;
@@ -100,9 +103,32 @@ async function calculateAnalytics(allPokemon: Pokemon[]) {
     };
 }
 
-export async function AnalyticsTab() {
-    const allPokemon = await getAllPokemon();
-    const analyticsData = await calculateAnalytics(allPokemon);
+export function AnalyticsTab() {
+    const [analyticsData, setAnalyticsData] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        async function fetchData() {
+            try {
+                const allPokemon = await getAllPokemon();
+                const data = calculateAnalytics(allPokemon);
+                setAnalyticsData(data);
+            } catch (error) {
+                console.error("Failed to calculate analytics", error);
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchData();
+    }, []);
+
+    if (loading) {
+        return (
+            <main className="flex-1 container mx-auto p-4 md:p-6 flex justify-center items-center">
+                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </main>
+        );
+    }
 
     return (
         <main className="flex-1 container mx-auto p-4 md:p-6">
@@ -114,7 +140,7 @@ export async function AnalyticsTab() {
                     A deep dive into your shiny collection.
                 </p>
             </div>
-            <AnalyticsDashboardClient initialData={analyticsData} />
+            {analyticsData && <AnalyticsDashboardClient initialData={analyticsData} />}
         </main>
     );
 }

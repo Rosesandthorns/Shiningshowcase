@@ -1,4 +1,3 @@
-
 import { NationalPokedexClient } from '@/components/client/NationalPokedexClient';
 import { getAllPokemon, getNationalPokedex, shinyLockedPokemon } from '@/lib/pokemonApi';
 import { PokemonProvider } from '@/contexts/PokemonContext';

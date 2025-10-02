@@ -1,4 +1,3 @@
-
 import { AnalyticsDashboardClient } from '@/components/client/AnalyticsDashboardClient';
 import { getAllPokemon } from '@/lib/pokemonApi';
 import type { Pokemon } from '@/types/pokemon';

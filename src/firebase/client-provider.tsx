@@ -22,8 +22,8 @@ export function FirebaseClientProvider({
   const [firebase, setFirebase] = useState<FirebaseContextValue | null>(null);
 
   useEffect(() => {
-    const { firebaseApp, auth } = initializeFirebase();
-    setFirebase({ firebaseApp, auth });
+    const { firebaseApp, auth, firestore } = initializeFirebase();
+    setFirebase({ firebaseApp, auth, firestore });
   }, []);
 
   if (!firebase) {

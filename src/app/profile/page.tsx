@@ -1,18 +1,20 @@
 
 "use client";
 
-import { useAuth } from "@/contexts/AuthContext";
+import { useUser } from "@/firebase";
 import { Header } from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { auth, googleProvider, signInWithRedirect } from "@/lib/firebase";
+import { getAuth, GoogleAuthProvider, signInWithRedirect } from "firebase/auth";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ProfilePage() {
-    const { user, loading } = useAuth();
+    const { user, loading } = useUser();
 
     const handleSignIn = async () => {
+        const auth = getAuth();
+        const googleProvider = new GoogleAuthProvider();
         await signInWithRedirect(auth, googleProvider);
     };
 

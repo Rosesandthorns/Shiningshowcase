@@ -6,15 +6,40 @@ import Image from 'next/image';
 import { ThemeToggle } from './ThemeToggle';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { ChevronDown, LogIn, LogOut } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import { auth, googleProvider, signInWithRedirect, signOut } from '@/lib/firebase';
+import { useUser, useAuth } from '@/firebase';
+import { GoogleAuthProvider, signInWithRedirect, signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
+import { useEffect } from 'react';
+import { getRedirectResult } from 'firebase/auth';
 
 export function Header() {
-  const { user, loading } = useAuth();
+  const { user, loading } = useUser();
+  const auth = useAuth();
   const { toast } = useToast();
 
+  useEffect(() => {
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result) {
+          const user = result.user;
+          toast({
+            title: "Signed In",
+            description: `Welcome back, ${user.displayName}!`,
+          });
+        }
+      })
+      .catch((error) => {
+        console.error("Error getting redirect result:", error);
+        toast({
+            variant: "destructive",
+            title: "Sign In Failed",
+            description: "Could not complete sign-in. Please try again.",
+        });
+      });
+  }, [auth, toast]);
+
   const handleSignIn = async () => {
+    const googleProvider = new GoogleAuthProvider();
     try {
       await signInWithRedirect(auth, googleProvider);
     } catch (error) {

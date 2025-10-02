@@ -26,6 +26,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           // This will only happen if the user just signed in via redirect
           const user = result.user;
           setUser(user);
+          console.log(`Signed in via redirect: ${user.displayName} (${user.email})`);
           toast({
             title: "Signed In",
             description: `Welcome back, ${user.displayName}!`,
@@ -44,6 +45,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // This listener handles all other auth state changes (initial load, sign out)
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
+      if (currentUser) {
+        console.log(`Auth state changed: User is signed in as ${currentUser.displayName} (${currentUser.email})`);
+      } else {
+        console.log("Auth state changed: No user is signed in.");
+      }
       setLoading(false);
     });
 

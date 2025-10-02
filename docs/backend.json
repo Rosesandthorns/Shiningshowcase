@@ -24,6 +24,58 @@
         }
       },
       "required": ["uid", "displayName"]
+    },
+    "Hunt": {
+      "title": "Shiny Hunt",
+      "description": "Represents a single shiny hunting session.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The UID of the user who owns this hunt."
+        },
+        "pokemonName": {
+          "type": "string",
+          "description": "The name of the Pokémon being hunted."
+        },
+        "pokemonSprite": {
+            "type": "string",
+            "description": "URL of the Pokémon's sprite."
+        },
+        "game": {
+          "type": "string",
+          "description": "The game the hunt is taking place in."
+        },
+        "method": {
+          "type": "string",
+          "description": "The hunting method being used."
+        },
+        "odds": {
+          "type": "number",
+          "description": "The shiny odds for this hunt (e.g., 4096)."
+        },
+        "shinyCharm": {
+            "type": "boolean",
+            "description": "Whether the shiny charm is being used."
+        },
+        "encounters": {
+          "type": "number",
+          "description": "The number of encounters in this hunt."
+        },
+        "timeElapsed": {
+          "type": "number",
+          "description": "The total time elapsed in seconds."
+        },
+        "isActive": {
+            "type": "boolean",
+            "description": "Whether the hunt timer is currently active."
+        },
+        "createdAt": {
+            "type": "number",
+            "description": "Timestamp of when the hunt was created."
+        }
+      },
+      "required": ["userId", "pokemonName", "game", "method", "odds", "shinyCharm", "encounters", "timeElapsed", "isActive", "createdAt"]
     }
   },
   "auth": {
@@ -35,6 +87,12 @@
         "$ref": "#/entities/UserProfile"
       },
       "description": "Stores public profile information for each user."
+    },
+    "/users/{userId}/hunts/{huntId}": {
+      "schema": {
+        "$ref": "#/entities/Hunt"
+      },
+      "description": "Stores the shiny hunts for a specific user."
     }
   }
 }

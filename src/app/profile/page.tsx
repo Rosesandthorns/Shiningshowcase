@@ -12,6 +12,7 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { EditProfileClient } from '@/components/client/EditProfileClient';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import Image from 'next/image';
 
 interface UserProfile {
   displayName?: string;
@@ -110,7 +111,7 @@ export default function ProfilePage() {
         <Card className="w-full max-w-2xl shadow-xl overflow-hidden">
           <div className="h-48 bg-muted relative">
             {bannerURL && (
-              <img src={bannerURL} alt="Profile banner" className="w-full h-full object-cover" />
+              <Image src={bannerURL} alt="Profile banner" layout="fill" objectFit="cover" />
             )}
           </div>
           <CardHeader className="text-center -mt-16">

@@ -1,12 +1,25 @@
 
 import { doc, setDoc, Firestore } from 'firebase/firestore';
 import { updateProfile, type User } from 'firebase/auth';
-import { uploadFile } from './storage';
 
 interface UpdateData {
   displayName?: string;
   photoFile?: File;
   bannerFile?: File;
+}
+
+/**
+ * Converts a file to a Base64 data URL.
+ * @param file The file to convert.
+ * @returns A promise that resolves with the data URL.
+ */
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 /**
@@ -32,15 +45,13 @@ export async function updateUserProfile(
   }
 
   if (photoFile) {
-    const photoPath = `users/${user.uid}/profile.jpg`;
-    const photoURL = await uploadFile(photoFile, photoPath);
+    const photoURL = await fileToDataUrl(photoFile);
     authUpdateData.photoURL = photoURL;
     firestoreUpdateData.photoURL = photoURL;
   }
 
   if (bannerFile) {
-    const bannerPath = `users/${user.uid}/banner.jpg`;
-    const bannerURL = await uploadFile(bannerFile, bannerPath);
+    const bannerURL = await fileToDataUrl(bannerFile);
     firestoreUpdateData.bannerURL = bannerURL;
   }
 

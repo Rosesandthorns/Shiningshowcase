@@ -11,11 +11,11 @@
         },
         "photoURL": {
           "type": "string",
-          "description": "URL for the user's profile picture."
+          "description": "Data URL for the user's profile picture."
         },
         "bannerURL": {
           "type": "string",
-          "description": "URL for the user's profile banner."
+          "description": "Data URL for the user's profile banner."
         }
       },
       "required": ["displayName"]

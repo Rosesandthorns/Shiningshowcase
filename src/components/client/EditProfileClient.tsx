@@ -13,11 +13,29 @@ import { useState } from 'react';
 import { updateUserProfile } from '@/lib/user';
 import { useFirestore } from '@/firebase';
 
+const MAX_FILE_SIZE = 500 * 1024; // 500 KB
+const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+
 const profileFormSchema = z.object({
   displayName: z.string().min(2, { message: 'Display name must be at least 2 characters.' }).max(30, { message: 'Display name must not be longer than 30 characters.' }),
-  photoFile: z.instanceof(File).optional(),
-  bannerFile: z.instanceof(File).optional(),
+  photoFile: z
+    .instanceof(File)
+    .optional()
+    .refine((file) => !file || file.size <= MAX_FILE_SIZE, `Max file size is 500KB.`)
+    .refine(
+      (file) => !file || ACCEPTED_IMAGE_TYPES.includes(file.type),
+      'Only .jpg, .jpeg, .png, .gif and .webp formats are supported.'
+    ),
+  bannerFile: z
+    .instanceof(File)
+    .optional()
+    .refine((file) => !file || file.size <= MAX_FILE_SIZE, `Max file size is 500KB.`)
+    .refine(
+      (file) => !file || ACCEPTED_IMAGE_TYPES.includes(file.type),
+      'Only .jpg, .jpeg, .png, .gif and .webp formats are supported.'
+    ),
 });
+
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
@@ -90,14 +108,15 @@ export function EditProfileClient({ user, profile, onSave }: EditProfileClientPr
         <FormField
           control={form.control}
           name="photoFile"
-          render={({ field }) => (
+          render={({ field: { onChange, value, ...rest } }) => (
             <FormItem>
-              <FormLabel>Profile Picture (PNG, JPG, GIF)</FormLabel>
+              <FormLabel>Profile Picture (Max 500KB)</FormLabel>
               <FormControl>
                 <Input
                   type="file"
-                  accept="image/png, image/jpeg, image/gif"
-                  onChange={(e) => field.onChange(e.target.files ? e.target.files[0] : null)}
+                  accept="image/png, image/jpeg, image/gif, image/webp"
+                  onChange={(e) => onChange(e.target.files ? e.target.files[0] : null)}
+                  {...rest}
                 />
               </FormControl>
               <FormMessage />
@@ -107,14 +126,15 @@ export function EditProfileClient({ user, profile, onSave }: EditProfileClientPr
         <FormField
           control={form.control}
           name="bannerFile"
-          render={({ field }) => (
+          render={({ field: { onChange, value, ...rest } }) => (
             <FormItem>
-              <FormLabel>Profile Banner (PNG, JPG, GIF)</FormLabel>
+              <FormLabel>Profile Banner (Max 500KB)</FormLabel>
               <FormControl>
                 <Input
                   type="file"
-                  accept="image/png, image/jpeg, image/gif"
-                  onChange={(e) => field.onChange(e.target.files ? e.target.files[0] : null)}
+                  accept="image/png, image/jpeg, image/gif, image/webp"
+                  onChange={(e) => onChange(e.target.files ? e.target.files[0] : null)}
+                  {...rest}
                 />
               </FormControl>
               <FormMessage />

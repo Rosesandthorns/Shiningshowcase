@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { collection, query, where, getDocs, limit, onSnapshot, doc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, limit } from 'firebase/firestore';
 import { useEffect, useState, useMemo } from 'react';
 import { EditProfileClient } from '@/components/client/EditProfileClient';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -15,10 +15,10 @@ import Image from 'next/image';
 import { notFound, useRouter } from 'next/navigation';
 
 interface UserProfile {
+  uid: string;
   displayName?: string;
   photoURL?: string;
   bannerURL?: string;
-  uid: string;
 }
 
 type ProfilePageProps = {
@@ -31,6 +31,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
   const { user: currentUser, loading: authLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
+
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -39,24 +40,25 @@ export default function ProfilePage({ params }: ProfilePageProps) {
 
   useEffect(() => {
     if (!firestore) return;
+
     setLoading(true);
-    
-    const q = query(collection(firestore, 'users'), where('displayName', '==', displayNameFromParam), limit(1));
-    
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      if (querySnapshot.empty) {
+    const usersRef = collection(firestore, 'users');
+    const q = query(usersRef, where('displayName', '==', displayNameFromParam), limit(1));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      if (snapshot.empty) {
         setProfile(null);
       } else {
-        const userDoc = querySnapshot.docs[0];
+        const userDoc = snapshot.docs[0];
         const profileData = userDoc.data() as UserProfile;
-        
-        // Handle case where displayName in URL is old, but a new one is in the document
+
+        // If the current user is viewing their own profile via an old display name URL, redirect them.
         if (currentUser && currentUser.uid === userDoc.id && profileData.displayName && profileData.displayName !== displayNameFromParam) {
            router.replace(`/profile/${encodeURIComponent(profileData.displayName)}`);
-           return; // Prevent setting state with old data
+           return;
         }
 
-        setProfile(profileData);
+        setProfile({ ...profileData, uid: userDoc.id });
       }
       setLoading(false);
     }, (error) => {
@@ -72,7 +74,6 @@ export default function ProfilePage({ params }: ProfilePageProps) {
     return !authLoading && currentUser && profile && currentUser.uid === profile.uid;
   }, [currentUser, profile, authLoading]);
 
-
   if (loading || authLoading) {
     return (
       <div className="flex flex-col min-h-screen bg-background text-foreground">
@@ -83,10 +84,9 @@ export default function ProfilePage({ params }: ProfilePageProps) {
             <CardHeader className="text-center -mt-16">
               <Skeleton className="h-24 w-24 rounded-full mx-auto border-4 border-background" />
               <Skeleton className="h-8 w-48 mx-auto mt-4" />
-              <Skeleton className="h-5 w-64 mx-auto mt-2" />
             </CardHeader>
             <CardContent className="text-center p-6">
-              <Skeleton className="h-10 w-24 mx-auto" />
+               <Skeleton className="h-6 w-32 mx-auto" />
             </CardContent>
           </Card>
         </main>
@@ -97,7 +97,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
   if (!profile) {
     notFound();
   }
-  
+
   const displayName = profile.displayName || 'User';
   const photoURL = profile.photoURL;
   const bannerURL = profile.bannerURL;
@@ -123,17 +123,17 @@ export default function ProfilePage({ params }: ProfilePageProps) {
           </CardHeader>
           <CardContent className="text-center p-6">
             {isOwner && (
-                <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+              <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                 <DialogTrigger asChild>
-                    <Button>Edit Profile</Button>
+                  <Button>Edit Profile</Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
+                  <DialogHeader>
                     <DialogTitle>Edit profile</DialogTitle>
-                    </DialogHeader>
-                    {currentUser && <EditProfileClient user={currentUser} profile={profile} onSave={() => setIsEditDialogOpen(false)} />}
+                  </DialogHeader>
+                  {currentUser && <EditProfileClient user={currentUser} profile={profile} onSave={() => setIsEditDialogOpen(false)} />}
                 </DialogContent>
-                </Dialog>
+              </Dialog>
             )}
           </CardContent>
         </Card>

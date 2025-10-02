@@ -1,5 +1,5 @@
 
-import { doc, setDoc, getDoc, collection, query, where, getDocs, Firestore, writeBatch } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, query, where, getDocs, Firestore } from 'firebase/firestore';
 import { updateProfile, type User } from 'firebase/auth';
 
 interface UpdateData {
@@ -84,15 +84,20 @@ export async function updateUserProfile(
     const userDoc = await getDoc(userDocRef);
     if (!userDoc.exists() || !userDoc.data()?.displayName) {
       // Create a default display name if none exists
-      const baseName = user.displayName || user.email?.split('@')[0] || `user-${user.uid.substring(0, 5)}`;
-      let newDisplayName = baseName;
+      const baseName = "User";
+      let newDisplayName = `${baseName}${Math.floor(Math.random() * 10000)}`;
       let isUnique = await isDisplayNameUnique(firestore, newDisplayName, user.uid);
       let attempts = 0;
-      while (!isUnique && attempts < 5) {
+      while (!isUnique && attempts < 10) {
         attempts++;
-        newDisplayName = `${baseName}${Math.floor(Math.random() * 1000)}`;
+        newDisplayName = `${baseName}${Math.floor(Math.random() * 10000)}`;
         isUnique = await isDisplayNameUnique(firestore, newDisplayName, user.uid);
       }
+      
+      if (!isUnique) {
+          throw new Error("Failed to generate a unique display name.");
+      }
+
       finalDisplayName = newDisplayName;
       firestoreUpdateData.displayName = finalDisplayName;
       // Also update auth if it's different
@@ -124,7 +129,10 @@ export async function updateUserProfile(
   }
 
   if (!finalDisplayName) {
-      throw new Error("Could not determine a display name.");
+      // This should theoretically not be reached due to the logic above
+      const docSnap = await getDoc(userDocRef);
+      finalDisplayName = docSnap.data()?.displayName;
+      if (!finalDisplayName) throw new Error("Could not determine a display name.");
   }
 
   return finalDisplayName;

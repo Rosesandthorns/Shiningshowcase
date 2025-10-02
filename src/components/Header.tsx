@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ThemeToggle } from './ThemeToggle';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { ChevronDown, LogIn, LogOut } from 'lucide-react';
+import { ChevronDown, LogIn, LogOut, LayoutList, BarChart2 } from 'lucide-react';
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
@@ -41,23 +41,39 @@ export function Header() {
         </Link>
         <nav className="flex items-center gap-2 md:gap-4">
           <Link href="/" className="text-sm md:text-base hover:underline">Home</Link>
-          <Link href="/list" className="text-sm md:text-base hover:underline">List</Link>
-          <Link href="/analytics" className="text-sm md:text-base hover:underline">Analytics</Link>
+          {!loading && user && (
+            <>
+              <Link href="/list" className="text-sm md:text-base hover:underline hidden md:inline">List</Link>
+              <Link href="/analytics" className="text-sm md:text-base hover:underline hidden md:inline">Analytics</Link>
+            </>
+          )}
           
           <DropdownMenu>
             <DropdownMenuTrigger className="flex items-center text-sm md:text-base hover:underline outline-none">
-              Others
+              More
               <ChevronDown className="h-4 w-4 ml-1" />
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               {!loading && user && (
-                <DropdownMenuItem asChild>
-                  <Link href="/profile">My Profile</Link>
-                </DropdownMenuItem>
+                <>
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile">My Profile</Link>
+                  </DropdownMenuItem>
+                   <DropdownMenuItem asChild className="md:hidden">
+                    <Link href="/list">
+                      <LayoutList className="mr-2 h-4 w-4" />
+                      List
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild className="md:hidden">
+                    <Link href="/analytics">
+                      <BarChart2 className="mr-2 h-4 w-4" />
+                      Analytics
+                    </Link>
+                  </DropdownMenuItem>
+                </>
               )}
-              <DropdownMenuItem asChild>
-                <Link href="/search">Search</Link>
-              </DropdownMenuItem>
+              
               <DropdownMenuSeparator />
               {!loading && user ? (
                 <DropdownMenuItem onClick={handleSignOut}>
@@ -81,5 +97,3 @@ export function Header() {
     </header>
   );
 }
-
-    

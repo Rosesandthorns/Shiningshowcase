@@ -16,12 +16,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Header } from "@/components/Header";
-import { useAuth } from "@/firebase";
+import { useAuth, useFirestore } from "@/firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FirebaseError } from "firebase/app";
+import { updateUserProfile } from "@/lib/user";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Invalid email address." }),
@@ -30,6 +31,7 @@ const formSchema = z.object({
 
 export default function RegisterPage() {
   const auth = useAuth();
+  const firestore = useFirestore();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -44,6 +46,10 @@ export default function RegisterPage() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+      
+      // After user is created in Auth, create their profile document in Firestore
+      await updateUserProfile(firestore, userCredential.user, {});
+
       toast({
         title: "Account Created",
         description: "You have been successfully signed up and logged in.",

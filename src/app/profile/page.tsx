@@ -140,7 +140,7 @@ export default function MyProfilePage() {
             <CardTitle className="text-3xl font-bold font-headline mt-4">{displayName}</CardTitle>
             {user.email && <CardDescription>{user.email}</CardDescription>}
           </CardHeader>
-          <CardContent className="text-center p-6">
+          <CardContent className="text-center p-6 space-x-2">
             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
               <DialogTrigger asChild>
                 <Button>Edit Profile</Button>
@@ -152,6 +152,12 @@ export default function MyProfilePage() {
                 <EditProfileClient user={user} profile={profile} onSave={() => setIsEditDialogOpen(false)} />
               </DialogContent>
             </Dialog>
+            <Button asChild variant="outline">
+              <Link href="/list">My List</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/analytics">My Analytics</Link>
+            </Button>
           </CardContent>
         </Card>
       </main>

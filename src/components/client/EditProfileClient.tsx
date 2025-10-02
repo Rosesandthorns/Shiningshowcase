@@ -12,12 +12,13 @@ import { type User } from 'firebase/auth';
 import { useState } from 'react';
 import { updateUserProfile } from '@/lib/user';
 import { useFirestore } from '@/firebase';
+import { useRouter } from 'next/navigation';
 
 const MAX_FILE_SIZE = 500 * 1024; // 500 KB
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
 
 const profileFormSchema = z.object({
-  displayName: z.string().min(2, { message: 'Display name must be at least 2 characters.' }).max(30, { message: 'Display name must not be longer than 30 characters.' }),
+  displayName: z.string().min(2, { message: 'Display name must be at least 2 characters.' }).max(30, { message: 'Display name must not be longer than 30 characters.' }).regex(/^[a-zA-Z0-9_-]+$/, 'Display name can only contain letters, numbers, underscores, and hyphens.'),
   photoFile: z
     .instanceof(File)
     .optional()
@@ -48,6 +49,7 @@ interface EditProfileClientProps {
 export function EditProfileClient({ user, profile, onSave }: EditProfileClientProps) {
   const { toast } = useToast();
   const firestore = useFirestore();
+  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<ProfileFormValues>({
@@ -65,8 +67,10 @@ export function EditProfileClient({ user, profile, onSave }: EditProfileClientPr
       description: 'Please wait while we save your changes.',
     });
 
+    const oldDisplayName = profile?.displayName || user.displayName;
+
     try {
-      await updateUserProfile(firestore, user, {
+      const newDisplayName = await updateUserProfile(firestore, user, {
         displayName: data.displayName,
         photoFile: data.photoFile,
         bannerFile: data.bannerFile,
@@ -76,7 +80,13 @@ export function EditProfileClient({ user, profile, onSave }: EditProfileClientPr
         title: 'Profile Updated',
         description: 'Your profile has been successfully updated.',
       });
+      
       onSave();
+
+      if (newDisplayName && oldDisplayName !== newDisplayName) {
+        router.push(`/profile/${encodeURIComponent(newDisplayName)}`);
+      }
+
     } catch (error: any) {
       console.error('Error updating profile:', error);
       toast({

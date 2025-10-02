@@ -55,26 +55,29 @@ export async function isDisplayNameUnique(firestore: Firestore, displayName: str
  * @param firestore The Firestore instance.
  * @param user The Firebase user object.
  * @param data The data to update.
+ * @returns The final display name that was saved.
  */
 export async function updateUserProfile(
   firestore: Firestore,
   user: User,
   data: UpdateData
-): Promise<void> {
+): Promise<string> {
   const { displayName, photoFile, bannerFile } = data;
   const userDocRef = doc(firestore, 'users', user.uid);
   const authUpdateData: { displayName?: string } = {};
   const firestoreUpdateData: { [key: string]: any } = { uid: user.uid };
+  
+  let finalDisplayName: string | undefined = displayName;
 
   // 1. Determine the display name
-  if (displayName) {
-    if (displayName !== user.displayName) {
-      const isUnique = await isDisplayNameUnique(firestore, displayName, user.uid);
+  if (finalDisplayName) {
+    if (finalDisplayName !== user.displayName) {
+      const isUnique = await isDisplayNameUnique(firestore, finalDisplayName, user.uid);
       if (!isUnique) {
         throw new Error('Display name is already taken. Please choose another one.');
       }
-      authUpdateData.displayName = displayName;
-      firestoreUpdateData.displayName = displayName;
+      authUpdateData.displayName = finalDisplayName;
+      firestoreUpdateData.displayName = finalDisplayName;
     }
   } else {
     // If no display name is being set, ensure one exists in the doc
@@ -90,11 +93,14 @@ export async function updateUserProfile(
         newDisplayName = `${baseName}${Math.floor(Math.random() * 1000)}`;
         isUnique = await isDisplayNameUnique(firestore, newDisplayName, user.uid);
       }
-      firestoreUpdateData.displayName = newDisplayName;
+      finalDisplayName = newDisplayName;
+      firestoreUpdateData.displayName = finalDisplayName;
       // Also update auth if it's different
-      if (newDisplayName !== user.displayName) {
-        authUpdateData.displayName = newDisplayName;
+      if (finalDisplayName !== user.displayName) {
+        authUpdateData.displayName = finalDisplayName;
       }
+    } else {
+        finalDisplayName = userDoc.data()?.displayName;
     }
   }
 
@@ -108,16 +114,18 @@ export async function updateUserProfile(
   }
 
   // 3. Perform the updates
-  const batch = writeBatch(firestore);
-
-  // Update Firestore document (always merge to create or update)
-  batch.set(userDocRef, firestoreUpdateData, { merge: true });
-
-  // Commit Firestore changes
-  await batch.commit();
+  if (Object.keys(firestoreUpdateData).length > 1) { // more than just uid
+    await setDoc(userDocRef, firestoreUpdateData, { merge: true });
+  }
 
   // Update Firebase Authentication profile only after Firestore succeeds
   if (Object.keys(authUpdateData).length > 0 && authUpdateData.displayName) {
     await updateProfile(user, { displayName: authUpdateData.displayName });
   }
+
+  if (!finalDisplayName) {
+      throw new Error("Could not determine a display name.");
+  }
+
+  return finalDisplayName;
 }

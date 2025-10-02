@@ -3,7 +3,7 @@
 
 import { useUser, useFirestore } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { Header } from '@/components/Header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -19,78 +19,74 @@ export default function ProfileRedirectPage() {
   const { user, loading: authLoading } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
+  const [status, setStatus] = useState('loading'); // 'loading', 'redirecting', 'error', 'prompt'
 
-  useEffect(() => {
-    if (authLoading) {
-      return; // Wait for auth state to settle
-    }
+  const ensureProfileAndRedirect = useCallback(async () => {
     if (!user) {
-      setLoading(false); // No user, stop loading and show sign-in prompt
+      setStatus('prompt');
       return;
     }
 
-    const fetchProfileAndRedirect = async () => {
+    setStatus('redirecting');
+    try {
       const profileRef = doc(firestore, 'users', user.uid);
       const docSnap = await getDoc(profileRef);
-      
-      let profile: UserProfile | null = null;
+
       let userDisplayName: string | null = null;
-
-      if (docSnap.exists()) {
-        profile = docSnap.data() as UserProfile;
-        userDisplayName = profile.displayName ?? null;
-      }
-
-      // If displayName is still not found, it might be a new user.
-      // Let's ensure a profile document is created.
-      if (!userDisplayName) {
-        try {
-            // This function will create/update the profile, ensuring a displayName.
-            // It will use email part or UID as fallback if necessary.
-            await updateUserProfile(firestore, user, {}); 
-            const updatedDocSnap = await getDoc(profileRef); // Re-fetch the doc
-            if (updatedDocSnap.exists()) {
-                const updatedProfile = updatedDocSnap.data() as UserProfile;
-                userDisplayName = updatedProfile.displayName!;
-            } else {
-                 // Extreme fallback, should not happen
-                userDisplayName = user.displayName || user.uid;
-            }
-        } catch (error) {
-            console.error("Failed to ensure user profile:", error);
-             // Fallback redirect to prevent getting stuck
-            userDisplayName = user.displayName || user.uid;
-        }
+      if (docSnap.exists() && docSnap.data()?.displayName) {
+        userDisplayName = docSnap.data().displayName;
+      } else {
+        // This function will now create the profile and return the name
+        userDisplayName = await updateUserProfile(firestore, user, {});
       }
       
-      if(userDisplayName) {
+      if (userDisplayName) {
         router.replace(`/profile/${encodeURIComponent(userDisplayName)}`);
       } else {
-        // If all else fails, prevent a loop.
-        setLoading(false); 
+        setStatus('error');
       }
-    };
+    } catch (error) {
+      console.error("Failed to ensure profile and redirect:", error);
+      setStatus('error');
+    }
+  }, [user, firestore, router]);
 
-    fetchProfileAndRedirect();
-  }, [user, authLoading, firestore, router]);
 
+  useEffect(() => {
+    if (!authLoading) {
+      ensureProfileAndRedirect();
+    }
+  }, [authLoading, ensureProfileAndRedirect]);
 
-  if (loading || authLoading) {
-     return (
+  if (status === 'loading') {
+    return (
       <div className="flex flex-col min-h-screen bg-background text-foreground">
         <Header />
         <main className="flex-1 container mx-auto p-4 md:p-6 flex justify-center items-center">
             <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Loading your profile...</p>
+                <p className="text-muted-foreground">Authenticating...</p>
             </div>
         </main>
       </div>
     );
   }
 
-  if (!user) {
+  if (status === 'redirecting') {
+    return (
+        <div className="flex flex-col min-h-screen bg-background text-foreground">
+            <Header />
+            <main className="flex-1 container mx-auto p-4 md:p-6 flex justify-center items-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-muted-foreground">Loading your profile...</p>
+                </div>
+            </main>
+        </div>
+    );
+  }
+
+  if (status === 'prompt') {
      return (
       <div className="flex flex-col min-h-screen bg-background text-foreground">
         <Header />
@@ -111,15 +107,20 @@ export default function ProfileRedirectPage() {
     );
   }
 
-  // This content is shown while redirecting or if something went wrong
+  // status === 'error'
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
         <Header />
         <main className="flex-1 container mx-auto p-4 md:p-6 flex justify-center items-center">
-             <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Redirecting to your profile...</p>
-            </div>
+            <Card className="w-full max-w-md text-center shadow-lg">
+            <CardHeader>
+              <CardTitle>Error</CardTitle>
+              <CardDescription>Could not load your profile. Please try again later.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={() => router.push('/')}>Go Home</Button>
+            </CardContent>
+          </Card>
         </main>
     </div>
   );

@@ -7,18 +7,18 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { collection, query, where, getDocs, limit, onSnapshot, doc, DocumentData } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit, onSnapshot, doc } from 'firebase/firestore';
 import { useEffect, useState, useMemo } from 'react';
 import { EditProfileClient } from '@/components/client/EditProfileClient';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import Image from 'next/image';
-import { notFound } from 'next/navigation';
+import { notFound, useRouter } from 'next/navigation';
 
 interface UserProfile {
   displayName?: string;
   photoURL?: string;
   bannerURL?: string;
-  uid?: string;
+  uid: string;
 }
 
 type ProfilePageProps = {
@@ -30,56 +30,50 @@ type ProfilePageProps = {
 export default function ProfilePage({ params }: ProfilePageProps) {
   const { user: currentUser, loading: authLoading } = useUser();
   const firestore = useFirestore();
+  const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [profileLoading, setProfileLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const displayNameFromParam = decodeURIComponent(params.displayName);
 
   useEffect(() => {
-    setProfileLoading(true);
+    if (!firestore) return;
+    setLoading(true);
+    
     const q = query(collection(firestore, 'users'), where('displayName', '==', displayNameFromParam), limit(1));
     
-    // This subscriber will listen for real-time updates
-    let unsubscribe: () => void = () => {};
-
-    getDocs(q).then(querySnapshot => {
-        if (querySnapshot.empty) {
-            setProfile(null);
-            setProfileLoading(false);
-        } else {
-            const userDoc = querySnapshot.docs[0];
-            // Set up the real-time listener
-            unsubscribe = onSnapshot(doc(firestore, 'users', userDoc.id), (docSnap) => {
-                if (docSnap.exists()) {
-                    const profileData = docSnap.data() as UserProfile;
-                     // Ensure UID is part of the profile object for ownership checks
-                    if (!profileData.uid) {
-                        profileData.uid = docSnap.id;
-                    }
-                    setProfile(profileData);
-                } else {
-                    setProfile(null);
-                }
-                setProfileLoading(false);
-            });
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      if (querySnapshot.empty) {
+        setProfile(null);
+      } else {
+        const userDoc = querySnapshot.docs[0];
+        const profileData = userDoc.data() as UserProfile;
+        
+        // Handle case where displayName in URL is old, but a new one is in the document
+        if (currentUser && currentUser.uid === userDoc.id && profileData.displayName && profileData.displayName !== displayNameFromParam) {
+           router.replace(`/profile/${encodeURIComponent(profileData.displayName)}`);
+           return; // Prevent setting state with old data
         }
-    }).catch(error => {
-        console.error("Error fetching profile:", error);
-        setProfileLoading(false);
+
+        setProfile(profileData);
+      }
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching profile:", error);
+      setLoading(false);
+      setProfile(null);
     });
 
-    // Cleanup subscription on unmount
     return () => unsubscribe();
-
-  }, [firestore, displayNameFromParam]);
+  }, [firestore, displayNameFromParam, currentUser, router]);
 
   const isOwner = useMemo(() => {
-    return !authLoading && !profileLoading && currentUser && profile && currentUser.uid === profile.uid;
-  }, [currentUser, profile, authLoading, profileLoading]);
+    return !authLoading && currentUser && profile && currentUser.uid === profile.uid;
+  }, [currentUser, profile, authLoading]);
 
 
-  if (profileLoading || authLoading) {
+  if (loading || authLoading) {
     return (
       <div className="flex flex-col min-h-screen bg-background text-foreground">
         <Header />
@@ -101,10 +95,9 @@ export default function ProfilePage({ params }: ProfilePageProps) {
   }
 
   if (!profile) {
-    // This uses Next.js's notFound utility to render the 404 page
     notFound();
   }
-
+  
   const displayName = profile.displayName || 'User';
   const photoURL = profile.photoURL;
   const bannerURL = profile.bannerURL;
@@ -117,7 +110,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
         <Card className="w-full max-w-2xl shadow-xl overflow-hidden">
           <div className="h-48 bg-muted relative">
             {bannerURL && (
-              <Image src={bannerURL} alt="Profile banner" layout="fill" objectFit="cover" />
+              <Image src={bannerURL} alt="Profile banner" layout="fill" objectFit="cover" unoptimized/>
             )}
           </div>
           <CardHeader className="text-center -mt-16">

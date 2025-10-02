@@ -2,84 +2,73 @@
 'use client';
 
 import { useUser, useFirestore } from '@/firebase';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { doc, getDoc } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Header } from '@/components/Header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
-import { EditProfileClient } from '@/components/client/EditProfileClient';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import Image from 'next/image';
 
 interface UserProfile {
   displayName?: string;
-  photoURL?: string;
-  bannerURL?: string;
 }
 
-export default function ProfilePage() {
+export default function ProfileRedirectPage() {
   const { user, loading: authLoading } = useUser();
   const firestore = useFirestore();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   useEffect(() => {
+    if (authLoading) {
+      return;
+    }
     if (!user) {
-      if (!authLoading) {
-        setLoading(false);
-      }
+      setLoading(false);
       return;
     }
 
-    const profileRef = doc(firestore, 'users', user.uid);
-    const unsubscribe = onSnapshot(profileRef, (docSnap) => {
+    const fetchProfileAndRedirect = async () => {
+      const profileRef = doc(firestore, 'users', user.uid);
+      const docSnap = await getDoc(profileRef);
       if (docSnap.exists()) {
-        setProfile(docSnap.data() as UserProfile);
+        const profile = docSnap.data() as UserProfile;
+        if (profile.displayName) {
+          router.replace(`/profile/${profile.displayName}`);
+        } else {
+          // Fallback if firestore doc exists but has no displayName
+          router.replace(`/profile/${user.uid}`);
+        }
       } else {
-        // If no firestore doc, use auth data as fallback
-        setProfile({
-          displayName: user.displayName || 'User',
-          photoURL: user.photoURL || undefined,
-        });
+        // Fallback for new users or if doc doesn't exist, redirect to a generic page
+        // Or handle creation of profile doc first
+        const displayName = user.displayName || user.uid;
+        router.replace(`/profile/${displayName}`);
       }
-      setLoading(false);
-    }, (error) => {
-      console.error("Error fetching profile:", error);
-      setLoading(false);
-    });
+    };
 
-    return () => unsubscribe();
-  }, [user, firestore, authLoading]);
+    fetchProfileAndRedirect();
+  }, [user, authLoading, firestore, router]);
 
-  const isLoading = authLoading || loading;
 
-  if (isLoading) {
-    return (
+  if (loading || authLoading) {
+     return (
       <div className="flex flex-col min-h-screen bg-background text-foreground">
         <Header />
-        <main className="flex-1 container mx-auto p-4 md:p-6 flex justify-center items-start pt-12">
-          <Card className="w-full max-w-2xl shadow-xl">
-            <Skeleton className="h-48 w-full" />
-            <CardHeader className="text-center -mt-16">
-              <Skeleton className="h-24 w-24 rounded-full mx-auto border-4 border-background" />
-              <Skeleton className="h-8 w-48 mx-auto mt-4" />
-              <Skeleton className="h-5 w-64 mx-auto mt-2" />
-            </CardHeader>
-            <CardContent className="text-center p-6">
-              <Skeleton className="h-10 w-24 mx-auto" />
-            </CardContent>
-          </Card>
+        <main className="flex-1 container mx-auto p-4 md:p-6 flex justify-center items-center">
+            <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading your profile...</p>
+            </div>
         </main>
       </div>
     );
   }
 
   if (!user) {
-    return (
+     return (
       <div className="flex flex-col min-h-screen bg-background text-foreground">
         <Header />
         <main className="flex-1 container mx-auto p-4 md:p-6 flex justify-center items-center">
@@ -99,44 +88,16 @@ export default function ProfilePage() {
     );
   }
 
-  const displayName = profile?.displayName || user.displayName || 'User';
-  const photoURL = profile?.photoURL || user.photoURL;
-  const bannerURL = profile?.bannerURL;
-  const fallbackInitial = displayName.charAt(0).toUpperCase();
-
+  // This content is shown while redirecting
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
-      <Header />
-      <main className="flex-1 container mx-auto p-4 md:p-6 flex justify-center items-start pt-12">
-        <Card className="w-full max-w-2xl shadow-xl overflow-hidden">
-          <div className="h-48 bg-muted relative">
-            {bannerURL && (
-              <Image src={bannerURL} alt="Profile banner" layout="fill" objectFit="cover" />
-            )}
-          </div>
-          <CardHeader className="text-center -mt-16">
-            <Avatar className="w-24 h-24 border-4 border-background mx-auto shadow-lg">
-              <AvatarImage src={photoURL || undefined} alt={displayName} />
-              <AvatarFallback>{fallbackInitial}</AvatarFallback>
-            </Avatar>
-            <CardTitle className="text-3xl font-bold font-headline mt-4">{displayName}</CardTitle>
-            <CardDescription>{user.email}</CardDescription>
-          </CardHeader>
-          <CardContent className="text-center p-6">
-            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>Edit Profile</Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>Edit profile</DialogTitle>
-                </DialogHeader>
-                <EditProfileClient user={user} profile={profile} onSave={() => setIsEditDialogOpen(false)} />
-              </DialogContent>
-            </Dialog>
-          </CardContent>
-        </Card>
-      </main>
+        <Header />
+        <main className="flex-1 container mx-auto p-4 md:p-6 flex justify-center items-center">
+             <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Redirecting to your profile...</p>
+            </div>
+        </main>
     </div>
   );
 }

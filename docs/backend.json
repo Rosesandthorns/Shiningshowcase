@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "UserProfile": {
@@ -5,20 +6,24 @@
       "description": "Represents a user's public profile information.",
       "type": "object",
       "properties": {
+        "uid": {
+            "type": "string",
+            "description": "The user's unique ID."
+        },
         "displayName": {
           "type": "string",
-          "description": "The user's display name."
+          "description": "The user's unique display name."
         },
         "photoURL": {
           "type": "string",
-          "description": "Data URL for the user's profile picture."
+          "description": "Data URL for the user's profile picture. Can be a very long string."
         },
         "bannerURL": {
           "type": "string",
-          "description": "Data URL for the user's profile banner."
+          "description": "Data URL for the user's profile banner. Can be a very long string."
         }
       },
-      "required": ["displayName"]
+      "required": ["uid", "displayName"]
     }
   },
   "auth": {

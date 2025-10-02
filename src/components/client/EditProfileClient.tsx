@@ -77,12 +77,12 @@ export function EditProfileClient({ user, profile, onSave }: EditProfileClientPr
         description: 'Your profile has been successfully updated.',
       });
       onSave();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating profile:', error);
       toast({
         variant: 'destructive',
         title: 'Uh oh! Something went wrong.',
-        description: 'There was a problem with your request. Please try again.',
+        description: error.message || 'There was a problem with your request. Please try again.',
       });
     } finally {
       setIsSubmitting(false);

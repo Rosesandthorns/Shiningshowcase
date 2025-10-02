@@ -1,5 +1,5 @@
 
-import { doc, setDoc, Firestore } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, query, where, getDocs, Firestore, writeBatch } from 'firebase/firestore';
 import { updateProfile, type User } from 'firebase/auth';
 
 interface UpdateData {
@@ -23,6 +23,34 @@ function fileToDataUrl(file: File): Promise<string> {
 }
 
 /**
+ * Checks if a display name is unique across the 'users' collection.
+ * @param firestore The Firestore instance.
+ * @param displayName The display name to check.
+ * @param currentUserId The UID of the user requesting the change, to exclude them from the check.
+ * @returns A promise that resolves to true if the name is unique, false otherwise.
+ */
+export async function isDisplayNameUnique(firestore: Firestore, displayName: string, currentUserId: string): Promise<boolean> {
+    const usersRef = collection(firestore, 'users');
+    // Case-insensitive query
+    const q = query(usersRef, where('displayName', '==', displayName));
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+        return true; // Name is not taken
+    }
+
+    // If a user is found, check if it's the current user.
+    // If there is more than one, it's not unique. If there's one, it must be the current user.
+    if (querySnapshot.size > 1) {
+        return false;
+    }
+
+    // It's unique if the only user found is the current user.
+    return querySnapshot.docs[0].id === currentUserId;
+}
+
+
+/**
  * Updates the user's profile in Firebase Auth and Firestore.
  * @param firestore The Firestore instance.
  * @param user The Firebase user object.
@@ -36,17 +64,40 @@ export async function updateUserProfile(
   const { displayName, photoFile, bannerFile } = data;
   const userDocRef = doc(firestore, 'users', user.uid);
 
+  // Firestore transaction data
+  const firestoreUpdateData: { [key: string]: any } = {
+    uid: user.uid // Ensure UID is always present
+  };
+
+  // Auth profile update data
   const authUpdateData: { displayName?: string } = {};
-  const firestoreUpdateData: { displayName?: string; photoURL?: string; bannerURL?: string } = {};
 
   if (displayName && displayName !== user.displayName) {
-    authUpdateData.displayName = displayName;
-    firestoreUpdateData.displayName = displayName;
+      // Check for uniqueness before attempting to update
+      const isUnique = await isDisplayNameUnique(firestore, displayName, user.uid);
+      if (!isUnique) {
+          throw new Error('Display name is already taken. Please choose another one.');
+      }
+      authUpdateData.displayName = displayName;
+      firestoreUpdateData.displayName = displayName;
+  } else if (!displayName) {
+      // Ensure we have a displayName if one isn't provided
+      const userDoc = await getDoc(userDocRef);
+      if (!userDoc.exists() || !userDoc.data().displayName) {
+          // If no profile or display name exists, create one from email
+           const newDisplayName = user.email ? user.email.split('@')[0] : user.uid;
+           const isUnique = await isDisplayNameUnique(firestore, newDisplayName, user.uid);
+           if (!isUnique) {
+                firestoreUpdateData.displayName = `${newDisplayName}-${user.uid.substring(0, 4)}`;
+           } else {
+                firestoreUpdateData.displayName = newDisplayName;
+           }
+      }
   }
+
 
   if (photoFile) {
     const photoURL = await fileToDataUrl(photoFile);
-    // We only save the large data URL to Firestore.
     firestoreUpdateData.photoURL = photoURL;
   }
 
@@ -55,14 +106,18 @@ export async function updateUserProfile(
     firestoreUpdateData.bannerURL = bannerURL;
   }
 
-  // Update Firebase Authentication profile only if displayName changed.
-  // We do NOT update the photoURL here because of length limitations.
+  // Batch write to ensure atomicity
+  const batch = writeBatch(firestore);
+
+  // Update Firebase Authentication profile (only if displayName changed)
   if (Object.keys(authUpdateData).length > 0) {
     await updateProfile(user, authUpdateData);
   }
 
-  // Update Firestore document with all data (including large image strings).
+  // Update Firestore document
   if (Object.keys(firestoreUpdateData).length > 0) {
-    await setDoc(userDocRef, firestoreUpdateData, { merge: true });
+    batch.set(userDocRef, firestoreUpdateData, { merge: true });
   }
+  
+  await batch.commit();
 }

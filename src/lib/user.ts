@@ -31,7 +31,6 @@ function fileToDataUrl(file: File): Promise<string> {
  */
 export async function isDisplayNameUnique(firestore: Firestore, displayName: string, currentUserId: string): Promise<boolean> {
     const usersRef = collection(firestore, 'users');
-    // Case-insensitive query
     const q = query(usersRef, where('displayName', '==', displayName));
     const querySnapshot = await getDocs(q);
 
@@ -39,19 +38,20 @@ export async function isDisplayNameUnique(firestore: Firestore, displayName: str
         return true; // Name is not taken
     }
 
-    // If a user is found, check if it's the current user.
-    // If there is more than one, it's not unique. If there's one, it must be the current user.
-    if (querySnapshot.size > 1) {
-        return false;
+    // A name is considered unique if it's only used by the current user.
+    if (querySnapshot.size === 1 && querySnapshot.docs[0].id === currentUserId) {
+        return true;
     }
 
-    // It's unique if the only user found is the current user.
-    return querySnapshot.docs[0].id === currentUserId;
+    // If size > 1, it's definitely not unique.
+    // If size is 1 and it's not the current user, it's not unique.
+    return false;
 }
 
 
 /**
  * Updates the user's profile in Firebase Auth and Firestore.
+ * Ensures a profile document and display name exist.
  * @param firestore The Firestore instance.
  * @param user The Firebase user object.
  * @param data The data to update.
@@ -63,61 +63,61 @@ export async function updateUserProfile(
 ): Promise<void> {
   const { displayName, photoFile, bannerFile } = data;
   const userDocRef = doc(firestore, 'users', user.uid);
-
-  // Firestore transaction data
-  const firestoreUpdateData: { [key: string]: any } = {
-    uid: user.uid // Ensure UID is always present
-  };
-
-  // Auth profile update data
   const authUpdateData: { displayName?: string } = {};
+  const firestoreUpdateData: { [key: string]: any } = { uid: user.uid };
 
-  if (displayName && displayName !== user.displayName) {
-      // Check for uniqueness before attempting to update
+  // 1. Determine the display name
+  if (displayName) {
+    if (displayName !== user.displayName) {
       const isUnique = await isDisplayNameUnique(firestore, displayName, user.uid);
       if (!isUnique) {
-          throw new Error('Display name is already taken. Please choose another one.');
+        throw new Error('Display name is already taken. Please choose another one.');
       }
       authUpdateData.displayName = displayName;
       firestoreUpdateData.displayName = displayName;
-  } else if (!displayName) {
-      // Ensure we have a displayName if one isn't provided
-      const userDoc = await getDoc(userDocRef);
-      if (!userDoc.exists() || !userDoc.data().displayName) {
-          // If no profile or display name exists, create one from email
-           const newDisplayName = user.email ? user.email.split('@')[0] : user.uid;
-           const isUnique = await isDisplayNameUnique(firestore, newDisplayName, user.uid);
-           if (!isUnique) {
-                firestoreUpdateData.displayName = `${newDisplayName}-${user.uid.substring(0, 4)}`;
-           } else {
-                firestoreUpdateData.displayName = newDisplayName;
-           }
+    }
+  } else {
+    // If no display name is being set, ensure one exists in the doc
+    const userDoc = await getDoc(userDocRef);
+    if (!userDoc.exists() || !userDoc.data()?.displayName) {
+      // Create a default display name if none exists
+      const baseName = user.displayName || user.email?.split('@')[0] || `user-${user.uid.substring(0, 5)}`;
+      let newDisplayName = baseName;
+      let isUnique = await isDisplayNameUnique(firestore, newDisplayName, user.uid);
+      let attempts = 0;
+      while (!isUnique && attempts < 5) {
+        attempts++;
+        newDisplayName = `${baseName}${Math.floor(Math.random() * 1000)}`;
+        isUnique = await isDisplayNameUnique(firestore, newDisplayName, user.uid);
       }
+      firestoreUpdateData.displayName = newDisplayName;
+      // Also update auth if it's different
+      if (newDisplayName !== user.displayName) {
+        authUpdateData.displayName = newDisplayName;
+      }
+    }
   }
 
-
+  // 2. Handle file uploads
   if (photoFile) {
-    const photoURL = await fileToDataUrl(photoFile);
-    firestoreUpdateData.photoURL = photoURL;
+    firestoreUpdateData.photoURL = await fileToDataUrl(photoFile);
   }
 
   if (bannerFile) {
-    const bannerURL = await fileToDataUrl(bannerFile);
-    firestoreUpdateData.bannerURL = bannerURL;
+    firestoreUpdateData.bannerURL = await fileToDataUrl(bannerFile);
   }
 
-  // Batch write to ensure atomicity
+  // 3. Perform the updates
   const batch = writeBatch(firestore);
 
-  // Update Firebase Authentication profile (only if displayName changed)
-  if (Object.keys(authUpdateData).length > 0) {
-    await updateProfile(user, authUpdateData);
-  }
+  // Update Firestore document (always merge to create or update)
+  batch.set(userDocRef, firestoreUpdateData, { merge: true });
 
-  // Update Firestore document
-  if (Object.keys(firestoreUpdateData).length > 0) {
-    batch.set(userDocRef, firestoreUpdateData, { merge: true });
-  }
-  
+  // Commit Firestore changes
   await batch.commit();
+
+  // Update Firebase Authentication profile only after Firestore succeeds
+  if (Object.keys(authUpdateData).length > 0 && authUpdateData.displayName) {
+    await updateProfile(user, { displayName: authUpdateData.displayName });
+  }
 }

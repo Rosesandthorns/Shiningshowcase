@@ -5,11 +5,11 @@ import { useUser, useFirestore } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Header } from '@/components/Header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { updateUserProfile } from '@/lib/user';
 
 interface UserProfile {
   displayName?: string;
@@ -23,29 +23,52 @@ export default function ProfileRedirectPage() {
 
   useEffect(() => {
     if (authLoading) {
-      return;
+      return; // Wait for auth state to settle
     }
     if (!user) {
-      setLoading(false);
+      setLoading(false); // No user, stop loading and show sign-in prompt
       return;
     }
 
     const fetchProfileAndRedirect = async () => {
       const profileRef = doc(firestore, 'users', user.uid);
       const docSnap = await getDoc(profileRef);
+      
+      let profile: UserProfile | null = null;
+      let userDisplayName: string | null = null;
+
       if (docSnap.exists()) {
-        const profile = docSnap.data() as UserProfile;
-        if (profile.displayName) {
-          router.replace(`/profile/${profile.displayName}`);
-        } else {
-          // Fallback if firestore doc exists but has no displayName
-          router.replace(`/profile/${user.uid}`);
+        profile = docSnap.data() as UserProfile;
+        userDisplayName = profile.displayName ?? null;
+      }
+
+      // If displayName is still not found, it might be a new user.
+      // Let's ensure a profile document is created.
+      if (!userDisplayName) {
+        try {
+            // This function will create/update the profile, ensuring a displayName.
+            // It will use email part or UID as fallback if necessary.
+            await updateUserProfile(firestore, user, {}); 
+            const updatedDocSnap = await getDoc(profileRef); // Re-fetch the doc
+            if (updatedDocSnap.exists()) {
+                const updatedProfile = updatedDocSnap.data() as UserProfile;
+                userDisplayName = updatedProfile.displayName!;
+            } else {
+                 // Extreme fallback, should not happen
+                userDisplayName = user.displayName || user.uid;
+            }
+        } catch (error) {
+            console.error("Failed to ensure user profile:", error);
+             // Fallback redirect to prevent getting stuck
+            userDisplayName = user.displayName || user.uid;
         }
+      }
+      
+      if(userDisplayName) {
+        router.replace(`/profile/${encodeURIComponent(userDisplayName)}`);
       } else {
-        // Fallback for new users or if doc doesn't exist, redirect to a generic page
-        // Or handle creation of profile doc first
-        const displayName = user.displayName || user.uid;
-        router.replace(`/profile/${displayName}`);
+        // If all else fails, prevent a loop.
+        setLoading(false); 
       }
     };
 
@@ -88,7 +111,7 @@ export default function ProfileRedirectPage() {
     );
   }
 
-  // This content is shown while redirecting
+  // This content is shown while redirecting or if something went wrong
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
         <Header />

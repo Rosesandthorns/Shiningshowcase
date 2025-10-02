@@ -37,45 +37,42 @@ export default function ProfilePage({ params }: ProfilePageProps) {
   const displayNameFromParam = decodeURIComponent(params.displayName);
 
   useEffect(() => {
+    setProfileLoading(true);
     const q = query(collection(firestore, 'users'), where('displayName', '==', displayNameFromParam), limit(1));
     
-    const fetchProfile = async () => {
-        try {
-            const querySnapshot = await getDocs(q);
-            if (querySnapshot.empty) {
-                setProfile(null);
-            } else {
-                const userDoc = querySnapshot.docs[0];
-                 const profileData = userDoc.data() as UserProfile;
-                 // Ensure UID is part of the profile object for ownership checks
-                 if (!profileData.uid) {
-                    profileData.uid = userDoc.id;
-                 }
-                setProfile(profileData);
-            }
-        } catch (error) {
-            console.error("Error fetching profile by display name:", error);
-        } finally {
-            setProfileLoading(false);
-        }
-    };
-
-    fetchProfile();
-    
-    // If we have a profile, we can listen for realtime updates
+    // This subscriber will listen for real-time updates
     let unsubscribe: () => void = () => {};
-    if (profile?.uid) {
-        const profileRef = doc(firestore, 'users', profile.uid);
-        unsubscribe = onSnapshot(profileRef, (docSnap) => {
-            if (docSnap.exists()) {
-                setProfile(docSnap.data() as UserProfile);
-            }
-        });
-    }
 
+    getDocs(q).then(querySnapshot => {
+        if (querySnapshot.empty) {
+            setProfile(null);
+            setProfileLoading(false);
+        } else {
+            const userDoc = querySnapshot.docs[0];
+            // Set up the real-time listener
+            unsubscribe = onSnapshot(doc(firestore, 'users', userDoc.id), (docSnap) => {
+                if (docSnap.exists()) {
+                    const profileData = docSnap.data() as UserProfile;
+                     // Ensure UID is part of the profile object for ownership checks
+                    if (!profileData.uid) {
+                        profileData.uid = docSnap.id;
+                    }
+                    setProfile(profileData);
+                } else {
+                    setProfile(null);
+                }
+                setProfileLoading(false);
+            });
+        }
+    }).catch(error => {
+        console.error("Error fetching profile:", error);
+        setProfileLoading(false);
+    });
+
+    // Cleanup subscription on unmount
     return () => unsubscribe();
 
-  }, [firestore, displayNameFromParam, profile?.uid]);
+  }, [firestore, displayNameFromParam]);
 
   const isOwner = useMemo(() => {
     return !authLoading && !profileLoading && currentUser && profile && currentUser.uid === profile.uid;

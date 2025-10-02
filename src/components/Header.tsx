@@ -7,10 +7,9 @@ import { ThemeToggle } from './ThemeToggle';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { ChevronDown, LogIn, LogOut } from 'lucide-react';
 import { useUser, useAuth } from '@/firebase';
-import { GoogleAuthProvider, signInWithRedirect, signOut } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithRedirect, signOut, getRedirectResult } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { useEffect } from 'react';
-import { getRedirectResult } from 'firebase/auth';
 
 export function Header() {
   const { user, loading } = useUser();

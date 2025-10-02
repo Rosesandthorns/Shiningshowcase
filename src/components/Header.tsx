@@ -16,7 +16,6 @@ export function Header() {
 
   const handleSignIn = async () => {
     try {
-      sessionStorage.setItem('justLoggedIn', 'true');
       await signInWithRedirect(auth, googleProvider);
     } catch (error) {
       console.error("Error during sign in:", error);
@@ -25,7 +24,6 @@ export function Header() {
         title: "Sign In Failed",
         description: "Could not sign you in with Google. Please try again.",
       });
-      sessionStorage.removeItem('justLoggedIn');
     }
   };
 

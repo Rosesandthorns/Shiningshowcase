@@ -8,6 +8,7 @@ import {
   GoogleAuthProvider, 
   signInWithRedirect, 
   signOut,
+  getRedirectResult,
   type User
 } from "firebase/auth";
 
@@ -51,6 +52,7 @@ export {
   onAuthStateChanged,
   signInWithRedirect,
   signOut,
+  getRedirectResult,
   googleProvider,
   type User
 };

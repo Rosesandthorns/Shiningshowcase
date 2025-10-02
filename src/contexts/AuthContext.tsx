@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { auth, onAuthStateChanged, User } from '@/lib/firebase';
+import { auth, onAuthStateChanged, getRedirectResult, User } from '@/lib/firebase';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 
@@ -19,20 +19,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
-      if (user) {
-        // This check prevents the toast from showing on every page load
-        // A more robust way would be to check getRedirectResult, but this is simpler
-        if (sessionStorage.getItem('justLoggedIn')) {
+    // This handles the result of a sign-in redirect
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result) {
+          // This will only happen if the user just signed in via redirect
+          const user = result.user;
+          setUser(user);
           toast({
             title: "Signed In",
             description: `Welcome back, ${user.displayName}!`,
           });
-          sessionStorage.removeItem('justLoggedIn');
         }
-      }
+      })
+      .catch((error) => {
+        console.error("Error getting redirect result:", error);
+        toast({
+            variant: "destructive",
+            title: "Sign In Failed",
+            description: "Could not complete sign-in. Please try again.",
+        });
+      });
+
+    // This listener handles all other auth state changes (initial load, sign out)
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setLoading(false);
     });
 
     return () => unsubscribe();
@@ -61,7 +73,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider value={{ user, loading }}>
-      {children}
+      {!loading && children}
     </AuthContext.Provider>
   );
 };

@@ -6,17 +6,11 @@ import { Header } from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { getAuth, GoogleAuthProvider, signInWithRedirect } from "firebase/auth";
 import { Skeleton } from "@/components/ui/skeleton";
+import Link from "next/link";
 
 export default function ProfilePage() {
     const { user, loading } = useUser();
-
-    const handleSignIn = async () => {
-        const auth = getAuth();
-        const googleProvider = new GoogleAuthProvider();
-        await signInWithRedirect(auth, googleProvider);
-    };
 
     if (loading) {
         return (
@@ -52,7 +46,9 @@ export default function ProfilePage() {
                             <CardDescription>You must be signed in to view your profile.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <Button onClick={handleSignIn}>Sign In with Google</Button>
+                            <Button asChild>
+                                <Link href="/login">Sign In</Link>
+                            </Button>
                         </CardContent>
                     </Card>
                 </main>
@@ -73,11 +69,11 @@ export default function ProfilePage() {
                         <Avatar className="w-24 h-24 border-4 border-primary">
                             <AvatarImage src={user.photoURL || undefined} alt={user.displayName || 'User'} />
                             <AvatarFallback>
-                                {user.displayName ? user.displayName.charAt(0).toUpperCase() : 'U'}
+                                {user.email ? user.email.charAt(0).toUpperCase() : 'U'}
                             </AvatarFallback>
                         </Avatar>
                         <div className="text-center">
-                            <h2 className="text-2xl font-semibold">{user.displayName}</h2>
+                            <h2 className="text-2xl font-semibold">{user.displayName || 'User'}</h2>
                             <p className="text-muted-foreground">{user.email}</p>
                         </div>
                     </CardContent>

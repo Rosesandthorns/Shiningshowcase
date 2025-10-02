@@ -1,3 +1,4 @@
+
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import { getAnalytics, isSupported, type Analytics } from "firebase/analytics";
@@ -5,7 +6,7 @@ import {
   getAuth, 
   onAuthStateChanged, 
   GoogleAuthProvider, 
-  signInWithPopup, 
+  signInWithRedirect, 
   signOut,
   type User
 } from "firebase/auth";
@@ -44,8 +45,11 @@ const provider = new GoogleAuthProvider();
 
 const signInWithGoogle = async () => {
   try {
-    const result = await signInWithPopup(auth, provider);
-    return result.user;
+    // Using signInWithRedirect is more robust in some sandboxed environments.
+    await signInWithRedirect(auth, provider);
+    // The user will be redirected to Google and then back to your app.
+    // The user object is handled by the onAuthStateChanged listener.
+    return null; 
   } catch (error) {
     console.error("Error during sign in:", error);
     return null;

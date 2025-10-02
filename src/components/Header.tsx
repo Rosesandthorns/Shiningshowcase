@@ -15,19 +15,9 @@ export function Header() {
   const { toast } = useToast();
 
   const handleSignIn = async () => {
-    const user = await signInWithGoogle();
-    if (user) {
-      toast({
-        title: "Signed In",
-        description: `Welcome back, ${user.displayName}!`,
-      });
-    } else {
-       toast({
-        title: "Sign In Failed",
-        description: "There was an error signing in with Google. Please try again.",
-        variant: "destructive",
-      });
-    }
+    // We don't get the user back immediately with redirect
+    // The onAuthStateChanged listener will handle the UI update.
+    await signInWithGoogle();
   };
 
   const handleSignOut = async () => {

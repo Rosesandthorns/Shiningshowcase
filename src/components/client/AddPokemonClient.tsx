@@ -559,8 +559,3 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
         </Card>
     );
 }
-
-    
-    
-
-    

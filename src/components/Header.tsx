@@ -32,6 +32,7 @@ export function Header() {
     }
   };
 
+  // Always use the UID for profile links
   const userId = user?.uid;
 
   return (
@@ -44,7 +45,7 @@ export function Header() {
         <nav className="flex items-center gap-2 md:gap-4">
           <Link href="/" className="text-sm md:text-base hover:underline">Home</Link>
           
-          {/* Visible on medium screens and up */}
+          {/* Visible on medium screens and up, uses UID */}
           {!loading && userId && (
             <>
               <Link href={`/profile/${userId}/list`} className="text-sm md:text-base hover:underline hidden md:inline">My List</Link>
@@ -67,9 +68,9 @@ export function Header() {
                       My Profile
                     </Link>
                   </DropdownMenuItem>
+                  {/* Uses UID for mobile dropdown */}
                   {userId && (
                     <>
-                      {/* Hidden on medium screens and up */}
                       <DropdownMenuItem asChild className="md:hidden">
                         <Link href={`/profile/${userId}/list`}>
                           <LayoutList className="mr-2 h-4 w-4" />
@@ -124,3 +125,4 @@ export function Header() {
     </header>
   );
 }
+

@@ -76,40 +76,28 @@ export async function getAllPokemon(firestore: Firestore, userId: string): Promi
   }
 }
 
-export async function getUserProfile(firestore: Firestore, userIdOrDisplayName: string): Promise<UserProfile | null> {
-    if (!userIdOrDisplayName) {
-        console.log('[Server Page] getUserProfile called with no userIdOrDisplayName.');
+export async function getUserProfile(firestore: Firestore, userId: string): Promise<UserProfile | null> {
+    if (!userId) {
+        console.log('[Server Page] getUserProfile called with no userId.');
         return null;
     }
 
     try {
-        // 1. First, assume the identifier is a UID and try to get the document directly.
-        const userDocRef = doc(firestore, 'users', userIdOrDisplayName);
+        // Assume the identifier is always a UID and get the document directly.
+        const userDocRef = doc(firestore, 'users', userId);
         const docSnap = await getDoc(userDocRef);
 
         if (docSnap.exists()) {
-            console.log(`[Server Page] Found profile for UID: ${userIdOrDisplayName}`);
+            console.log(`[Server Page] Found profile for UID: ${userId}`);
             return { uid: docSnap.id, ...docSnap.data() } as UserProfile;
         }
 
-        // 2. If that fails, assume it might be a display name and query the collection.
-        console.log(`[Server Page] No document for UID ${userIdOrDisplayName}. Trying to find by displayName.`);
-        const usersRef = collection(firestore, 'users');
-        const q = query(usersRef, where('displayName', '==', userIdOrDisplayName), limit(1));
-        const querySnapshot = await getDocs(q);
-
-        if (!querySnapshot.empty) {
-            const userDoc = querySnapshot.docs[0];
-            console.log(`[Server Page] Found profile for displayName: ${userIdOrDisplayName}`);
-            return { uid: userDoc.id, ...userDoc.data() } as UserProfile;
-        }
-
-        // 3. If neither method works, the user does not exist.
-        console.log(`[Server Page] No profile found for identifier: ${userIdOrDisplayName}`);
+        // If direct lookup fails, the user does not exist.
+        console.log(`[Server Page] No profile found for UID: ${userId}`);
         return null;
 
     } catch (error) {
-        console.error(`[Server API Error] Failed to fetch profile for identifier ${userIdOrDisplayName}:`, error);
+        console.error(`[Server API Error] Failed to fetch profile for UID ${userId}:`, error);
         // In case of a database error, we also return null to trigger notFound().
         return null;
     }

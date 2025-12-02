@@ -57,7 +57,7 @@ const StatDisplay = ({ title, stats }: { title: string, stats?: StatsSet }) => {
 
 
 export function PokemonDetailClient({ pokemon: initialPokemonData }: PokemonDetailClientProps) {
-  const { pokemonList } = usePokemon();
+  const { pokemonList, userId } = usePokemon();
   const router = useRouter();
 
   const pokemon = pokemonList.find(p => p.id === initialPokemonData.id) || initialPokemonData;
@@ -66,9 +66,18 @@ export function PokemonDetailClient({ pokemon: initialPokemonData }: PokemonDeta
     ? pokemon.abilities[0]
     : "Not specified";
 
+  const handleBack = () => {
+    // If the userId from the context exists, we can create a more specific back URL.
+    if (userId) {
+      router.push(`/profile/${userId}/list`);
+    } else {
+      router.back(); // Fallback to browser history
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto">
-      <Button variant="outline" onClick={() => router.back()} className="mb-6">
+      <Button variant="outline" onClick={handleBack} className="mb-6">
         <ArrowLeft className="mr-2 h-4 w-4" /> Back to List
       </Button>
 

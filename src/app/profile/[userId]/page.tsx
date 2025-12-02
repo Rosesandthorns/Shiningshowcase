@@ -36,19 +36,17 @@ export default function ProfilePage({ params }: ProfilePageProps) {
   const [loading, setLoading] = useState(true);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-  // The userId is now directly from the URL param
   const userIdFromParam = params.userId;
 
   useEffect(() => {
     if (!firestore || !userIdFromParam) {
-        if (!loading) {
-          setProfile(null);
-        }
-        return;
-    };
+      if (!authLoading) {
+        setLoading(false);
+      }
+      return;
+    }
 
     setLoading(true);
-    // Directly use the userId from the URL to get the document.
     const userRef = doc(firestore, 'users', userIdFromParam);
 
     const unsubscribe = onSnapshot(userRef, (docSnap) => {
@@ -56,8 +54,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
         const profileData = docSnap.data() as Omit<UserProfile, 'uid'>;
         setProfile({ ...profileData, uid: docSnap.id });
       } else {
-        // This user ID does not exist in Firestore.
-        setProfile(null);
+        setProfile(null); // User not found
       }
       setLoading(false);
     }, (error) => {
@@ -67,7 +64,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
     });
 
     return () => unsubscribe();
-  }, [firestore, userIdFromParam]);
+  }, [firestore, userIdFromParam, authLoading]);
 
   const isOwner = useMemo(() => {
     return !authLoading && currentUser && profile && currentUser.uid === profile.uid;

@@ -55,16 +55,20 @@ export default function RegisterPage() {
         return;
     }
     try {
+      // 1. Create user in Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       
-      // After user is created in Auth, create their profile document in Firestore
+      // 2. Create their profile document in Firestore with the chosen display name
+      // This function now also ensures the display name is unique.
       await updateUserProfile(firestore, userCredential.user, { displayName: values.displayName });
 
       toast({
         title: "Account Created",
         description: "You have been successfully signed up and logged in.",
       });
+      // 3. Redirect to the homepage after successful registration
       router.push("/");
+
     } catch (error: any) {
       console.error("Sign up error", error);
       let description = "An unexpected error occurred. Please try again.";
@@ -75,6 +79,7 @@ export default function RegisterPage() {
           description = error.message;
         }
       } else if (error.message) {
+        // Catch custom errors from updateUserProfile, like "Display name is already taken"
         description = error.message;
       }
       toast({

@@ -1,10 +1,9 @@
 
 'use client';
 
-import { useUser, useFirestore } from '@/firebase';
+import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { updateUserProfile } from '@/lib/user';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Header } from '@/components/Header';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
@@ -12,7 +11,6 @@ import { Card, CardHeader, CardContent } from '@/components/ui/card';
 
 export default function MyProfileRedirectPage() {
   const { user, loading: authLoading } = useUser();
-  const firestore = useFirestore();
   const router = useRouter();
 
   useEffect(() => {
@@ -26,27 +24,12 @@ export default function MyProfileRedirectPage() {
       return;
     }
 
-    if (!firestore) {
-      return; // Wait for firestore to be available
-    }
+    // The user is logged in, so we have their UID.
+    // Redirect directly to their UID-based profile page.
+    // The target page will handle fetching or creating the document.
+    router.replace(`/profile/${user.uid}`);
 
-    // This is the core logic: ensure a profile exists and redirect to it using the stable UID.
-    const ensureProfileAndRedirect = async () => {
-        try {
-            // This function ensures a profile exists with a display name and returns the user's UID.
-            const userId = await updateUserProfile(firestore, user, {});
-            // Redirect to the stable, UID-based URL.
-            router.replace(`/profile/${userId}`);
-        } catch (error) {
-            console.error("Failed to ensure user profile:", error);
-            // If profile creation fails, the user will be stuck here with a loading screen.
-            // A more robust solution might show an error message.
-        }
-    };
-
-    ensureProfileAndRedirect();
-
-  }, [user, authLoading, firestore, router]);
+  }, [user, authLoading, router]);
 
   // Display a full-page loading skeleton while the redirect is in progress.
   return (

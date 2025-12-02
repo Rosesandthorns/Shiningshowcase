@@ -5,25 +5,33 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
     function isOwner(userId) {
-      return request.auth != null && request.auth.uid == userId;
+      return isSignedIn() && request.auth.uid == userId;
     }
 
     // Rules for user profiles
     match /users/{userId} {
+      // Anyone can read a public profile
       allow read: if true;
-      allow write: if isOwner(userId);
+      // Only the owner can create or update their own profile
+      allow create, update: if isOwner(userId);
       
       // Rules for user-specific hunts
       match /hunts/{huntId} {
         allow read, update, delete: if isOwner(userId);
-        allow create: if isOwner(userId) && request.resource.data.userId == userId;
+        allow create: if isOwner(userId) && request.resource.data.userId == request.auth.uid;
       }
 
       // Rules for user-specific Pokémon
       match /pokemon/{pokemonId} {
-        allow read: if true; // Anyone can read a user's pokemon list
-        allow create, update, delete: if isOwner(userId) && request.resource.data.userId == userId;
+        // Anyone can read a user's pokemon list
+        allow read: if true; 
+        // A user can only create, update, or delete pokemon for themselves.
+        allow create, update, delete: if isOwner(userId) && request.resource.data.userId == request.auth.uid;
       }
     }
   }

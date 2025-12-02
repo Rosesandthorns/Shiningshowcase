@@ -1,4 +1,5 @@
 
+
 import { doc, setDoc, getDoc, collection, query, where, getDocs, Firestore } from 'firebase/firestore';
 import { updateProfile, type User } from 'firebase/auth';
 
@@ -31,6 +32,8 @@ function fileToDataUrl(file: File): Promise<string> {
  */
 export async function isDisplayNameUnique(firestore: Firestore, displayName: string, currentUserId: string): Promise<boolean> {
     const usersRef = collection(firestore, 'users');
+    // A display name with only numbers is not allowed
+    if (/^\d+$/.test(displayName)) return false;
     const q = query(usersRef, where('displayName', '==', displayName));
     const querySnapshot = await getDocs(q);
 
@@ -74,7 +77,7 @@ export async function updateUserProfile(
     if (finalDisplayName !== user.displayName) {
       const isUnique = await isDisplayNameUnique(firestore, finalDisplayName, user.uid);
       if (!isUnique) {
-        throw new Error('Display name is already taken. Please choose another one.');
+        throw new Error('Display name is already taken or invalid. Please choose another one.');
       }
       authUpdateData.displayName = finalDisplayName;
       firestoreUpdateData.displayName = finalDisplayName;
@@ -86,8 +89,8 @@ export async function updateUserProfile(
     const userDoc = await getDoc(userDocRef);
     if (!userDoc.exists() || !userDoc.data()?.displayName) {
       // Create a default display name if none exists
-      const baseName = "User";
-      let newDisplayName = `${baseName}${Math.floor(Math.random() * 10000)}`;
+      const baseName = user.email?.split('@')[0] || `user`;
+      let newDisplayName = `${baseName}${Math.floor(Math.random() * 1000)}`;
       let isUnique = await isDisplayNameUnique(firestore, newDisplayName, user.uid);
       let attempts = 0;
       while (!isUnique && attempts < 10) {
@@ -120,9 +123,8 @@ export async function updateUserProfile(
   }
 
   // 3. Perform the updates
-  if (Object.keys(firestoreUpdateData).length > 1) { // more than just uid
-    await setDoc(userDocRef, firestoreUpdateData, { merge: true });
-  }
+  // We always want to set the document to ensure it exists.
+  await setDoc(userDocRef, firestoreUpdateData, { merge: true });
 
   // Update Firebase Authentication profile only after Firestore succeeds
   if (Object.keys(authUpdateData).length > 0 && authUpdateData.displayName) {

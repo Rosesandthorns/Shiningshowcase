@@ -25,6 +25,7 @@ import { FirebaseError } from "firebase/app";
 import { updateUserProfile } from "@/lib/user";
 
 const formSchema = z.object({
+  displayName: z.string().min(2, { message: 'Display name must be at least 2 characters.' }).max(30, { message: 'Display name must not be longer than 30 characters.' }).regex(/^[a-zA-Z0-9_-]+$/, 'Display name can only contain letters, numbers, underscores, and hyphens.'),
   email: z.string().email({ message: "Invalid email address." }),
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
 });
@@ -38,24 +39,33 @@ export default function RegisterPage() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      displayName: "",
       email: "",
       password: "",
     },
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (!firestore) {
+        toast({
+            variant: "destructive",
+            title: "Sign Up Failed",
+            description: "Database service is not available. Please try again later.",
+        });
+        return;
+    }
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       
       // After user is created in Auth, create their profile document in Firestore
-      await updateUserProfile(firestore, userCredential.user, {});
+      await updateUserProfile(firestore, userCredential.user, { displayName: values.displayName });
 
       toast({
         title: "Account Created",
         description: "You have been successfully signed up and logged in.",
       });
       router.push("/");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Sign up error", error);
       let description = "An unexpected error occurred. Please try again.";
        if (error instanceof FirebaseError) {
@@ -64,6 +74,8 @@ export default function RegisterPage() {
         } else {
           description = error.message;
         }
+      } else if (error.message) {
+        description = error.message;
       }
       toast({
         variant: "destructive",
@@ -80,11 +92,24 @@ export default function RegisterPage() {
         <Card className="w-full max-w-md shadow-lg">
           <CardHeader>
             <CardTitle>Create an Account</CardTitle>
-            <CardDescription>Enter your email and password to get started.</CardDescription>
+            <CardDescription>Enter your details to get started.</CardDescription>
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="displayName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Display Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="YourUniqueName" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <FormField
                   control={form.control}
                   name="email"

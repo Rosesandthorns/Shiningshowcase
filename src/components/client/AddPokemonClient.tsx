@@ -74,8 +74,11 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
     const [formData, setFormData] = useState<FormData>({});
     const [isLoading, setIsLoading] = useState(false);
     const [apiData, setApiData] = useState<any>(null);
-    const [pokedex, setPokedex] = useState<PokedexEntry[]>([]);
+    const [fullPokedex, setFullPokedex] = useState<PokedexEntry[]>([]);
+    const [filteredPokedex, setFilteredPokedex] = useState<PokedexEntry[]>([]);
     const [popoverOpen, setPopoverOpen] = useState(false);
+    const [commandValue, setCommandValue] = useState("");
+
 
     const { toast } = useToast();
     const router = useRouter();
@@ -83,10 +86,23 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
     useEffect(() => {
         const fetchPokedex = async () => {
             const dex = await getNationalPokedex();
-            setPokedex(dex);
+            setFullPokedex(dex);
         };
         fetchPokedex();
     }, []);
+
+    const handleSearch = (value: string) => {
+        setCommandValue(value);
+        if (value.length < 2) {
+            setFilteredPokedex([]);
+            return;
+        }
+        const lowerValue = value.toLowerCase();
+        const results = fullPokedex
+            .filter(p => p.speciesName.toLowerCase().includes(lowerValue))
+            .slice(0, 5);
+        setFilteredPokedex(results);
+    };
 
     const form = useForm({
         resolver: zodResolver(speciesSchema),
@@ -231,24 +247,29 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                                         aria-expanded={popoverOpen}
                                         className="w-full justify-between"
                                     >
-                                        {form.watch('speciesName')
-                                            ? pokedex.find((p) => p.speciesName.toLowerCase() === form.watch('speciesName').toLowerCase())?.speciesName
-                                            : "Select Pokémon..."}
+                                        {form.watch('speciesName') || "Select Pokémon..."}
                                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                                     <Command>
-                                        <CommandInput placeholder="Search Pokémon..." />
+                                        <CommandInput
+                                            placeholder="Search Pokémon (min 2 chars)..."
+                                            value={commandValue}
+                                            onValueChange={handleSearch}
+                                        />
                                         <CommandEmpty>No Pokémon found.</CommandEmpty>
                                         <CommandList>
                                             <CommandGroup>
-                                                {pokedex.map((p) => (
+                                                {filteredPokedex.map((p) => (
                                                     <CommandItem
                                                         key={p.pokedexNumber}
                                                         value={p.speciesName}
                                                         onSelect={(currentValue) => {
-                                                            form.setValue("speciesName", currentValue === form.watch('speciesName') ? "" : currentValue, { shouldValidate: true });
+                                                            const selectedName = fullPokedex.find(pk => pk.speciesName.toLowerCase() === currentValue)?.speciesName || "";
+                                                            form.setValue("speciesName", selectedName, { shouldValidate: true });
+                                                            setCommandValue("");
+                                                            setFilteredPokedex([]);
                                                             setPopoverOpen(false);
                                                         }}
                                                     >
@@ -383,7 +404,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
 
 
                     <div className="flex justify-between mt-8">
-                        <Button type="button" variant="outline" onClick={handleBack} disabled={currentStep === 0 || isLoading}>
+                        <Button type="button" variant="outline" onClick={handleBack} disabled={isLoading}>
                             Back
                         </Button>
                         {currentStep < steps.length - 1 ? (

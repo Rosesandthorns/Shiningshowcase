@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ThemeToggle } from './ThemeToggle';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { ChevronDown, LogIn, LogOut, LayoutList, BarChart2, Target, UserSearch } from 'lucide-react';
+import { ChevronDown, LogIn, LogOut, LayoutList, BarChart2, Target, UserSearch, User as UserIcon } from 'lucide-react';
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
@@ -32,6 +32,8 @@ export function Header() {
     }
   };
 
+  const userDisplayName = user?.displayName;
+
   return (
     <header className="bg-primary text-primary-foreground shadow-md">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -41,10 +43,12 @@ export function Header() {
         </Link>
         <nav className="flex items-center gap-2 md:gap-4">
           <Link href="/" className="text-sm md:text-base hover:underline">Home</Link>
-          {!loading && user && user.displayName && (
+          
+          {/* Visible on medium screens and up */}
+          {!loading && userDisplayName && (
             <>
-              <Link href={`/profile/${encodeURIComponent(user.displayName)}/list`} className="text-sm md:text-base hover:underline hidden md:inline">My List</Link>
-              <Link href={`/profile/${encodeURIComponent(user.displayName)}/analytics`} className="text-sm md:text-base hover:underline hidden md:inline">My Analytics</Link>
+              <Link href={`/profile/${encodeURIComponent(userDisplayName)}/list`} className="text-sm md:text-base hover:underline hidden md:inline">My List</Link>
+              <Link href={`/profile/${encodeURIComponent(userDisplayName)}/analytics`} className="text-sm md:text-base hover:underline hidden md:inline">My Analytics</Link>
             </>
           )}
           <Link href="/hunts" className="text-sm md:text-base hover:underline hidden md:inline">Hunts</Link>
@@ -55,35 +59,40 @@ export function Header() {
               <ChevronDown className="h-4 w-4 ml-1" />
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              {!loading && user && (
+              {!loading && user ? (
                 <>
                   <DropdownMenuItem asChild>
-                    <Link href="/profile">My Profile</Link>
-                  </DropdownMenuItem>
-                   <DropdownMenuItem asChild className="md:hidden">
-                    <Link href="/hunts">
-                      <Target className="mr-2 h-4 w-4" />
-                      Hunts
+                    <Link href="/profile">
+                      <UserIcon className="mr-2 h-4 w-4" />
+                      My Profile
                     </Link>
                   </DropdownMenuItem>
-                   {user.displayName && (
+                  {userDisplayName && (
                     <>
+                      {/* Hidden on medium screens and up */}
                       <DropdownMenuItem asChild className="md:hidden">
-                        <Link href={`/profile/${encodeURIComponent(user.displayName)}/list`}>
+                        <Link href={`/profile/${encodeURIComponent(userDisplayName)}/list`}>
                           <LayoutList className="mr-2 h-4 w-4" />
                           My List
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild className="md:hidden">
-                        <Link href={`/profile/${encodeURIComponent(user.displayName)}/analytics`}>
+                        <Link href={`/profile/${encodeURIComponent(userDisplayName)}/analytics`}>
                           <BarChart2 className="mr-2 h-4 w-4" />
                           My Analytics
                         </Link>
                       </DropdownMenuItem>
                     </>
                   )}
+                   <DropdownMenuItem asChild className="md:hidden">
+                    <Link href="/hunts">
+                      <Target className="mr-2 h-4 w-4" />
+                      Hunts
+                    </Link>
+                  </DropdownMenuItem>
                 </>
-              )}
+              ) : null}
+
                <DropdownMenuItem asChild>
                 <Link href="/search">
                   <UserSearch className="mr-2 h-4 w-4" />
@@ -92,6 +101,7 @@ export function Header() {
               </DropdownMenuItem>
               
               <DropdownMenuSeparator />
+
               {!loading && user ? (
                 <DropdownMenuItem onClick={handleSignOut}>
                   <LogOut className="mr-2 h-4 w-4" />

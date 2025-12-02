@@ -32,51 +32,50 @@ export default function MyProfilePage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (authLoading) return;
+    // 1. Wait for auth to be ready
+    if (authLoading) {
+      return;
+    }
+    // 2. If not logged in, redirect to login
     if (!user) {
       router.push('/login');
       return;
     }
+    // 3. If logged in but firestore isn't ready, wait.
     if (!firestore) {
-      setLoading(true); // Wait for firestore to be available
       return;
     }
 
+    setLoading(true);
     const profileRef = doc(firestore, 'users', user.uid);
     const unsubscribe = onSnapshot(profileRef, async (docSnap) => {
-      setLoading(true);
-      if (docSnap.exists()) {
-        const profileData = { ...docSnap.data(), uid: docSnap.id } as UserProfile;
-        
-        // If the displayName in auth is different from Firestore, trust auth and update Firestore.
-        // Or if the firestore doc is missing a name, create one.
-        if ((user.displayName && user.displayName !== profileData.displayName) || !profileData.displayName) {
-            try {
-                // This call will either set the initial name or update it.
-                const updatedName = await updateUserProfile(firestore, user, { displayName: user.displayName || undefined });
-                 // If the name changed, we should redirect to the new canonical URL.
-                if (updatedName && router) {
-                    router.replace(`/profile/${encodeURIComponent(updatedName)}`);
-                }
-            } catch (error) {
-                console.error("Failed to auto-update displayName:", error);
-                 setProfile(profileData); // set profile even if update fails
-            }
-        } else {
-             setProfile(profileData);
-        }
-      } else {
-        // Profile doesn't exist, so create it. The listener will pick up the new document.
-        try {
-          const newName = await updateUserProfile(firestore, user, {});
-          if(newName && router) {
-              router.replace(`/profile/${encodeURIComponent(newName)}`);
+      
+      let profileData: UserProfile | null = docSnap.exists() ? { ...docSnap.data(), uid: docSnap.id } as UserProfile : null;
+
+      try {
+        // If the profile doc doesn't exist, or it's missing a display name, create/update it.
+        // This is a critical step to ensure every user has a stable, unique name.
+        if (!profileData || !profileData.displayName) {
+          const newDisplayName = await updateUserProfile(firestore, user, { displayName: user.displayName });
+          // If a name was created/updated, we must redirect to the canonical URL
+          // to ensure bookmarks and page reloads work correctly.
+          if (newDisplayName) {
+              router.replace(`/profile/${encodeURIComponent(newDisplayName)}`);
+              return; // Stop processing further to allow redirect to complete
           }
-        } catch (error) {
-          console.error("Failed to create user profile:", error);
+        } else {
+            // If the user's auth displayName is out of sync with firestore, trust firestore and update auth
+            // This can happen if the name was changed on another device.
+            if (user.displayName !== profileData.displayName) {
+                 await updateUserProfile(firestore, user, { displayName: profileData.displayName });
+            }
+            setProfile(profileData);
         }
+      } catch (error) {
+         console.error("Error ensuring user profile:", error);
+      } finally {
+        setLoading(false);
       }
-       setLoading(false);
     }, (error) => {
         console.error("Error fetching profile:", error);
         setLoading(false);

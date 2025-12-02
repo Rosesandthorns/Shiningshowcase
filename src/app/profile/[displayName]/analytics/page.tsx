@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useUser, useFirestore } from '@/firebase';
+import { useFirestore } from '@/firebase';
 import { Header } from '@/components/Header';
 import { AnalyticsTab } from '@/components/tabs/AnalyticsTab';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react';
 import { notFound } from 'next/navigation';
 import { getAllPokemon, getUserIdFromDisplayName } from '@/lib/pokemonApi';
 import type { Pokemon } from '@/types/pokemon';
+import { useUser } from '@/firebase/auth/use-user';
 
 type AnalyticsPageProps = {
     params: {
@@ -34,10 +35,13 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
 
         const fetchProfileAndPokemon = async () => {
             setLoading(true);
+            setError(null);
             try {
                 const userId = await getUserIdFromDisplayName(firestore, displayName);
                 if (!userId) {
                     setError("Profile not found.");
+                    setPokemon([]);
+                    setProfileUserId(null);
                     setLoading(false);
                     return;
                 }
@@ -45,7 +49,7 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
                 const userPokemon = await getAllPokemon(firestore, userId);
                 setPokemon(userPokemon);
             } catch (err) {
-                console.error(err);
+                console.error("Error fetching analytics data:", err);
                 setError("Failed to load data.");
             } finally {
                 setLoading(false);
@@ -73,6 +77,9 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
     }
 
     if (!pokemon || pokemon.length === 0) {
+        const message = currentUser?.uid === profileUserId 
+            ? "You need to add some Pokémon to your collection to see analytics."
+            : "This user hasn't added any Pokémon to their collection yet.";
         return (
             <div className="flex flex-col min-h-screen bg-background text-foreground">
                 <Header />
@@ -80,12 +87,7 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
                     <Card className="w-full max-w-md text-center shadow-lg">
                         <CardHeader>
                             <CardTitle>No Data for Analytics</CardTitle>
-                            <CardDescription>
-                                {currentUser?.uid === profileUserId 
-                                    ? "You need to add some Pokémon to your collection to see analytics."
-                                    : "This user hasn't added any Pokémon to their collection yet."
-                                }
-                            </CardDescription>
+                            <CardDescription>{message}</CardDescription>
                         </CardHeader>
                         <CardContent>
                              <Button asChild variant="outline">

@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
 interface PokemonDetailClientProps {
   pokemon: Pokemon;
@@ -57,6 +58,7 @@ const StatDisplay = ({ title, stats }: { title: string, stats?: StatsSet }) => {
 
 export function PokemonDetailClient({ pokemon: initialPokemonData }: PokemonDetailClientProps) {
   const { pokemonList } = usePokemon();
+  const router = useRouter();
 
   const pokemon = pokemonList.find(p => p.id === initialPokemonData.id) || initialPokemonData;
 
@@ -66,10 +68,8 @@ export function PokemonDetailClient({ pokemon: initialPokemonData }: PokemonDeta
 
   return (
     <div className="max-w-4xl mx-auto">
-      <Button variant="outline" asChild className="mb-6">
-        <Link href="/">
-          <ArrowLeft className="mr-2 h-4 w-4" /> Back to List
-        </Link>
+      <Button variant="outline" onClick={() => router.back()} className="mb-6">
+        <ArrowLeft className="mr-2 h-4 w-4" /> Back to List
       </Button>
 
       <Card className="overflow-hidden shadow-xl">
@@ -79,7 +79,6 @@ export function PokemonDetailClient({ pokemon: initialPokemonData }: PokemonDeta
               <CardTitle className="text-3xl md:text-4xl font-bold font-headline">{pokemon.name}</CardTitle>
               <CardDescription className="text-lg text-muted-foreground">
                 {pokemon.speciesName} (#{pokemon.pokedexNumber})
-                {pokemon.speciesDescription && ` - ${pokemon.speciesDescription}`}
               </CardDescription>
             </div>
           </div>
@@ -111,8 +110,10 @@ export function PokemonDetailClient({ pokemon: initialPokemonData }: PokemonDeta
               <h4 className="text-lg font-semibold mb-2">Pokédex Data</h4>
               <ul className="space-y-1 text-sm">
                 {pokemon.level && <li><strong>Level:</strong> {pokemon.level}</li>}
+                 {pokemon.gender && <li><strong>Gender:</strong> {pokemon.gender}</li>}
                 {pokemon.nature && <li><strong>Nature:</strong> {pokemon.nature}</li>}
                 {pokemon.ball && <li><strong>Ball:</strong> {pokemon.ball}</li>}
+                {pokemon.gameOrigin && <li><strong>Origin:</strong> {pokemon.gameOrigin}</li>}
                 {pokemon.height && <li><strong>Height:</strong> {pokemon.height / 10} m</li>}
                 {pokemon.weight && <li><strong>Weight:</strong> {pokemon.weight / 10} kg</li>}
                 {pokemon.types && pokemon.types.length > 0 && (

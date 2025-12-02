@@ -31,7 +31,7 @@ export function PokemonListClient({ uniqueTags }: PokemonListClientProps) {
     return pokemonList
       .filter(p =>
         p.name.toLowerCase().includes(lowerSearchTerm) ||
-        p.speciesName.toLowerCase().includes(lowerSearchTerm) // Changed from p.species
+        p.speciesName.toLowerCase().includes(lowerSearchTerm)
       )
       .filter(p =>
         lowerSelectedTags.length === 0 || 

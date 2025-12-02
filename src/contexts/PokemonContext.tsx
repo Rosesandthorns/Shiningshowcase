@@ -2,31 +2,42 @@
 "use client";
 import type { Pokemon } from '@/types/pokemon';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { getEvolutionChainByPokedexNumber, getNationalPokedex, shinyLockedPokemon } from '@/lib/pokemonApi';
+import { getEvolutionChainByPokedexNumber, getNationalPokedex, shinyLockedPokemon, getAllPokemon } from '@/lib/pokemonApi';
+import { useFirestore } from '@/firebase';
 
 interface PokemonContextType {
   pokemonList: Pokemon[];
   isLoading: boolean;
   evolutionLine: Pokemon[] | null;
-  selectedPokemonId: number | null;
+  selectedPokemonId: string | null;
   showEvolutionLine: (pokemon: Pokemon) => Promise<void>;
   clearEvolutionLine: () => void;
   isEvolutionLoading: boolean;
+  userId: string;
 }
 
 const PokemonContext = createContext<PokemonContextType | undefined>(undefined);
 
-export const PokemonProvider = ({ children, initialPokemon }: { children: ReactNode, initialPokemon: Pokemon[] }) => {
+export const PokemonProvider = ({ children, initialPokemon, userId }: { children: ReactNode, initialPokemon: Pokemon[], userId: string }) => {
   const [pokemonList, setPokemonList] = useState<Pokemon[]>(initialPokemon);
   const [isLoading, setIsLoading] = useState(true);
   const [evolutionLine, setEvolutionLine] = useState<Pokemon[] | null>(null);
-  const [selectedPokemonId, setSelectedPokemonId] = useState<number | null>(null);
+  const [selectedPokemonId, setSelectedPokemonId] = useState<string | null>(null);
   const [isEvolutionLoading, setIsEvolutionLoading] = useState(false);
+  const firestore = useFirestore();
 
   useEffect(() => {
-    setPokemonList(initialPokemon);
-    setIsLoading(false);
-  }, [initialPokemon]);
+     if (!firestore || !userId) return;
+    
+    setIsLoading(true);
+    getAllPokemon(firestore, userId)
+        .then(data => {
+            setPokemonList(data);
+        })
+        .catch(console.error)
+        .finally(() => setIsLoading(false));
+        
+  }, [firestore, userId]);
 
   const showEvolutionLine = async (pokemon: Pokemon) => {
     if (pokemon.pokedexNumber === 0) return;
@@ -64,7 +75,8 @@ export const PokemonProvider = ({ children, initialPokemon }: { children: ReactN
 
                 if (nationalPokedexEntry) {
                      return [{
-                        id: pokedexNumber,
+                        id: `${pokedexNumber}-${nationalPokedexEntry.speciesName}`, // Temporary unique ID
+                        userId: '',
                         name: 'Not Yet Caught',
                         pokedexNumber: pokedexNumber,
                         speciesName: nationalPokedexEntry.speciesName,
@@ -117,7 +129,8 @@ export const PokemonProvider = ({ children, initialPokemon }: { children: ReactN
     selectedPokemonId,
     showEvolutionLine,
     clearEvolutionLine,
-    isEvolutionLoading
+    isEvolutionLoading,
+    userId
   };
 
   return (

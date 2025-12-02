@@ -76,6 +76,38 @@
         }
       },
       "required": ["userId", "pokemonName", "game", "method", "odds", "shinyCharm", "encounters", "timeElapsed", "isActive", "createdAt"]
+    },
+    "Pokemon": {
+      "title": "User Pokemon",
+      "description": "Represents a single Pokémon caught by a user.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "pokedexNumber": { "type": "number" },
+        "speciesName": { "type": "string" },
+        "sprites": {
+          "type": "object",
+          "properties": {
+            "default": { "type": "string" },
+            "shiny": { "type": "string" }
+          }
+        },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "shinyViewed": { "type": "boolean" },
+        "types": { "type": "array", "items": { "type": "string" } },
+        "abilities": { "type": "array", "items": { "type": "string" } },
+        "description": { "type": "string" },
+        "level": { "type": "number" },
+        "nature": { "type": "string" },
+        "moveset": { "type": "array", "items": { "type": "string" } },
+        "ball": { "type": "string" },
+        "gender": { "type": "string", "enum": ["male", "female", "genderless"] },
+        "form": { "type": "string" },
+        "gameOrigin": { "type": "string" },
+        "encounters": { "type": "number" }
+      },
+      "required": ["userId", "name", "pokedexNumber", "speciesName", "sprites"]
     }
   },
   "auth": {
@@ -93,6 +125,12 @@
         "$ref": "#/entities/Hunt"
       },
       "description": "Stores the shiny hunts for a specific user."
+    },
+    "/users/{userId}/pokemon/{pokemonId}": {
+      "schema": {
+        "$ref": "#/entities/Pokemon"
+      },
+      "description": "Stores the Pokémon collection for a specific user."
     }
   }
 }

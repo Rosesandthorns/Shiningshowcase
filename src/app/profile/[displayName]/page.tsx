@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser, useFirestore } from '@/firebase';
@@ -11,6 +12,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { EditProfileClient } from '@/components/client/EditProfileClient';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import Image from 'next/image';
+import Link from 'next/link';
 import { notFound, useRouter } from 'next/navigation';
 
 interface UserProfile {
@@ -120,7 +122,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
             <CardTitle className="text-3xl font-bold font-headline mt-4">{displayName}</CardTitle>
             {isOwner && currentUser?.email && <CardDescription>{currentUser.email}</CardDescription>}
           </CardHeader>
-          <CardContent className="text-center p-6">
+          <CardContent className="text-center p-6 space-x-2">
             {isOwner && (
               <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                 <DialogTrigger asChild>
@@ -134,6 +136,12 @@ export default function ProfilePage({ params }: ProfilePageProps) {
                 </DialogContent>
               </Dialog>
             )}
+            <Button asChild variant="outline">
+              <Link href={`/profile/${encodeURIComponent(displayName)}/list`}>View List</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href={`/profile/${encodeURIComponent(displayName)}/analytics`}>View Analytics</Link>
+            </Button>
           </CardContent>
         </Card>
       </main>

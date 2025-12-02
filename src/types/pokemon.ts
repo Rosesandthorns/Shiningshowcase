@@ -14,16 +14,16 @@ export interface StatsSet {
 }
 
 export interface Pokemon {
-  id: number;
-  name: string; // Was nickname in user's data, used as primary display name
-  pokedexNumber: number; // The actual Pokedex number like 475
-  speciesName: string; // The species name like "Gallade"
-  speciesDescription?: string; // Descriptive species like "Seed Pokémon" (optional)
+  id: string; // Firestore document ID
+  userId: string;
+  name: string;
+  pokedexNumber: number;
+  speciesName: string;
   sprites: PokemonSprite;
   tags: string[];
   shinyViewed: boolean;
-  height?: number; // in decimeters (e.g., 7 for 0.7m)
-  weight?: number; // in hectograms (e.g., 69 for 6.9kg)
+  height?: number;
+  weight?: number;
   types: string[];
   abilities: string[];
   description?: string;
@@ -35,6 +35,10 @@ export interface Pokemon {
   ball?: string;
   ivs?: StatsSet;
   evs?: StatsSet;
+  gender?: 'male' | 'female' | 'genderless';
+  form?: string;
+  gameOrigin?: string;
+  encounters?: number;
 }
 
 export interface PokedexEntry {

@@ -1,5 +1,4 @@
 
 import type { UserPokemon } from '../pokemon';
 
-export const userPokemonData: UserPokemon[] = [
-];
+export const userPokemonData: UserPokemon[] = [];

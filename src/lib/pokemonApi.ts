@@ -1,6 +1,7 @@
 
-import { fullPokemonData } from '@/data/pokemon';
 import type { Pokemon, PokedexEntry } from '@/types/pokemon';
+import { collection, getDocs, query, where, type Firestore } from 'firebase/firestore';
+
 
 // In-memory cache
 const evolutionChainCache = new Map<number, { speciesNames: string[], speciesDetailsList: any[] }>();
@@ -52,51 +53,31 @@ export async function getPokemonDetailsByName(name: string): Promise<any> {
 }
 
 
-export async function getAllPokemon(): Promise<Pokemon[]> {
-  const pokemonWithDetails = await Promise.all(
-    fullPokemonData.map(async (pokemon) => {
-      let updatedPokemon = { ...pokemon };
-      const isPlaceholderImage = !pokemon.sprites.shiny || pokemon.sprites.shiny.includes('placehold.co') || pokemon.sprites.shiny.includes('via.placeholder.com');
-      
-      if (isPlaceholderImage) {
-        try {
-          let apiName = pokemon.speciesName.toLowerCase().replace(/[\s.'é]+/g, '-');
-          
-          const response = await getPokemonDetailsByName(apiName);
-          
-          if (response) {
-            updatedPokemon.sprites = {
-              default: response.sprites?.front_default || updatedPokemon.sprites.default,
-              shiny: response.sprites?.front_shiny || response.sprites?.front_default || updatedPokemon.sprites.shiny,
-            };
-            updatedPokemon.types = response.types.map((t: any) => t.type.name);
-            updatedPokemon.abilities = response.abilities.map((a: any) => a.ability.name.replace('-', ' '));
-            updatedPokemon.height = response.height;
-            updatedPokemon.weight = response.weight;
-          }
-        } catch (error) {
-          console.warn(`Could not fetch full details for ${pokemon.speciesName}. Using fallback sprite. Error: ${error}`);
-          // Use the reliable default sprite from PokeAPI if all else fails
-          if (pokemon.pokedexNumber > 0) {
-            updatedPokemon.sprites.default = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.pokedexNumber}.png`;
-            updatedPokemon.sprites.shiny = updatedPokemon.sprites.default; // Fallback shiny to default
-          }
-        }
-      }
-      return updatedPokemon;
-    })
-  );
-  return pokemonWithDetails;
+export async function getAllPokemon(firestore: Firestore, userId: string): Promise<Pokemon[]> {
+  const pokemonColRef = collection(firestore, 'users', userId, 'pokemon');
+  const snapshot = await getDocs(pokemonColRef);
+  
+  if (snapshot.empty) {
+    return [];
+  }
+  
+  const pokemonList = snapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data()
+  } as Pokemon));
+  
+  return pokemonList;
 }
 
 
-export async function getPokemonById(id: number): Promise<Pokemon | undefined> {
-  const allPokemon = await getAllPokemon();
-  return allPokemon.find(p => p.id === id);
+export async function getPokemonById(firestore: Firestore, userId: string, pokemonId: string): Promise<Pokemon | undefined> {
+  const allPokemon = await getAllPokemon(firestore, userId);
+  return allPokemon.find(p => p.id === pokemonId);
 }
 
-export async function getUniqueTags(): Promise<string[]> {
-  const allTags = fullPokemonData.flatMap(p => p.tags);
+export async function getUniqueTags(firestore: Firestore, userId: string): Promise<string[]> {
+  const allPokemon = await getAllPokemon(firestore, userId);
+  const allTags = allPokemon.flatMap(p => p.tags);
   
   const tagMap = new Map<string, string>();
   allTags.forEach(tag => {
@@ -197,4 +178,14 @@ export async function getNationalPokedex(): Promise<PokedexEntry[]> {
         console.error("Could not fetch National Pokedex:", error);
         return [];
     }
+}
+
+export async function getUserIdFromDisplayName(firestore: Firestore, displayName: string): Promise<string | null> {
+    const usersRef = collection(firestore, "users");
+    const q = query(usersRef, where("displayName", "==", displayName), limit(1));
+    const querySnapshot = await getDocs(q);
+    if (querySnapshot.empty) {
+        return null;
+    }
+    return querySnapshot.docs[0].id;
 }

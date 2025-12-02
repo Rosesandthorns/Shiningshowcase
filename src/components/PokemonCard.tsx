@@ -1,5 +1,4 @@
 
-
 import Image from 'next/image';
 import Link from 'next/link';
 import type { Pokemon } from '@/types/pokemon';
@@ -66,7 +65,7 @@ const ShieldSVG = () => (
 export function PokemonCard({ pokemon, displayFullDetail = false }: PokemonCardProps) {
   const ref = useRef<HTMLDivElement>(null);
   const isVisible = useOnScreen(ref);
-  const { showEvolutionLine } = usePokemon();
+  const { showEvolutionLine, userId } = usePokemon();
 
   const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (pokemon.isPlaceholder || pokemon.isShinyLocked) {
@@ -117,7 +116,7 @@ export function PokemonCard({ pokemon, displayFullDetail = false }: PokemonCardP
     if (pokemon.isPlaceholder || pokemon.isShinyLocked) {
         return <div className="block group h-full">{children}</div>;
     }
-    return <Link href={`/pokemon/${pokemon.id}`} onClick={(e) => { e.preventDefault(); }} className="block group h-full">{children}</Link>;
+    return <Link href={`/pokemon/${pokemon.id}?user=${userId}`} onClick={(e) => { e.preventDefault(); }} className="block group h-full">{children}</Link>;
   };
 
   let imageToShow = pokemon.sprites.shiny;
@@ -258,4 +257,3 @@ export function PokemonCard({ pokemon, displayFullDetail = false }: PokemonCardP
     </CardWrapper>
   );
 }
-    

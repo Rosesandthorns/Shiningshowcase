@@ -9,7 +9,7 @@ import { ArrowLeft } from "lucide-react";
 
 interface EvolutionLineViewProps {
     evolutionLine: Pokemon[];
-    selectedPokemonId: number | null;
+    selectedPokemonId: string | null;
 }
 
 export function EvolutionLineView({ evolutionLine, selectedPokemonId }: EvolutionLineViewProps) {

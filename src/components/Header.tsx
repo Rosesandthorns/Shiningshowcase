@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ThemeToggle } from './ThemeToggle';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { ChevronDown, LogIn, LogOut, LayoutList, BarChart2, Target } from 'lucide-react';
+import { ChevronDown, LogIn, LogOut, LayoutList, BarChart2, Target, UserSearch } from 'lucide-react';
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
@@ -43,8 +43,6 @@ export function Header() {
           <Link href="/" className="text-sm md:text-base hover:underline">Home</Link>
           {!loading && user && (
             <>
-              <Link href="/list" className="text-sm md:text-base hover/underline hidden md:inline">List</Link>
-              <Link href="/analytics" className="text-sm md:text-base hover:underline hidden md:inline">Analytics</Link>
               <Link href="/hunts" className="text-sm md:text-base hover:underline hidden md:inline">Hunts</Link>
             </>
           )}
@@ -61,18 +59,6 @@ export function Header() {
                     <Link href="/profile">My Profile</Link>
                   </DropdownMenuItem>
                    <DropdownMenuItem asChild className="md:hidden">
-                    <Link href="/list">
-                      <LayoutList className="mr-2 h-4 w-4" />
-                      List
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild className="md:hidden">
-                    <Link href="/analytics">
-                      <BarChart2 className="mr-2 h-4 w-4" />
-                      Analytics
-                    </Link>
-                  </DropdownMenuItem>
-                   <DropdownMenuItem asChild className="md:hidden">
                     <Link href="/hunts">
                       <Target className="mr-2 h-4 w-4" />
                       Hunts
@@ -80,6 +66,12 @@ export function Header() {
                   </DropdownMenuItem>
                 </>
               )}
+               <DropdownMenuItem asChild>
+                <Link href="/search">
+                  <UserSearch className="mr-2 h-4 w-4" />
+                  Search Users
+                </Link>
+              </DropdownMenuItem>
               
               <DropdownMenuSeparator />
               {!loading && user ? (

@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { updateUserProfile } from '@/lib/user';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 interface UserProfile {
   uid: string;
@@ -28,6 +29,7 @@ export default function MyProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     if (authLoading || !firestore) return;
@@ -40,10 +42,20 @@ export default function MyProfilePage() {
     const profileRef = doc(firestore, 'users', user.uid);
     const unsubscribe = onSnapshot(profileRef, async (docSnap) => {
       if (docSnap.exists()) {
-        setProfile({ ...docSnap.data(), uid: docSnap.id } as UserProfile);
+        const profileData = { ...docSnap.data(), uid: docSnap.id } as UserProfile;
+        // If the displayName is missing from the document for some reason, fix it.
+        if (!profileData.displayName) {
+            try {
+                const updatedName = await updateUserProfile(firestore, user, {});
+                profileData.displayName = updatedName;
+            } catch (error) {
+                console.error("Failed to auto-update displayName:", error);
+            }
+        }
+        setProfile(profileData);
         setLoading(false);
       } else {
-        // Profile doesn't exist, so create it.
+        // Profile doesn't exist, so create it with a unique display name.
         try {
           await updateUserProfile(firestore, user, {});
           // The listener will pick up the new document, no need to set state here.
@@ -59,6 +71,13 @@ export default function MyProfilePage() {
 
     return () => unsubscribe();
   }, [user, authLoading, firestore]);
+
+   useEffect(() => {
+    // If the user logs out, redirect them away from the profile page.
+    if (!authLoading && !user) {
+      router.push('/');
+    }
+  }, [user, authLoading, router]);
 
   if (loading || authLoading) {
     return (
@@ -153,10 +172,10 @@ export default function MyProfilePage() {
               </DialogContent>
             </Dialog>
             <Button asChild variant="outline">
-              <Link href="/list">My List</Link>
+              <Link href={`/profile/${encodeURIComponent(displayName)}/list`}>My List</Link>
             </Button>
             <Button asChild variant="outline">
-              <Link href="/analytics">My Analytics</Link>
+              <Link href={`/profile/${encodeURIComponent(displayName)}/analytics`}>My Analytics</Link>
             </Button>
           </CardContent>
         </Card>

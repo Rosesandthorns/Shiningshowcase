@@ -1,9 +1,7 @@
 
 'use client';
 import { AnalyticsDashboardClient } from '@/components/client/AnalyticsDashboardClient';
-import { getAllPokemon } from '@/lib/pokemonApi';
 import type { Pokemon } from '@/types/pokemon';
-import { useEffect, useState } from 'react';
 
 // Define Pokedex number ranges for each generation
 const generationRanges: Record<string, { start: number; end: number, total: number }> = {
@@ -103,32 +101,12 @@ function calculateAnalytics(allPokemon: Pokemon[]) {
     };
 }
 
-export function AnalyticsTab() {
-    const [analyticsData, setAnalyticsData] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
+interface AnalyticsTabProps {
+    pokemon: Pokemon[];
+}
 
-    useEffect(() => {
-        async function fetchData() {
-            try {
-                const allPokemon = await getAllPokemon();
-                const data = calculateAnalytics(allPokemon);
-                setAnalyticsData(data);
-            } catch (error) {
-                console.error("Failed to calculate analytics", error);
-            } finally {
-                setLoading(false);
-            }
-        }
-        fetchData();
-    }, []);
-
-    if (loading) {
-        return (
-            <main className="flex-1 container mx-auto p-4 md:p-6 flex justify-center items-center">
-                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-            </main>
-        );
-    }
+export function AnalyticsTab({ pokemon }: AnalyticsTabProps) {
+    const analyticsData = calculateAnalytics(pokemon);
 
     return (
         <main className="flex-1 container mx-auto p-4 md:p-6">
@@ -137,7 +115,7 @@ export function AnalyticsTab() {
                     Analytics Dashboard
                 </h1>
                 <p className="mt-2 text-lg text-muted-foreground">
-                    A deep dive into your shiny collection.
+                    A deep dive into this shiny collection.
                 </p>
             </div>
             {analyticsData && <AnalyticsDashboardClient initialData={analyticsData} />}

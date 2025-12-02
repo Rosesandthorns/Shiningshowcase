@@ -2,23 +2,24 @@
 'use client';
 
 import { NationalPokedexClient } from '@/components/client/NationalPokedexClient';
-import { getAllPokemon, getNationalPokedex, shinyLockedPokemon } from '@/lib/pokemonApi';
+import { getNationalPokedex, shinyLockedPokemon } from '@/lib/pokemonApi';
 import { PokemonProvider } from '@/contexts/PokemonContext';
 import type { PokedexEntry, Pokemon } from '@/types/pokemon';
 import { useEffect, useState } from 'react';
 
-export function ListTab() {
-    const [allPokemonData, setAllPokemonData] = useState<Pokemon[]>([]);
+interface ListTabProps {
+    pokemon: Pokemon[];
+    userId: string;
+}
+
+export function ListTab({ pokemon, userId }: ListTabProps) {
     const [processedPokedex, setProcessedPokedex] = useState<PokedexEntry[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        async function fetchData() {
+        async function processPokedex() {
             try {
-                const [pokemon, pokedex] = await Promise.all([
-                    getAllPokemon(),
-                    getNationalPokedex()
-                ]);
+                const pokedex = await getNationalPokedex();
 
                 const caughtPokedexNumbers = new Set(pokemon.map(p => p.pokedexNumber));
 
@@ -35,8 +36,7 @@ export function ListTab() {
 
                     return { ...entry, status };
                 });
-
-                setAllPokemonData(pokemon);
+                
                 setProcessedPokedex(processed);
             } catch (error) {
                 console.error("Failed to load list data:", error);
@@ -44,8 +44,8 @@ export function ListTab() {
                 setLoading(false);
             }
         }
-        fetchData();
-    }, []);
+        processPokedex();
+    }, [pokemon]);
 
     if (loading) {
         return (
@@ -56,7 +56,7 @@ export function ListTab() {
     }
 
     return (
-        <PokemonProvider initialPokemon={allPokemonData}>
+        <PokemonProvider initialPokemon={pokemon} userId={userId}>
             <main className="flex-1 container mx-auto p-4 md:p-6">
                 <h1 className="text-3xl md:text-4xl font-bold mb-6 text-center font-headline">National Pokédex</h1>
                 <NationalPokedexClient initialPokedex={processedPokedex} />

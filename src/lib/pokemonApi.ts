@@ -1,6 +1,6 @@
 
 import type { Pokemon, PokedexEntry } from '@/types/pokemon';
-import { collection, getDocs, query, where, type Firestore } from 'firebase/firestore';
+import { collection, getDocs, query, where, limit, type Firestore } from 'firebase/firestore';
 
 
 // In-memory cache

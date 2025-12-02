@@ -187,3 +187,13 @@ export async function getNationalPokedex(): Promise<PokedexEntry[]> {
         return [];
     }
 }
+
+export async function getUserIdFromDisplayName(firestore: Firestore, displayName: string): Promise<string | null> {
+    const usersRef = collection(firestore, "users");
+    const q = query(usersRef, where("displayName", "==", displayName), limit(1));
+    const querySnapshot = await getDocs(q);
+    if (querySnapshot.empty) {
+        return null;
+    }
+    return querySnapshot.docs[0].id;
+}

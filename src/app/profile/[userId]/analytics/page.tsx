@@ -1,16 +1,12 @@
 
-'use client';
-
-import { useFirestore } from '@/firebase';
+import { initializeFirebase } from '@/firebase';
 import { Header } from '@/components/Header';
 import { AnalyticsTab } from '@/components/tabs/AnalyticsTab';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { notFound } from 'next/navigation';
 import { getAllPokemon } from '@/lib/pokemonApi';
-import type { Pokemon } from '@/types/pokemon';
+import { notFound } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
 
 type AnalyticsPageProps = {
@@ -19,84 +15,25 @@ type AnalyticsPageProps = {
     };
 };
 
-export default function AnalyticsPage({ params }: AnalyticsPageProps) {
-    const firestore = useFirestore();
-    const [pokemon, setPokemon] = useState<Pokemon[] | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [userExists, setUserExists] = useState<boolean | undefined>(undefined);
-    
+// This is now a React Server Component
+export default async function AnalyticsPage({ params }: AnalyticsPageProps) {
+    const { firestore } = initializeFirebase();
     const profileUserId = params.userId;
 
-    useEffect(() => {
-        console.log(`[AnalyticsPage] useEffect triggered. userId: ${profileUserId}`);
+    // 1. Validate user exists on the server
+    const userDocRef = doc(firestore, 'users', profileUserId);
+    const userDocSnap = await getDoc(userDocRef);
 
-        if (!firestore || !profileUserId) {
-            console.log('[AnalyticsPage] Firestore or userId is missing. Bailing out.');
-            setLoading(false);
-            return;
-        }
-
-        const fetchUserData = async () => {
-            console.log('[AnalyticsPage] Starting fetchUserData...');
-            setLoading(true);
-            setError(null);
-            try {
-                // 1. Check if user exists
-                console.log(`[AnalyticsPage] Checking for user document at 'users/${profileUserId}'`);
-                const userDocRef = doc(firestore, 'users', profileUserId);
-                const userDocSnap = await getDoc(userDocRef);
-
-                if (!userDocSnap.exists()) {
-                    console.warn(`[AnalyticsPage] User document NOT found for userId: ${profileUserId}`);
-                    setUserExists(false);
-                    setLoading(false);
-                    return;
-                }
-                
-                console.log(`[AnalyticsPage] User document FOUND for userId: ${profileUserId}`);
-                setUserExists(true);
-
-                // 2. Fetch Pokémon
-                console.log(`[AnalyticsPage] Fetching all pokemon for userId: ${profileUserId}`);
-                const userPokemon = await getAllPokemon(firestore, profileUserId);
-                console.log(`[AnalyticsPage] Found ${userPokemon.length} pokemon.`);
-                setPokemon(userPokemon);
-
-            } catch (err: any) {
-                console.error("[AnalyticsPage] CRITICAL ERROR fetching analytics data:", err);
-                setError(`Failed to load data: ${err.message}`);
-            } finally {
-                console.log('[AnalyticsPage] fetchUserData finished.');
-                setLoading(false);
-            }
-        };
-
-        fetchUserData();
-
-    }, [firestore, profileUserId]);
-
-
-    if (loading || userExists === undefined) {
-        console.log(`[AnalyticsPage] Render: Loading state. loading: ${loading}, userExists: ${userExists}`);
-        return (
-             <div className="flex flex-col min-h-screen bg-background text-foreground">
-                <Header />
-                <main className="flex-1 container mx-auto p-4 md:p-6 flex justify-center items-center">
-                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-                </main>
-            </div>
-        )
-    }
-
-    if (!userExists || error) {
-        console.error(`[AnalyticsPage] Render: Triggering 404. userExists: ${userExists}, error: ${error}`);
+    if (!userDocSnap.exists()) {
+        console.error(`[AnalyticsPage RSC] User not found for userId: ${profileUserId}`);
         notFound();
     }
+    
+    // 2. Fetch Pokémon data on the server
+    const pokemon = await getAllPokemon(firestore, profileUserId);
 
+    // 3. Render page, handle case with no pokemon
     if (!pokemon || pokemon.length === 0) {
-        const message = "This user hasn't added any Pokémon to their collection yet.";
-        console.log('[AnalyticsPage] Render: No pokemon data found for analytics.');
         return (
             <div className="flex flex-col min-h-screen bg-background text-foreground">
                 <Header />
@@ -104,7 +41,7 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
                     <Card className="w-full max-w-md text-center shadow-lg">
                         <CardHeader>
                             <CardTitle>No Data for Analytics</CardTitle>
-                            <CardDescription>{message}</CardDescription>
+                            <CardDescription>This user hasn't added any Pokémon to their collection yet.</CardDescription>
                         </CardHeader>
                         <CardContent>
                              <Button asChild variant="outline">
@@ -117,10 +54,11 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
         );
     }
     
-    console.log('[AnalyticsPage] Render: Rendering AnalyticsTab.');
+    // 4. Render the analytics tab with the fetched data
     return (
         <div className="flex flex-col min-h-screen bg-background text-foreground">
             <Header />
+            {/* AnalyticsTab receives the server-fetched data as a prop */}
             <AnalyticsTab pokemon={pokemon} />
              <footer className="py-6 text-center text-muted-foreground text-sm">
                 © 2025 Rosie. All rights reserved.

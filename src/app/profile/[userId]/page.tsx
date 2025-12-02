@@ -40,9 +40,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
 
   useEffect(() => {
     if (!firestore || !userIdFromParam) {
-      if (!authLoading) {
-        setLoading(false);
-      }
+      if (!authLoading) setLoading(false);
       return;
     }
 
@@ -51,8 +49,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
 
     const unsubscribe = onSnapshot(userRef, (docSnap) => {
       if (docSnap.exists()) {
-        const profileData = docSnap.data() as Omit<UserProfile, 'uid'>;
-        setProfile({ ...profileData, uid: docSnap.id });
+        setProfile({ uid: docSnap.id, ...docSnap.data() } as UserProfile);
       } else {
         setProfile(null);
       }
@@ -63,9 +60,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
       setProfile(null);
     });
 
-    return () => {
-      unsubscribe();
-    };
+    return () => unsubscribe();
   }, [firestore, userIdFromParam, authLoading]);
 
   const isOwner = useMemo(() => {

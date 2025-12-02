@@ -53,7 +53,7 @@ export function NationalPokedexClient({ initialPokedex }: NationalPokedexClientP
             </div>
             <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-2">
                 {filteredPokedex.map(p => (
-                    <PokedexEntryCard key={p.pokedexNumber} entry={p} />
+                    <PokedexEntryCard key={`${p.pokedexNumber}-${p.speciesName}`} entry={p} />
                 ))}
             </div>
         </div>

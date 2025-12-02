@@ -1,26 +1,14 @@
 
-'use client';
-
-import { useUser, useFirestore } from '@/firebase';
+import { initializeFirebase, useUser } from '@/firebase';
 import { Header } from '@/components/Header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { useEffect, useState, useMemo } from 'react';
-import { EditProfileClient } from '@/components/client/EditProfileClient';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { getUserProfile } from '@/lib/pokemonApi';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-
-interface UserProfile {
-  uid: string;
-  displayName?: string;
-  photoURL?: string;
-  bannerURL?: string;
-}
+import { ProfilePageClient } from '@/components/client/ProfilePageClient';
 
 type ProfilePageProps = {
   params: {
@@ -28,65 +16,17 @@ type ProfilePageProps = {
   };
 };
 
-export default function ProfilePage({ params }: ProfilePageProps) {
-  const { user: currentUser, loading: authLoading } = useUser();
-  const firestore = useFirestore();
+// This is a React Server Component.
+// It fetches the profile data on the server before rendering.
+export default async function ProfilePage({ params }: ProfilePageProps) {
+  const { firestore } = initializeFirebase();
+  const profileUserId = params.userId;
 
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  // Fetch the user's profile from Firestore on the server.
+  const profile = await getUserProfile(firestore, profileUserId);
 
-  const userIdFromParam = params.userId;
-
-  useEffect(() => {
-    if (!firestore || !userIdFromParam) {
-      if (!authLoading) setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    const userRef = doc(firestore, 'users', userIdFromParam);
-
-    const unsubscribe = onSnapshot(userRef, (docSnap) => {
-      if (docSnap.exists()) {
-        setProfile({ uid: docSnap.id, ...docSnap.data() } as UserProfile);
-      } else {
-        setProfile(null);
-      }
-      setLoading(false);
-    }, (error) => {
-      console.error("Error fetching profile:", error);
-      setLoading(false);
-      setProfile(null);
-    });
-
-    return () => unsubscribe();
-  }, [firestore, userIdFromParam, authLoading]);
-
-  const isOwner = useMemo(() => {
-    return !authLoading && currentUser && profile && currentUser.uid === profile.uid;
-  }, [currentUser, profile, authLoading]);
-
-  if (loading || authLoading) {
-    return (
-      <div className="flex flex-col min-h-screen bg-background text-foreground">
-        <Header />
-        <main className="flex-1 container mx-auto p-4 md:p-6 flex justify-center items-start pt-12">
-          <Card className="w-full max-w-2xl shadow-xl">
-            <Skeleton className="h-48 w-full" />
-            <CardHeader className="text-center -mt-16">
-              <Skeleton className="h-24 w-24 rounded-full mx-auto border-4 border-background" />
-              <Skeleton className="h-8 w-48 mx-auto mt-4" />
-            </CardHeader>
-            <CardContent className="text-center p-6">
-               <Skeleton className="h-6 w-32 mx-auto" />
-            </CardContent>
-          </Card>
-        </main>
-      </div>
-    );
-  }
-
+  // If no profile is found for the given userId, render a 404 page.
+  // This is the correct way to handle "not found" cases in a server component.
   if (!profile) {
     notFound();
   }
@@ -112,22 +52,11 @@ export default function ProfilePage({ params }: ProfilePageProps) {
               <AvatarFallback>{fallbackInitial}</AvatarFallback>
             </Avatar>
             <CardTitle className="text-3xl font-bold font-headline mt-4">{displayName}</CardTitle>
-            {isOwner && currentUser?.email && <CardDescription>{currentUser.email}</CardDescription>}
           </CardHeader>
           <CardContent className="text-center p-6 space-x-2">
-            {isOwner && (
-              <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button>Edit Profile</Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
-                  <DialogHeader>
-                    <DialogTitle>Edit profile</DialogTitle>
-                  </DialogHeader>
-                  {currentUser && <EditProfileClient user={currentUser} profile={profile} onSave={() => setIsEditDialogOpen(false)} />}
-                </DialogContent>
-              </Dialog>
-            )}
+            {/* The client component handles interactive elements like the edit button */}
+            <ProfilePageClient profile={profile} />
+
             <Button asChild variant="outline">
               <Link href={`/profile/${profile.uid}/list`}>View List</Link>
             </Button>

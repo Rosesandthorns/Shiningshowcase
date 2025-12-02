@@ -2,9 +2,8 @@
 import { initializeFirebase } from '@/firebase';
 import { Header } from '@/components/Header';
 import { ListTab } from '@/components/tabs/ListTab';
-import { getAllPokemon } from '@/lib/pokemonApi';
+import { getAllPokemon, getUserProfile } from '@/lib/pokemonApi';
 import { notFound } from 'next/navigation';
-import { doc, getDoc } from 'firebase/firestore';
 
 type ListPageProps = {
     params: {
@@ -12,24 +11,21 @@ type ListPageProps = {
     };
 };
 
-// This is now a React Server Component
+// This is a React Server Component. It fetches all necessary data on the server.
 export default async function ListPage({ params }: ListPageProps) {
     const { firestore } = initializeFirebase();
     const profileUserId = params.userId;
 
-    // 1. Validate user exists on the server
-    const userDocRef = doc(firestore, 'users', profileUserId);
-    const userDocSnap = await getDoc(userDocRef);
-
-    if (!userDocSnap.exists()) {
-        console.error(`[ListPage RSC] User not found for userId: ${profileUserId}`);
+    // 1. Validate user exists on the server. If not, notFound() is called.
+    const userProfile = await getUserProfile(firestore, profileUserId);
+    if (!userProfile) {
         notFound();
     }
 
-    // 2. Fetch Pokémon data on the server
+    // 2. Fetch all Pokémon for this user on the server.
     const pokemon = await getAllPokemon(firestore, profileUserId);
     
-    // 3. Render the page, passing server-fetched data to the client component
+    // 3. Render the page, passing the server-fetched data to the client component.
     return (
         <div className="flex flex-col min-h-screen bg-background text-foreground">
             <Header />

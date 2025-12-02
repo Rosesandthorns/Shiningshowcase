@@ -8,30 +8,29 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Header } from '@/components/Header';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 
-
 export default function MyProfileRedirectPage() {
   const { user, loading: authLoading } = useUser();
   const router = useRouter();
 
   useEffect(() => {
+    // Wait until the authentication state is resolved.
     if (authLoading) {
-      return; // Wait until auth state is confirmed
+      return; 
     }
     
+    // If auth is resolved and there's no user, redirect to login.
     if (!user) {
-      // If not logged in after auth check, redirect to login
       router.replace('/login');
       return;
     }
 
-    // The user is logged in, so we have their UID.
-    // Redirect directly to their UID-based profile page.
-    // The target page will handle fetching or creating the document.
+    // If we have a user, redirect to their UID-based profile page.
+    // This is the most reliable way to handle the user's own profile.
     router.replace(`/profile/${user.uid}`);
 
   }, [user, authLoading, router]);
 
-  // Display a full-page loading skeleton while the redirect is in progress.
+  // Display a full-page loading skeleton while we wait for auth and redirect.
   return (
       <div className="flex flex-col min-h-screen bg-background text-foreground">
         <Header />

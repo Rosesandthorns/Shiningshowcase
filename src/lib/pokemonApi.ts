@@ -1,5 +1,6 @@
 
 import type { Pokemon, PokedexEntry } from '@/types/pokemon';
+import type { UserProfile } from '@/types/user';
 import { collection, getDocs, doc, getDoc, query, where, limit, type Firestore } from 'firebase/firestore';
 
 
@@ -68,6 +69,22 @@ export async function getAllPokemon(firestore: Firestore, userId: string): Promi
   } as Pokemon));
   
   return pokemonList;
+}
+
+export async function getUserProfile(firestore: Firestore, userId: string): Promise<UserProfile | null> {
+    if (!userId) {
+        return null;
+    }
+    const userDocRef = doc(firestore, 'users', userId);
+    const docSnap = await getDoc(userDocRef);
+
+    if (docSnap.exists()) {
+        return { uid: docSnap.id, ...docSnap.data() } as UserProfile;
+    } else {
+        // This is a crucial part. If the document doesn't exist, we return null.
+        // The calling Server Component will then use notFound() to render a 404 page.
+        return null;
+    }
 }
 
 

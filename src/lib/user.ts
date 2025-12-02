@@ -109,7 +109,7 @@ export async function updateUserProfile(
       firestoreUpdateData.bannerURL = await fileToDataUrl(bannerFile);
     }
 
-    // 4. Perform the Firestore update
+    // 4. Perform the Firestore update, ensuring the UID is always present.
     firestoreUpdateData.uid = user.uid;
     await setDoc(userDocRef, firestoreUpdateData, { merge: true });
     

@@ -15,7 +15,7 @@ import { doc, getDoc } from 'firebase/firestore';
 
 type AnalyticsPageProps = {
     params: {
-        userId: string; // This is now the UID from the URL
+        userId: string;
     };
 };
 
@@ -29,31 +29,45 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
     const profileUserId = params.userId;
 
     useEffect(() => {
-        if (!firestore || !profileUserId) return;
+        console.log(`[AnalyticsPage] useEffect triggered. userId: ${profileUserId}`);
+
+        if (!firestore || !profileUserId) {
+            console.log('[AnalyticsPage] Firestore or userId is missing. Bailing out.');
+            setLoading(false);
+            return;
+        }
 
         const fetchUserData = async () => {
+            console.log('[AnalyticsPage] Starting fetchUserData...');
             setLoading(true);
             setError(null);
             try {
                 // 1. Check if user exists
+                console.log(`[AnalyticsPage] Checking for user document at 'users/${profileUserId}'`);
                 const userDocRef = doc(firestore, 'users', profileUserId);
                 const userDocSnap = await getDoc(userDocRef);
 
                 if (!userDocSnap.exists()) {
+                    console.warn(`[AnalyticsPage] User document NOT found for userId: ${profileUserId}`);
                     setUserExists(false);
                     setLoading(false);
                     return;
                 }
+                
+                console.log(`[AnalyticsPage] User document FOUND for userId: ${profileUserId}`);
                 setUserExists(true);
 
                 // 2. Fetch Pokémon
+                console.log(`[AnalyticsPage] Fetching all pokemon for userId: ${profileUserId}`);
                 const userPokemon = await getAllPokemon(firestore, profileUserId);
+                console.log(`[AnalyticsPage] Found ${userPokemon.length} pokemon.`);
                 setPokemon(userPokemon);
 
-            } catch (err) {
-                console.error("Error fetching analytics data:", err);
-                setError("Failed to load data.");
+            } catch (err: any) {
+                console.error("[AnalyticsPage] CRITICAL ERROR fetching analytics data:", err);
+                setError(`Failed to load data: ${err.message}`);
             } finally {
+                console.log('[AnalyticsPage] fetchUserData finished.');
                 setLoading(false);
             }
         };
@@ -64,6 +78,7 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
 
 
     if (loading || userExists === undefined) {
+        console.log(`[AnalyticsPage] Render: Loading state. loading: ${loading}, userExists: ${userExists}`);
         return (
              <div className="flex flex-col min-h-screen bg-background text-foreground">
                 <Header />
@@ -75,11 +90,13 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
     }
 
     if (!userExists || error) {
+        console.error(`[AnalyticsPage] Render: Triggering 404. userExists: ${userExists}, error: ${error}`);
         notFound();
     }
 
     if (!pokemon || pokemon.length === 0) {
         const message = "This user hasn't added any Pokémon to their collection yet.";
+        console.log('[AnalyticsPage] Render: No pokemon data found for analytics.');
         return (
             <div className="flex flex-col min-h-screen bg-background text-foreground">
                 <Header />
@@ -100,6 +117,7 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
         );
     }
     
+    console.log('[AnalyticsPage] Render: Rendering AnalyticsTab.');
     return (
         <div className="flex flex-col min-h-screen bg-background text-foreground">
             <Header />

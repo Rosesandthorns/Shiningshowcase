@@ -7,14 +7,14 @@ import { notFound } from 'next/navigation';
 
 type ListPageProps = {
     params: {
-        profileId: string;
+        userId: string;
     };
 };
 
 // This is a React Server Component. It fetches all necessary data on the server.
 export default async function ListPage({ params }: ListPageProps) {
     const { firestore } = initializeFirebase();
-    const profileUserId = params.profileId;
+    const profileUserId = params.userId;
 
     // 1. Validate user exists on the server. If not, notFound() is called.
     try {

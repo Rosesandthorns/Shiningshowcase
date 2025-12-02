@@ -10,14 +10,14 @@ import { notFound } from 'next/navigation';
 
 type AnalyticsPageProps = {
     params: {
-        profileId: string;
+        userId: string;
     };
 };
 
 // This is now a React Server Component. It fetches data on the server before rendering.
 export default async function AnalyticsPage({ params }: AnalyticsPageProps) {
     const { firestore } = initializeFirebase();
-    const profileUserId = params.profileId;
+    const profileUserId = params.userId;
 
     // 1. Validate user exists on the server. If not, this will trigger a 404.
     let userProfile;

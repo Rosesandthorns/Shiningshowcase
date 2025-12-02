@@ -86,7 +86,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
 
 
     const { toast } = useToast();
-    const router = useRouter();
+    router = useRouter();
 
     useEffect(() => {
         const fetchPokedex = async () => {
@@ -245,13 +245,16 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
         .filter((name: string) => !moveset.includes(name))
         .filter((name: string) => name.toLowerCase().includes(movesSearch.toLowerCase()));
 
-    const availableForms = apiData?.forms || [];
+    const availableForms = apiData?.varieties?.filter((v: any) => {
+        const formNames = v.form_names.find((fn: any) => fn.language.name === 'en');
+        return formNames && formNames.name !== "";
+    }) || [];
 
-    const formatFormName = (name: string, speciesName: string) => {
-        const cleanedName = name.replace(speciesName.toLowerCase() + '-', '');
-        if (cleanedName === name.replace(speciesName.toLowerCase(),'')) return "Standard";
-        return cleanedName.replace(/-/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    const formatFormName = (variety: any) => {
+        const formNames = variety.form_names.find((fn: any) => fn.language.name === 'en');
+        return formNames ? formNames.name : variety.name;
     };
+
 
     return (
         <Card className="w-full max-w-2xl mx-auto shadow-lg">
@@ -333,9 +336,9 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                                             <SelectValue placeholder="Select a form" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {availableForms.map((f: any) => (
-                                                <SelectItem key={f.name} value={f.name}>
-                                                    {formatFormName(f.name, formData.speciesName)}
+                                            {availableForms.map((v: any) => (
+                                                <SelectItem key={v.name} value={v.name}>
+                                                    {formatFormName(v)}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
@@ -473,7 +476,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                             </div>
                             <p><strong>Nickname:</strong> {formData.nickname}</p>
                             <p><strong>Species:</strong> {formData.speciesName}</p>
-                            {formData.form && <p><strong>Form:</strong> {formatFormName(formData.form, formData.speciesName)}</p>}
+                            {formData.form && <p><strong>Form:</strong> {formatFormName({name: formData.form, form_names: apiData.varieties.find((v:any) => v.name === formData.form)?.form_names || []})}</p>}
                             <p><strong>Level:</strong> {formData.level}</p>
                             <p><strong>Nature:</strong> {formData.nature}</p>
                             <p><strong>Gender:</strong> {formData.gender}</p>
@@ -504,3 +507,5 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
         </Card>
     );
 }
+
+    

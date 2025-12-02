@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,8 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { getPokemonDetailsByName } from '@/lib/pokemonApi';
-import type { Pokemon as PokemonType } from '@/types/pokemon';
+import { getPokemonDetailsByName, getNationalPokedex } from '@/lib/pokemonApi';
+import type { Pokemon as PokemonType, PokedexEntry } from '@/types/pokemon';
 import type { User } from 'firebase/auth';
 import type { Firestore } from 'firebase/firestore';
 import Image from 'next/image';
@@ -19,6 +20,11 @@ import { addPokemon } from '@/lib/pokemon';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { games, natures } from '@/lib/pokemon-data';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { ChevronsUpDown, Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
 
 const steps = [
     { id: 'species', title: 'Pokémon Species' },
@@ -68,12 +74,25 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
     const [formData, setFormData] = useState<FormData>({});
     const [isLoading, setIsLoading] = useState(false);
     const [apiData, setApiData] = useState<any>(null);
+    const [pokedex, setPokedex] = useState<PokedexEntry[]>([]);
+    const [popoverOpen, setPopoverOpen] = useState(false);
+
     const { toast } = useToast();
     const router = useRouter();
 
+    useEffect(() => {
+        const fetchPokedex = async () => {
+            const dex = await getNationalPokedex();
+            setPokedex(dex);
+        };
+        fetchPokedex();
+    }, []);
+
     const form = useForm({
-        // This is a bit of a trick; we'll manage validation per step.
-        // The overall form doesn't have a single schema.
+        resolver: zodResolver(speciesSchema),
+        defaultValues: {
+            speciesName: "",
+        }
     });
 
     const handleNext = async (event: React.FormEvent) => {
@@ -106,7 +125,6 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
         if (schema) {
             const result = schema.safeParse(data);
             if (!result.success) {
-                // Show errors
                 Object.keys(result.error.formErrors.fieldErrors).forEach((field) => {
                     form.setError(field as any, {
                         type: 'manual',
@@ -124,6 +142,8 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                 const details = await getPokemonDetailsByName(data.speciesName);
                 setApiData(details);
                 setFormData({ ...formData, ...data });
+                // Pre-fill nickname with species name
+                form.setValue('nickname', data.speciesName.charAt(0).toUpperCase() + data.speciesName.slice(1));
                 setCurrentStep(currentStep + 1);
             } catch (error) {
                 form.setError('speciesName', { type: 'manual', message: 'Could not find this Pokémon. Check the spelling.' });
@@ -203,7 +223,50 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                     {steps[currentStep].id === 'species' && (
                         <div>
                             <label htmlFor="speciesName" className="block text-sm font-medium mb-1">Pokémon Name</label>
-                            <Input id="speciesName" {...form.register('speciesName')} placeholder="e.g., Pikachu" />
+                            <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        role="combobox"
+                                        aria-expanded={popoverOpen}
+                                        className="w-full justify-between"
+                                    >
+                                        {form.watch('speciesName')
+                                            ? pokedex.find((p) => p.speciesName.toLowerCase() === form.watch('speciesName').toLowerCase())?.speciesName
+                                            : "Select Pokémon..."}
+                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                    <Command>
+                                        <CommandInput placeholder="Search Pokémon..." />
+                                        <CommandEmpty>No Pokémon found.</CommandEmpty>
+                                        <CommandList>
+                                            <CommandGroup>
+                                                {pokedex.map((p) => (
+                                                    <CommandItem
+                                                        key={p.pokedexNumber}
+                                                        value={p.speciesName}
+                                                        onSelect={(currentValue) => {
+                                                            form.setValue("speciesName", currentValue === form.watch('speciesName') ? "" : currentValue, { shouldValidate: true });
+                                                            setPopoverOpen(false);
+                                                        }}
+                                                    >
+                                                        <Check
+                                                            className={cn(
+                                                                "mr-2 h-4 w-4",
+                                                                form.watch('speciesName').toLowerCase() === p.speciesName.toLowerCase() ? "opacity-100" : "opacity-0"
+                                                            )}
+                                                        />
+                                                        {p.speciesName}
+                                                    </CommandItem>
+                                                ))}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
+
                             {form.formState.errors.speciesName && <p className="text-sm text-destructive mt-1">{form.formState.errors.speciesName.message as string}</p>}
                         </div>
                     )}
@@ -218,7 +281,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                             <div>
                                 <label htmlFor="level" className="block text-sm font-medium mb-1">Level</label>
                                 <Input id="level" type="number" {...form.register('level')} placeholder="1-100" />
-                                {form.formState.errors.level && <p className="text-sm text-destructive mt-1">{form.form_state.errors.level.message as string}</p>}
+                                {form.formState.errors.level && <p className="text-sm text-destructive mt-1">{form.formState.errors.level?.message as string}</p>}
                             </div>
                             <div>
                                 <label htmlFor="nature" className="block text-sm font-medium mb-1">Nature</label>

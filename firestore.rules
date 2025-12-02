@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -15,6 +16,7 @@ service cloud.firestore {
       
       // Rules for user-specific hunts
       match /hunts/{huntId} {
+        // Only the user themselves can read, write, and delete their own hunts.
         allow read, write, delete: if isOwner(userId);
       }
     }

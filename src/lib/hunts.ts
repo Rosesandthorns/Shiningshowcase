@@ -1,7 +1,7 @@
 
 'use client';
 
-import { collection, addDoc, serverTimestamp, type Firestore } from 'firebase/firestore';
+import { collection, addDoc, type Firestore } from 'firebase/firestore';
 import type { Hunt } from '@/types/hunts';
 import { getPokemonDetailsByName } from './pokemonApi';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -45,12 +45,16 @@ export async function addHunt(firestore: Firestore, userId: string, data: NewHun
     createdAt: Date.now(),
   };
 
-  addDoc(huntsRef, newHunt).catch(async (serverError) => {
+  try {
+    await addDoc(huntsRef, newHunt);
+  } catch (serverError) {
     const permissionError = new FirestorePermissionError({
         path: huntsRef.path,
         operation: 'create',
         requestResourceData: newHunt,
     });
     errorEmitter.emit('permission-error', permissionError);
-  });
+    // Re-throw the original error to be caught by the form if needed
+    throw serverError;
+  }
 }

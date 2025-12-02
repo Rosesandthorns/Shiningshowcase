@@ -4,7 +4,6 @@
 import { useEffect } from 'react';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { useUser } from '@/firebase/auth/use-user';
-import { useToast } from '@/hooks/use-toast';
 
 function createErrorJson(error: any, user: any) {
   const { context } = error;
@@ -50,21 +49,15 @@ function createErrorJson(error: any, user: any) {
 
 export function FirebaseErrorListener() {
   const { user } = useUser();
-  const { toast } = useToast();
 
   useEffect(() => {
     const handleError = (error: any) => {
-      console.error(
-        "A Firestore permission error occurred. See details below."
-      );
-      
       const errorJson = createErrorJson(error, user);
       const fullErrorMessage = `FirestoreError: Missing or insufficient permissions: The following request was denied by Firestore Security Rules:\n${errorJson}`;
       
       // Throwing the error here will make it appear in the Next.js error overlay
       // during development, which is exactly what we want for debugging.
       throw new Error(fullErrorMessage);
-
     };
 
     errorEmitter.on('permission-error', handleError);
@@ -72,7 +65,7 @@ export function FirebaseErrorListener() {
     return () => {
       errorEmitter.removeListener('permission-error', handleError);
     };
-  }, [user, toast]);
+  }, [user]);
 
   return null; // This component does not render anything
 }

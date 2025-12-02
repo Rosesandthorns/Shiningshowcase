@@ -5,3 +5,8 @@ runConfig:
   # Increase this value if you'd like to automatically spin up
   # more instances in response to increased traffic.
   maxInstances: 1
+# Add a rewrite rule to handle all routes through the Next.js app
+rewrites:
+  - source: /.*
+    run:
+      region: us-central1 # Or your preferred region

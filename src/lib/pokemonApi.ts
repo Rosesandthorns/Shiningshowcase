@@ -46,8 +46,29 @@ async function fetchWithCache(url: string, cache: Map<string, any>): Promise<any
 }
 
 export async function getPokemonDetailsByName(name: string): Promise<any> {
-    const url = `https://pokeapi.co/api/v2/pokemon/${name.toLowerCase()}`;
-    return fetchWithCache(url, pokemonDetailCache);
+    const speciesUrl = `https://pokeapi.co/api/v2/pokemon-species/${name.toLowerCase()}`;
+    const speciesData = await fetchWithCache(speciesUrl, speciesDetailCache);
+
+    const formDetailsPromises = speciesData.varieties.map(async (variety: any) => {
+        const formData = await fetchWithCache(variety.pokemon.url, pokemonDetailCache);
+        const formDetail = await fetchWithCache(formData.forms[0].url, new Map());
+        return {
+            ...formData,
+            form_names: formDetail.form_names
+        };
+    });
+
+    const forms = await Promise.all(formDetailsPromises);
+    
+    // The first variety is the default, so we use its main data
+    const defaultPokemonData = forms[0];
+
+    const allData = {
+        ...defaultPokemonData,
+        forms: forms, // This now contains an array of full pokemon details for each form
+    };
+    
+    return allData;
 }
 
 

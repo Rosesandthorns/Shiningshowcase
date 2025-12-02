@@ -243,7 +243,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
         .filter((name: string) => !moveset.includes(name))
         .filter((name: string) => name.toLowerCase().includes(movesSearch.toLowerCase()));
 
-    const availableForms = apiData?.forms?.filter((f: any) => !f.name.includes('-f') && !f.name.includes('-m')) || [];
+    const availableForms = apiData?.forms?.filter((f: any) => f.form_names && f.form_names.length > 0) || [];
 
     return (
         <Card className="w-full max-w-2xl mx-auto shadow-lg">

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -97,24 +98,25 @@ export function NewHuntForm({ user, firestore, onHuntCreated }: NewHuntFormProps
     setIsSubmitting(true);
 
     const finalMethod = values.method === 'Other...' ? values.customMethod! : values.method;
+    const odds = calculateOdds(finalMethod, values.shinyCharm);
 
     try {
-        const odds = calculateOdds(finalMethod, values.shinyCharm);
-        
-        await addHunt(firestore, user.uid, { ...values, method: finalMethod, odds });
+        // addHunt is now a fire-and-forget function. We don't await it.
+        addHunt(firestore, user.uid, { ...values, method: finalMethod, odds });
 
-      toast({
-        title: 'Hunt Started!',
-        description: `Now tracking your hunt for shiny ${values.pokemonName}.`,
-      });
-      onHuntCreated();
+        toast({
+            title: 'Hunt Started!',
+            description: `Now tracking your hunt for shiny ${values.pokemonName}.`,
+        });
+        onHuntCreated();
     } catch (error: any) {
-      console.error("Error creating hunt:", error);
-      toast({
-        variant: 'destructive',
-        title: 'Uh oh! Something went wrong.',
-        description: error.message || 'Could not start the hunt. Please try again.',
-      });
+        // This catch block will now likely only catch setup errors, not Firestore permission errors.
+        console.error("Error submitting hunt form:", error);
+        toast({
+            variant: 'destructive',
+            title: 'Uh oh! Something went wrong.',
+            description: error.message || 'Could not start the hunt. Please try again.',
+        });
     } finally {
       setIsSubmitting(false);
     }

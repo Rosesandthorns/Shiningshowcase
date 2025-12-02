@@ -26,8 +26,18 @@ const formSchema = z.object({
   pokemonName: z.string().min(1, { message: 'Pokémon name is required.' }),
   game: z.string().min(1, { message: 'Please select a game.' }),
   method: z.string().min(1, { message: 'Please select a method.' }),
+  customMethod: z.string().optional(),
   shinyCharm: z.boolean().default(false),
+}).refine(data => {
+    if (data.method === 'Other' && (!data.customMethod || data.customMethod.trim() === '')) {
+        return false;
+    }
+    return true;
+}, {
+    message: 'Please enter a custom method name.',
+    path: ['customMethod'],
 });
+
 
 interface NewHuntFormProps {
   user: User;
@@ -55,18 +65,20 @@ const games = [
     "Red, Blue & Yellow",
     "Pokémon GO"
 ];
-const methods = ["Random Encounter", "Masuda Method", "Soft Reset", "Outbreaks"];
+const methods = ["Random Encounter", "Masuda Method", "Soft Reset", "Outbreaks", "Other..."];
 
 
 export function NewHuntForm({ user, firestore, onHuntCreated }: NewHuntFormProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showCustomMethod, setShowCustomMethod] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       pokemonName: '',
       shinyCharm: false,
+      customMethod: '',
     },
   });
 
@@ -83,10 +95,13 @@ export function NewHuntForm({ user, firestore, onHuntCreated }: NewHuntFormProps
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
+
+    const finalMethod = values.method === 'Other' ? values.customMethod! : values.method;
+
     try {
-        const odds = calculateOdds(values.method, values.shinyCharm);
+        const odds = calculateOdds(finalMethod, values.shinyCharm);
         
-        await addHunt(firestore, user.uid, { ...values, odds });
+        await addHunt(firestore, user.uid, { ...values, method: finalMethod, odds });
 
       toast({
         title: 'Hunt Started!',
@@ -151,7 +166,10 @@ export function NewHuntForm({ user, firestore, onHuntCreated }: NewHuntFormProps
           render={({ field }) => (
             <FormItem>
               <FormLabel>Method</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={(value) => {
+                  field.onChange(value);
+                  setShowCustomMethod(value === 'Other...');
+              }} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a hunt method" />
@@ -167,6 +185,22 @@ export function NewHuntForm({ user, firestore, onHuntCreated }: NewHuntFormProps
             </FormItem>
           )}
         />
+
+        {showCustomMethod && (
+            <FormField
+            control={form.control}
+            name="customMethod"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Custom Method Name</FormLabel>
+                <FormControl>
+                    <Input placeholder="e.g., Chain Fishing" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        )}
         
         <FormField
           control={form.control}

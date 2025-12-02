@@ -12,6 +12,11 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if true;
       allow write: if isOwner(userId);
+      
+      // Rules for user-specific hunts
+      match /hunts/{huntId} {
+        allow read, write, delete: if isOwner(userId);
+      }
     }
   }
 }

@@ -49,23 +49,22 @@ export async function getPokemonDetailsByName(name: string): Promise<any> {
     const speciesUrl = `https://pokeapi.co/api/v2/pokemon-species/${name.toLowerCase()}`;
     const speciesData = await fetchWithCache(speciesUrl, speciesDetailCache);
 
-    const formDetailsPromises = speciesData.varieties.map(async (variety: any) => {
-        const formData = await fetchWithCache(variety.pokemon.url, pokemonDetailCache);
-        const formDetail = await fetchWithCache(formData.forms[0].url, new Map());
+    // The first variety is always the default one. Fetch its full details.
+    const defaultVarietyUrl = speciesData.varieties.find((v: any) => v.is_default)?.pokemon.url;
+    const defaultPokemonData = await fetchWithCache(defaultVarietyUrl || speciesData.varieties[0].pokemon.url, pokemonDetailCache);
+
+    // Now, map all varieties to a simplified form structure for the dropdown.
+    const forms = speciesData.varieties.map((variety: any) => {
         return {
-            ...formData,
-            form_names: formDetail.form_names
+            name: variety.pokemon.name, // e.g., "raichu-alola"
+            url: variety.pokemon.url,
         };
     });
-
-    const forms = await Promise.all(formDetailsPromises);
     
-    // The first variety is the default, so we use its main data
-    const defaultPokemonData = forms[0];
-
+    // Combine the full data of the default Pokémon with the list of all its available forms.
     const allData = {
-        ...defaultPokemonData,
-        forms: forms, // This now contains an array of full pokemon details for each form
+        ...defaultPokemonData, // This has sprites, types, etc. of the default form
+        forms: forms, // This is a simple list of { name, url } for all forms
     };
     
     return allData;

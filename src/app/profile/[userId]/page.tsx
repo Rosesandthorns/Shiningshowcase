@@ -41,8 +41,6 @@ export default function ProfilePage({ params }: ProfilePageProps) {
 
   useEffect(() => {
     if (!firestore || !userIdFromParam) {
-        // If there's no userId in the param, we can't load a profile.
-        // This might happen during a brief render cycle, so we wait until loading is false.
         if (!loading) {
           setProfile(null);
         }
@@ -69,7 +67,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
     });
 
     return () => unsubscribe();
-  }, [firestore, userIdFromParam, loading]);
+  }, [firestore, userIdFromParam]);
 
   const isOwner = useMemo(() => {
     return !authLoading && currentUser && profile && currentUser.uid === profile.uid;

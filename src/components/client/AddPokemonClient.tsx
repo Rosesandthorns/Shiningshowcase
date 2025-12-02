@@ -22,8 +22,9 @@ import { useRouter } from 'next/navigation';
 import { games, natures } from '@/lib/pokemon-data';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { ChevronsUpDown, Check } from 'lucide-react';
+import { ChevronsUpDown, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Badge } from '../ui/badge';
 
 
 const steps = [
@@ -79,6 +80,9 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
     const [popoverOpen, setPopoverOpen] = useState(false);
     const [commandValue, setCommandValue] = useState("");
 
+    const [movesSearch, setMovesSearch] = useState('');
+    const [openMoves, setOpenMoves] = useState(false);
+
 
     const { toast } = useToast();
     const router = useRouter();
@@ -108,6 +112,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
         resolver: zodResolver(speciesSchema),
         defaultValues: {
             speciesName: "",
+            moveset: [],
         }
     });
 
@@ -226,6 +231,12 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
     };
 
     const progress = ((currentStep + 1) / steps.length) * 100;
+    const moveset = form.watch('moveset') || [];
+    const availableMoves = apiData?.moves
+        .map((m: any) => m.move.name)
+        .filter((name: string) => !moveset.includes(name))
+        .filter((name: string) => name.toLowerCase().includes(movesSearch.toLowerCase()));
+
 
     return (
         <Card className="w-full max-w-2xl mx-auto shadow-lg">
@@ -267,7 +278,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                                                         value={p.speciesName}
                                                         onSelect={(currentValue) => {
                                                             form.setValue("speciesName", currentValue === form.watch("speciesName") ? "" : currentValue, { shouldValidate: true });
-                                                            setCommandValue("");
+                                                            setCommandValue(p.speciesName);
                                                             setFilteredPokedex([]);
                                                             setPopoverOpen(false);
                                                         }}
@@ -355,23 +366,60 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                     )}
 
                     {steps[currentStep].id === 'moves' && apiData && (
-                        <div>
-                             <label className="block text-sm font-medium mb-2">Moves (select up to 4)</label>
-                             <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-60 overflow-y-auto p-2 border rounded-md">
-                                {apiData.moves.map((moveData: any) => (
-                                    <div key={moveData.move.name} className="flex items-center space-x-2">
-                                        <input
-                                            type="checkbox"
-                                            id={`move-${moveData.move.name}`}
-                                            value={moveData.move.name}
-                                            {...form.register('moveset')}
-                                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                                        />
-                                        <label htmlFor={`move-${moveData.move.name}`} className="text-sm capitalize">{moveData.move.name.replace('-', ' ')}</label>
+                         <div>
+                            <label className="block text-sm font-medium mb-2">Moves (select up to 4)</label>
+                            <Popover open={openMoves} onOpenChange={setOpenMoves}>
+                                <PopoverTrigger asChild>
+                                    <div className="flex min-h-[40px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background items-center flex-wrap gap-1">
+                                        {moveset.map(move => (
+                                            <Badge key={move} variant="secondary" className="capitalize">
+                                                {move.replace('-', ' ')}
+                                                <button
+                                                    type="button"
+                                                    className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                                    onClick={() => {
+                                                        const newMoveset = moveset.filter(m => m !== move);
+                                                        form.setValue('moveset', newMoveset, { shouldValidate: true });
+                                                    }}
+                                                >
+                                                    <X className="h-3 w-3 text-muted-foreground hover:text-foreground" />
+                                                </button>
+                                            </Badge>
+                                        ))}
+                                         <span className="text-muted-foreground text-sm flex-1">{moveset.length > 0 ? '' : 'Select moves...'}</span>
                                     </div>
-                                ))}
-                             </div>
-                              {form.formState.errors.moveset && <p className="text-sm text-destructive mt-1">{form.formState.errors.moveset.message as string}</p>}
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                    <Command>
+                                        <CommandInput
+                                            placeholder="Search moves..."
+                                            value={movesSearch}
+                                            onValueChange={setMovesSearch}
+                                        />
+                                        <CommandList>
+                                            <CommandEmpty>No moves found.</CommandEmpty>
+                                            <CommandGroup>
+                                                {availableMoves.map((moveName: string) => (
+                                                    <CommandItem
+                                                        key={moveName}
+                                                        onSelect={() => {
+                                                            if (moveset.length < 4) {
+                                                                const newMoveset = [...moveset, moveName];
+                                                                form.setValue('moveset', newMoveset, { shouldValidate: true });
+                                                            }
+                                                            setMovesSearch('');
+                                                        }}
+                                                        className="capitalize"
+                                                    >
+                                                        {moveName.replace('-', ' ')}
+                                                    </CommandItem>
+                                                ))}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
+                            {form.formState.errors.moveset && <p className="text-sm text-destructive mt-1">{form.formState.errors.moveset.message as string}</p>}
                         </div>
                     )}
                     

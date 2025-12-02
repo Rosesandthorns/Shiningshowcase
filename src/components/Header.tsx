@@ -41,11 +41,13 @@ export function Header() {
         </Link>
         <nav className="flex items-center gap-2 md:gap-4">
           <Link href="/" className="text-sm md:text-base hover:underline">Home</Link>
-          {!loading && user && (
+          {!loading && user && user.displayName && (
             <>
-              <Link href="/hunts" className="text-sm md:text-base hover:underline hidden md:inline">Hunts</Link>
+              <Link href={`/profile/${encodeURIComponent(user.displayName)}/list`} className="text-sm md:text-base hover:underline hidden md:inline">My List</Link>
+              <Link href={`/profile/${encodeURIComponent(user.displayName)}/analytics`} className="text-sm md:text-base hover:underline hidden md:inline">My Analytics</Link>
             </>
           )}
+          <Link href="/hunts" className="text-sm md:text-base hover:underline hidden md:inline">Hunts</Link>
           
           <DropdownMenu>
             <DropdownMenuTrigger className="flex items-center text-sm md:text-base hover:underline outline-none">
@@ -64,6 +66,22 @@ export function Header() {
                       Hunts
                     </Link>
                   </DropdownMenuItem>
+                   {user.displayName && (
+                    <>
+                      <DropdownMenuItem asChild className="md:hidden">
+                        <Link href={`/profile/${encodeURIComponent(user.displayName)}/list`}>
+                          <LayoutList className="mr-2 h-4 w-4" />
+                          My List
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild className="md:hidden">
+                        <Link href={`/profile/${encodeURIComponent(user.displayName)}/analytics`}>
+                          <BarChart2 className="mr-2 h-4 w-4" />
+                          My Analytics
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
                 </>
               )}
                <DropdownMenuItem asChild>

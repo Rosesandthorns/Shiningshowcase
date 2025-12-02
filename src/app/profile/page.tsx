@@ -32,54 +32,57 @@ export default function MyProfilePage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (authLoading || !firestore) return;
-
+    if (authLoading) return;
     if (!user) {
-      setLoading(false);
+      router.push('/login');
+      return;
+    }
+    if (!firestore) {
+      setLoading(true); // Wait for firestore to be available
       return;
     }
 
     const profileRef = doc(firestore, 'users', user.uid);
     const unsubscribe = onSnapshot(profileRef, async (docSnap) => {
+      setLoading(true);
       if (docSnap.exists()) {
         const profileData = { ...docSnap.data(), uid: docSnap.id } as UserProfile;
-        // If the displayName is missing from the document for some reason, fix it.
-        if (!profileData.displayName) {
+        
+        // If the displayName in auth is different from Firestore, trust auth and update Firestore.
+        // Or if the firestore doc is missing a name, create one.
+        if ((user.displayName && user.displayName !== profileData.displayName) || !profileData.displayName) {
             try {
-                const updatedName = await updateUserProfile(firestore, user, {});
-                profileData.displayName = updatedName;
+                // This call will either set the initial name or update it.
+                const updatedName = await updateUserProfile(firestore, user, { displayName: user.displayName || undefined });
+                 // If the name changed, we should redirect to the new canonical URL.
+                if (updatedName !== profileData.displayName && router) {
+                    router.replace(`/profile/${encodeURIComponent(updatedName)}`);
+                }
             } catch (error) {
                 console.error("Failed to auto-update displayName:", error);
             }
+        } else {
+             setProfile(profileData);
         }
-        setProfile(profileData);
-        setLoading(false);
       } else {
-        // Profile doesn't exist, so create it with a unique display name.
+        // Profile doesn't exist, so create it. The listener will pick up the new document.
         try {
           await updateUserProfile(firestore, user, {});
-          // The listener will pick up the new document, no need to set state here.
         } catch (error) {
           console.error("Failed to create user profile:", error);
-          setLoading(false);
         }
       }
+       setLoading(false);
     }, (error) => {
         console.error("Error fetching profile:", error);
         setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [user, authLoading, firestore]);
+  }, [user, authLoading, firestore, router]);
 
-   useEffect(() => {
-    // If the user logs out, redirect them away from the profile page.
-    if (!authLoading && !user) {
-      router.push('/');
-    }
-  }, [user, authLoading, router]);
 
-  if (loading || authLoading) {
+  if (loading || authLoading || !profile) {
     return (
       <div className="flex flex-col min-h-screen bg-background text-foreground">
         <Header />
@@ -98,42 +101,6 @@ export default function MyProfilePage() {
         </main>
       </div>
     );
-  }
-
-  if (!user) {
-    return (
-      <div className="flex flex-col min-h-screen bg-background text-foreground">
-        <Header />
-        <main className="flex-1 container mx-auto p-4 md:p-6 flex justify-center items-center">
-          <Card className="w-full max-w-md text-center shadow-lg">
-            <CardHeader>
-              <CardTitle>Access Your Profile</CardTitle>
-              <CardDescription>You need to be signed in to view your profile page.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button asChild>
-                <Link href="/login">Sign In</Link>
-              </Button>
-            </CardContent>
-          </Card>
-        </main>
-      </div>
-    );
-  }
-
-  if (!profile) {
-    // This state can happen if profile creation fails or is in progress.
-    return (
-       <div className="flex flex-col min-h-screen bg-background text-foreground">
-        <Header />
-        <main className="flex-1 container mx-auto p-4 md:p-6 flex justify-center items-center">
-            <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Setting up your profile...</p>
-            </div>
-        </main>
-      </div>
-    )
   }
 
   const displayName = profile.displayName || 'User';

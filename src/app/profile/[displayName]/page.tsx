@@ -53,9 +53,10 @@ export default function ProfilePage({ params }: ProfilePageProps) {
         const userDoc = snapshot.docs[0];
         const profileData = userDoc.data() as UserProfile;
 
-        // If the current user is viewing their own profile via an old display name URL, redirect them.
-        if (currentUser && currentUser.uid === userDoc.id && profileData.displayName && profileData.displayName !== displayNameFromParam) {
-           router.replace(`/profile/${encodeURIComponent(profileData.displayName)}`);
+        // If the current user is viewing this page AND the displayName in their auth state
+        // doesn't match the URL, it means their name changed and they should be redirected.
+        if (currentUser && currentUser.uid === userDoc.id && currentUser.displayName && currentUser.displayName !== displayNameFromParam) {
+           router.replace(`/profile/${encodeURIComponent(currentUser.displayName)}`);
            return;
         }
 

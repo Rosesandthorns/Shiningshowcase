@@ -44,6 +44,7 @@ const detailsSchema = z.object({
     nickname: z.string().min(1, 'Nickname is required.'),
     level: z.coerce.number().min(1).max(100),
     nature: z.string().min(1, 'Nature is required.'),
+    form: z.string().optional(),
 });
 
 const originSchema = z.object({
@@ -165,6 +166,10 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                 setFormData({ ...formData, ...data });
                 // Pre-fill nickname with species name
                 form.setValue('nickname', data.speciesName.charAt(0).toUpperCase() + data.speciesName.slice(1));
+                // Set default form if available
+                if (details.forms && details.forms.length > 0) {
+                    form.setValue('form', details.forms[0].name);
+                }
                 setCurrentStep(currentStep + 1);
             } catch (error) {
                 form.setError('speciesName', { type: 'manual', message: 'Could not find this Pokémon. Check the spelling.' });
@@ -210,6 +215,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
             moveset: formData.moveset,
             tags: finalTags,
             description: '',
+            form: formData.form
         };
 
         try {
@@ -237,6 +243,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
         .filter((name: string) => !moveset.includes(name))
         .filter((name: string) => name.toLowerCase().includes(movesSearch.toLowerCase()));
 
+    const availableForms = apiData?.forms?.filter((f: any) => !f.name.includes('-f') && !f.name.includes('-m')) || [];
 
     return (
         <Card className="w-full max-w-2xl mx-auto shadow-lg">
@@ -277,8 +284,9 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                                                         key={p.pokedexNumber}
                                                         value={p.speciesName}
                                                         onSelect={(currentValue) => {
-                                                            form.setValue("speciesName", currentValue === form.watch("speciesName") ? "" : currentValue, { shouldValidate: true });
-                                                            setCommandValue(p.speciesName);
+                                                            const newValue = currentValue === form.watch("speciesName").toLowerCase() ? "" : p.speciesName;
+                                                            form.setValue("speciesName", newValue, { shouldValidate: true });
+                                                            setCommandValue(newValue);
                                                             setFilteredPokedex([]);
                                                             setPopoverOpen(false);
                                                         }}
@@ -309,6 +317,24 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                                 <Input id="nickname" {...form.register('nickname')} placeholder="e.g., Sparky" />
                                 {form.formState.errors.nickname && <p className="text-sm text-destructive mt-1">{form.formState.errors.nickname.message as string}</p>}
                             </div>
+                            {availableForms.length > 1 && (
+                                <div>
+                                    <label htmlFor="form" className="block text-sm font-medium mb-1">Form</label>
+                                    <Select onValueChange={(value) => form.setValue('form', value)} defaultValue={form.watch('form')}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select a form" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {availableForms.map((f: any) => (
+                                                <SelectItem key={f.name} value={f.name} className="capitalize">
+                                                    {f.name.replace(/-/g, ' ')}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    {form.formState.errors.form && <p className="text-sm text-destructive mt-1">{form.formState.errors.form.message as string}</p>}
+                                </div>
+                            )}
                             <div>
                                 <label htmlFor="level" className="block text-sm font-medium mb-1">Level</label>
                                 <Input id="level" type="number" {...form.register('level')} placeholder="1-100" />
@@ -439,6 +465,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                             </div>
                             <p><strong>Nickname:</strong> {formData.nickname}</p>
                             <p><strong>Species:</strong> {formData.speciesName}</p>
+                            {formData.form && <p><strong>Form:</strong> {formData.form.replace(/-/g, ' ')}</p>}
                             <p><strong>Level:</strong> {formData.level}</p>
                             <p><strong>Nature:</strong> {formData.nature}</p>
                             <p><strong>Gender:</strong> {formData.gender}</p>
@@ -469,3 +496,5 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
         </Card>
     );
 }
+
+    

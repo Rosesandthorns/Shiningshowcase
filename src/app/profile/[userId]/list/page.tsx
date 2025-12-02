@@ -35,6 +35,7 @@ export default function ListPage({ params }: ListPageProps) {
             setLoading(true);
             setError(null);
             try {
+                // Directly use profileUserId to fetch data
                 const userPokemon = await getAllPokemon(firestore, profileUserId);
                 setPokemon(userPokemon);
             } catch (err) {

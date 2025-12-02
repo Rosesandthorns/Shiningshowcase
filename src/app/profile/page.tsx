@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 import { updateUserProfile } from '@/lib/user';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Header } from '@/components/Header';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
 
 
 export default function MyProfileRedirectPage() {
@@ -17,27 +17,30 @@ export default function MyProfileRedirectPage() {
 
   useEffect(() => {
     if (authLoading) {
-      return;
+      return; // Wait until auth state is confirmed
     }
     
     if (!user) {
+      // If not logged in after auth check, redirect to login
       router.replace('/login');
       return;
     }
 
     if (!firestore) {
-      return;
+      return; // Wait for firestore to be available
     }
 
+    // This is the core logic: ensure a profile exists and redirect to it using the stable UID.
     const ensureProfileAndRedirect = async () => {
         try {
-            // This function ensures a profile exists and returns the UID
+            // This function ensures a profile exists with a display name and returns the user's UID.
             const userId = await updateUserProfile(firestore, user, {});
+            // Redirect to the stable, UID-based URL.
             router.replace(`/profile/${userId}`);
         } catch (error) {
-            console.error("Failed to ensure user profile, staying on page:", error);
-             // If it fails, maybe stay here and show an error? For now, we do nothing.
-             // The user will be stuck on a loading screen.
+            console.error("Failed to ensure user profile:", error);
+            // If profile creation fails, the user will be stuck here with a loading screen.
+            // A more robust solution might show an error message.
         }
     };
 

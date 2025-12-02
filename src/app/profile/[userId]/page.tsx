@@ -36,12 +36,21 @@ export default function ProfilePage({ params }: ProfilePageProps) {
   const [loading, setLoading] = useState(true);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
+  // The userId is now directly from the URL param
   const userIdFromParam = params.userId;
 
   useEffect(() => {
-    if (!firestore || !userIdFromParam) return;
+    if (!firestore || !userIdFromParam) {
+        // If there's no userId in the param, we can't load a profile.
+        // This might happen during a brief render cycle, so we wait until loading is false.
+        if (!loading) {
+          setProfile(null);
+        }
+        return;
+    };
 
     setLoading(true);
+    // Directly use the userId from the URL to get the document.
     const userRef = doc(firestore, 'users', userIdFromParam);
 
     const unsubscribe = onSnapshot(userRef, (docSnap) => {
@@ -49,6 +58,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
         const profileData = docSnap.data() as Omit<UserProfile, 'uid'>;
         setProfile({ ...profileData, uid: docSnap.id });
       } else {
+        // This user ID does not exist in Firestore.
         setProfile(null);
       }
       setLoading(false);
@@ -59,7 +69,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
     });
 
     return () => unsubscribe();
-  }, [firestore, userIdFromParam]);
+  }, [firestore, userIdFromParam, loading]);
 
   const isOwner = useMemo(() => {
     return !authLoading && currentUser && profile && currentUser.uid === profile.uid;
@@ -85,6 +95,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
     );
   }
 
+  // If after loading, the profile is still null, it means the user ID doesn't exist.
   if (!profile) {
     notFound();
   }

@@ -55,11 +55,12 @@ export default function MyProfilePage() {
                 // This call will either set the initial name or update it.
                 const updatedName = await updateUserProfile(firestore, user, { displayName: user.displayName || undefined });
                  // If the name changed, we should redirect to the new canonical URL.
-                if (updatedName !== profileData.displayName && router) {
+                if (updatedName && router) {
                     router.replace(`/profile/${encodeURIComponent(updatedName)}`);
                 }
             } catch (error) {
                 console.error("Failed to auto-update displayName:", error);
+                 setProfile(profileData); // set profile even if update fails
             }
         } else {
              setProfile(profileData);
@@ -67,7 +68,10 @@ export default function MyProfilePage() {
       } else {
         // Profile doesn't exist, so create it. The listener will pick up the new document.
         try {
-          await updateUserProfile(firestore, user, {});
+          const newName = await updateUserProfile(firestore, user, {});
+          if(newName && router) {
+              router.replace(`/profile/${encodeURIComponent(newName)}`);
+          }
         } catch (error) {
           console.error("Failed to create user profile:", error);
         }

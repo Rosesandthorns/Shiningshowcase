@@ -32,7 +32,7 @@ export function Header() {
     }
   };
 
-  const userDisplayName = user?.displayName;
+  const userId = user?.uid;
 
   return (
     <header className="bg-primary text-primary-foreground shadow-md">
@@ -45,10 +45,10 @@ export function Header() {
           <Link href="/" className="text-sm md:text-base hover:underline">Home</Link>
           
           {/* Visible on medium screens and up */}
-          {!loading && userDisplayName && (
+          {!loading && userId && (
             <>
-              <Link href={`/profile/${encodeURIComponent(userDisplayName)}/list`} className="text-sm md:text-base hover:underline hidden md:inline">My List</Link>
-              <Link href={`/profile/${encodeURIComponent(userDisplayName)}/analytics`} className="text-sm md:text-base hover:underline hidden md:inline">My Analytics</Link>
+              <Link href={`/profile/${userId}/list`} className="text-sm md:text-base hover:underline hidden md:inline">My List</Link>
+              <Link href={`/profile/${userId}/analytics`} className="text-sm md:text-base hover:underline hidden md:inline">My Analytics</Link>
             </>
           )}
           <Link href="/hunts" className="text-sm md:text-base hover:underline hidden md:inline">Hunts</Link>
@@ -67,17 +67,17 @@ export function Header() {
                       My Profile
                     </Link>
                   </DropdownMenuItem>
-                  {userDisplayName && (
+                  {userId && (
                     <>
                       {/* Hidden on medium screens and up */}
                       <DropdownMenuItem asChild className="md:hidden">
-                        <Link href={`/profile/${encodeURIComponent(userDisplayName)}/list`}>
+                        <Link href={`/profile/${userId}/list`}>
                           <LayoutList className="mr-2 h-4 w-4" />
                           My List
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild className="md:hidden">
-                        <Link href={`/profile/${encodeURIComponent(userDisplayName)}/analytics`}>
+                        <Link href={`/profile/${userId}/analytics`}>
                           <BarChart2 className="mr-2 h-4 w-4" />
                           My Analytics
                         </Link>

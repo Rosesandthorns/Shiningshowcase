@@ -55,7 +55,7 @@ export async function isDisplayNameUnique(firestore: Firestore, displayName: str
  * @param firestore The Firestore instance.
  * @param user The Firebase user object.
  * @param data The data to update.
- * @returns The final display name that was saved.
+ * @returns The final user ID that was saved.
  */
 export async function updateUserProfile(
   firestore: Firestore,
@@ -78,6 +78,8 @@ export async function updateUserProfile(
       }
       authUpdateData.displayName = finalDisplayName;
       firestoreUpdateData.displayName = finalDisplayName;
+    } else {
+        firestoreUpdateData.displayName = finalDisplayName;
     }
   } else {
     // If no display name is being set, ensure one exists in the doc
@@ -100,12 +102,11 @@ export async function updateUserProfile(
 
       finalDisplayName = newDisplayName;
       firestoreUpdateData.displayName = finalDisplayName;
-      // Also update auth if it's different
-      if (finalDisplayName !== user.displayName) {
-        authUpdateData.displayName = finalDisplayName;
-      }
+      authUpdateData.displayName = finalDisplayName;
+      
     } else {
         finalDisplayName = userDoc.data()?.displayName;
+        firestoreUpdateData.displayName = finalDisplayName;
     }
   }
 
@@ -128,12 +129,5 @@ export async function updateUserProfile(
     await updateProfile(user, { displayName: authUpdateData.displayName });
   }
 
-  if (!finalDisplayName) {
-      // This should theoretically not be reached due to the logic above
-      const docSnap = await getDoc(userDocRef);
-      finalDisplayName = docSnap.data()?.displayName;
-      if (!finalDisplayName) throw new Error("Could not determine a display name.");
-  }
-
-  return finalDisplayName;
+  return user.uid;
 }

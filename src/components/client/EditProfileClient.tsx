@@ -12,7 +12,6 @@ import { type User } from 'firebase/auth';
 import { useState } from 'react';
 import { updateUserProfile } from '@/lib/user';
 import { useFirestore } from '@/firebase';
-import { useRouter } from 'next/navigation';
 
 const MAX_FILE_SIZE = 500 * 1024; // 500 KB
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
@@ -49,7 +48,6 @@ interface EditProfileClientProps {
 export function EditProfileClient({ user, profile, onSave }: EditProfileClientProps) {
   const { toast } = useToast();
   const firestore = useFirestore();
-  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<ProfileFormValues>({
@@ -67,10 +65,9 @@ export function EditProfileClient({ user, profile, onSave }: EditProfileClientPr
       description: 'Please wait while we save your changes.',
     });
 
-    const oldDisplayName = profile?.displayName || user.displayName;
 
     try {
-      const newDisplayName = await updateUserProfile(firestore, user, {
+      await updateUserProfile(firestore, user, {
         displayName: data.displayName,
         photoFile: data.photoFile,
         bannerFile: data.bannerFile,
@@ -82,10 +79,6 @@ export function EditProfileClient({ user, profile, onSave }: EditProfileClientPr
       });
       
       onSave();
-
-      if (newDisplayName && oldDisplayName !== newDisplayName) {
-        router.push(`/profile/${encodeURIComponent(newDisplayName)}`);
-      }
 
     } catch (error: any) {
       console.error('Error updating profile:', error);

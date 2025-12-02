@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useFirestore } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import { Header } from '@/components/Header';
 import { AnalyticsTab } from '@/components/tabs/AnalyticsTab';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -9,13 +9,12 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { notFound } from 'next/navigation';
-import { getAllPokemon, getUserIdFromDisplayName } from '@/lib/pokemonApi';
+import { getAllPokemon } from '@/lib/pokemonApi';
 import type { Pokemon } from '@/types/pokemon';
-import { useUser } from '@/firebase/auth/use-user';
 
 type AnalyticsPageProps = {
     params: {
-        displayName: string;
+        userId: string;
     };
 };
 
@@ -24,29 +23,19 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
     const firestore = useFirestore();
 
     const [pokemon, setPokemon] = useState<Pokemon[] | null>(null);
-    const [profileUserId, setProfileUserId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     
-    const displayName = decodeURIComponent(params.displayName);
+    const profileUserId = params.userId;
 
     useEffect(() => {
-        if (!firestore) return;
+        if (!firestore || !profileUserId) return;
 
-        const fetchProfileAndPokemon = async () => {
+        const fetchPokemon = async () => {
             setLoading(true);
             setError(null);
             try {
-                const userId = await getUserIdFromDisplayName(firestore, displayName);
-                if (!userId) {
-                    setError("Profile not found.");
-                    setPokemon([]);
-                    setProfileUserId(null);
-                    setLoading(false);
-                    return;
-                }
-                setProfileUserId(userId);
-                const userPokemon = await getAllPokemon(firestore, userId);
+                const userPokemon = await getAllPokemon(firestore, profileUserId);
                 setPokemon(userPokemon);
             } catch (err) {
                 console.error("Error fetching analytics data:", err);
@@ -56,9 +45,9 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
             }
         };
 
-        fetchProfileAndPokemon();
+        fetchPokemon();
 
-    }, [firestore, displayName]);
+    }, [firestore, profileUserId]);
 
 
     if (loading || authLoading) {
@@ -91,7 +80,7 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
                         </CardHeader>
                         <CardContent>
                              <Button asChild variant="outline">
-                                <Link href={`/profile/${params.displayName}/list`}>Back to List</Link>
+                                <Link href={`/profile/${profileUserId}/list`}>Back to List</Link>
                             </Button>
                         </CardContent>
                     </Card>

@@ -108,7 +108,7 @@ export function SearchClient() {
         {!loading && results.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {results.map(user => (
-              <Link key={user.uid} href={`/profile/${encodeURIComponent(user.displayName)}`} legacyBehavior>
+              <Link key={user.uid} href={`/profile/${user.uid}`} legacyBehavior>
                 <a className="block">
                   <Card className="hover:bg-accent hover:border-primary transition-colors cursor-pointer">
                     <CardContent className="p-4 flex items-center space-x-4">
@@ -130,4 +130,3 @@ export function SearchClient() {
     </div>
   );
 }
-

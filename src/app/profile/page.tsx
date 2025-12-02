@@ -2,91 +2,51 @@
 'use client';
 
 import { useUser, useFirestore } from '@/firebase';
-import { Header } from '@/components/Header';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
-import { EditProfileClient } from '@/components/client/EditProfileClient';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { updateUserProfile } from '@/lib/user';
-import Link from 'next/link';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { updateUserProfile } from '@/lib/user';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Header } from '@/components/Header';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 
-interface UserProfile {
-  uid: string;
-  displayName?: string;
-  photoURL?: string;
-  bannerURL?: string;
-}
 
-export default function MyProfilePage() {
+export default function MyProfileRedirectPage() {
   const { user, loading: authLoading } = useUser();
   const firestore = useFirestore();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    // 1. Wait for auth to be ready
     if (authLoading) {
       return;
     }
-    // 2. If not logged in, redirect to login
+    
     if (!user) {
-      router.push('/login');
+      router.replace('/login');
       return;
     }
-    // 3. If logged in but firestore isn't ready, wait.
+
     if (!firestore) {
       return;
     }
 
-    setLoading(true);
-    const profileRef = doc(firestore, 'users', user.uid);
-    const unsubscribe = onSnapshot(profileRef, async (docSnap) => {
-      
-      let profileData: UserProfile | null = docSnap.exists() ? { ...docSnap.data(), uid: docSnap.id } as UserProfile : null;
-
-      try {
-        // If the profile doc doesn't exist, or it's missing a display name, create/update it.
-        // This is a critical step to ensure every user has a stable, unique name.
-        if (!profileData || !profileData.displayName) {
-          const newDisplayName = await updateUserProfile(firestore, user, { displayName: user.displayName });
-          // If a name was created/updated, we must redirect to the canonical URL
-          // to ensure bookmarks and page reloads work correctly.
-          if (newDisplayName) {
-              router.replace(`/profile/${encodeURIComponent(newDisplayName)}`);
-              return; // Stop processing further to allow redirect to complete
-          }
-        } else {
-            // If the user's auth displayName is out of sync with firestore, trust firestore and update auth
-            // This can happen if the name was changed on another device.
-            if (user.displayName !== profileData.displayName) {
-                 await updateUserProfile(firestore, user, { displayName: profileData.displayName });
-            }
-            setProfile(profileData);
+    const ensureProfileAndRedirect = async () => {
+        try {
+            // This function ensures a profile exists and returns the UID
+            const userId = await updateUserProfile(firestore, user, {});
+            router.replace(`/profile/${userId}`);
+        } catch (error) {
+            console.error("Failed to ensure user profile, staying on page:", error);
+             // If it fails, maybe stay here and show an error? For now, we do nothing.
+             // The user will be stuck on a loading screen.
         }
-      } catch (error) {
-         console.error("Error ensuring user profile:", error);
-      } finally {
-        setLoading(false);
-      }
-    }, (error) => {
-        console.error("Error fetching profile:", error);
-        setLoading(false);
-    });
+    };
 
-    return () => unsubscribe();
+    ensureProfileAndRedirect();
+
   }, [user, authLoading, firestore, router]);
 
-
-  if (loading || authLoading || !profile) {
-    return (
+  // Display a full-page loading skeleton while the redirect is in progress.
+  return (
       <div className="flex flex-col min-h-screen bg-background text-foreground">
         <Header />
         <main className="flex-1 container mx-auto p-4 md:p-6 flex justify-center items-start pt-12">
@@ -103,53 +63,5 @@ export default function MyProfilePage() {
           </Card>
         </main>
       </div>
-    );
-  }
-
-  const displayName = profile.displayName || 'User';
-  const photoURL = profile.photoURL;
-  const bannerURL = profile.bannerURL;
-  const fallbackInitial = displayName.charAt(0).toUpperCase();
-
-  return (
-    <div className="flex flex-col min-h-screen bg-background text-foreground">
-      <Header />
-      <main className="flex-1 container mx-auto p-4 md:p-6 flex justify-center items-start pt-12">
-        <Card className="w-full max-w-2xl shadow-xl overflow-hidden">
-          <div className="h-48 bg-muted relative">
-            {bannerURL && (
-              <Image src={bannerURL} alt="Profile banner" layout="fill" objectFit="cover" unoptimized/>
-            )}
-          </div>
-          <CardHeader className="text-center -mt-16">
-            <Avatar className="w-24 h-24 border-4 border-background mx-auto shadow-lg">
-              {photoURL && <AvatarImage src={photoURL} alt={displayName} />}
-              <AvatarFallback>{fallbackInitial}</AvatarFallback>
-            </Avatar>
-            <CardTitle className="text-3xl font-bold font-headline mt-4">{displayName}</CardTitle>
-            {user.email && <CardDescription>{user.email}</CardDescription>}
-          </CardHeader>
-          <CardContent className="text-center p-6 space-x-2">
-            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>Edit Profile</Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>Edit profile</DialogTitle>
-                </DialogHeader>
-                <EditProfileClient user={user} profile={profile} onSave={() => setIsEditDialogOpen(false)} />
-              </DialogContent>
-            </Dialog>
-            <Button asChild variant="outline">
-              <Link href={`/profile/${encodeURIComponent(displayName)}/list`}>My List</Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link href={`/profile/${encodeURIComponent(displayName)}/analytics`}>My Analytics</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </main>
-    </div>
   );
 }

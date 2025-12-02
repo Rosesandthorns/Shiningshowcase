@@ -7,13 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { collection, query, where, onSnapshot, limit } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { useEffect, useState, useMemo } from 'react';
 import { EditProfileClient } from '@/components/client/EditProfileClient';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import Image from 'next/image';
 import Link from 'next/link';
-import { notFound, useRouter } from 'next/navigation';
+import { notFound } from 'next/navigation';
 
 interface UserProfile {
   uid: string;
@@ -24,43 +24,32 @@ interface UserProfile {
 
 type ProfilePageProps = {
   params: {
-    displayName: string;
+    userId: string;
   };
 };
 
 export default function ProfilePage({ params }: ProfilePageProps) {
   const { user: currentUser, loading: authLoading } = useUser();
   const firestore = useFirestore();
-  const router = useRouter();
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-  const displayNameFromParam = decodeURIComponent(params.displayName);
+  const userIdFromParam = params.userId;
 
   useEffect(() => {
-    if (!firestore) return;
+    if (!firestore || !userIdFromParam) return;
 
     setLoading(true);
-    const usersRef = collection(firestore, 'users');
-    const q = query(usersRef, where('displayName', '==', displayNameFromParam), limit(1));
+    const userRef = doc(firestore, 'users', userIdFromParam);
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      if (snapshot.empty) {
-        setProfile(null);
+    const unsubscribe = onSnapshot(userRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const profileData = docSnap.data() as Omit<UserProfile, 'uid'>;
+        setProfile({ ...profileData, uid: docSnap.id });
       } else {
-        const userDoc = snapshot.docs[0];
-        const profileData = userDoc.data() as UserProfile;
-
-        // If the current user is viewing THIS page AND the displayName in their auth state
-        // doesn't match the URL, it means their name changed and they should be redirected.
-        if (currentUser && currentUser.uid === userDoc.id && currentUser.displayName && currentUser.displayName !== displayNameFromParam) {
-           router.replace(`/profile/${encodeURIComponent(currentUser.displayName)}`);
-           return;
-        }
-
-        setProfile({ ...profileData, uid: userDoc.id });
+        setProfile(null);
       }
       setLoading(false);
     }, (error) => {
@@ -70,7 +59,7 @@ export default function ProfilePage({ params }: ProfilePageProps) {
     });
 
     return () => unsubscribe();
-  }, [firestore, displayNameFromParam, currentUser, router]);
+  }, [firestore, userIdFromParam]);
 
   const isOwner = useMemo(() => {
     return !authLoading && currentUser && profile && currentUser.uid === profile.uid;
@@ -138,10 +127,10 @@ export default function ProfilePage({ params }: ProfilePageProps) {
               </Dialog>
             )}
             <Button asChild variant="outline">
-              <Link href={`/profile/${encodeURIComponent(displayName)}/list`}>View List</Link>
+              <Link href={`/profile/${profile.uid}/list`}>View List</Link>
             </Button>
             <Button asChild variant="outline">
-              <Link href={`/profile/${encodeURIComponent(displayName)}/analytics`}>View Analytics</Link>
+              <Link href={`/profile/${profile.uid}/analytics`}>View Analytics</Link>
             </Button>
           </CardContent>
         </Card>

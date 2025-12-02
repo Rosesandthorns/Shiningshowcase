@@ -267,9 +267,9 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
     // Use the form-specific data if available, otherwise use base species data
     const movesDataSource = formSpecificApiData || apiData;
     const availableMoves = (movesDataSource?.moves || [])
-        .map((m: any) => m.move.name)
-        .filter((name: string) => !moveset.includes(name))
-        .filter((name: string) => name.toLowerCase().includes(movesSearch.toLowerCase()));
+        .filter((move: any) => !moveset.includes(move.move.name))
+        .filter((move: any) => move.move.name.toLowerCase().includes(movesSearch.toLowerCase()));
+
 
     const availableForms = apiData?.varieties?.filter((v: any) => {
       // Exclude gender forms, mega forms, gmax forms etc. - we want regional forms primarily.
@@ -332,8 +332,8 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                                                         key={p.pokedexNumber}
                                                         value={p.speciesName}
                                                         onSelect={(currentValue) => {
-                                                            form.setValue("speciesName", currentValue, { shouldValidate: true });
-                                                            setCommandValue(currentValue);
+                                                            form.setValue("speciesName", p.speciesName, { shouldValidate: true });
+                                                            setCommandValue(p.speciesName);
                                                             setFilteredPokedex([]);
                                                             setPopoverOpen(false);
                                                         }}
@@ -473,19 +473,19 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                                         <CommandList>
                                             <CommandEmpty>No moves found.</CommandEmpty>
                                             <CommandGroup>
-                                                {availableMoves.map((moveName: string) => (
+                                                {availableMoves.map((move: any) => (
                                                     <CommandItem
-                                                        key={moveName}
+                                                        key={move.move.name}
                                                         onSelect={() => {
                                                             if (moveset.length < 4) {
-                                                                const newMoveset = [...moveset, moveName];
+                                                                const newMoveset = [...moveset, move.move.name];
                                                                 form.setValue('moveset', newMoveset, { shouldValidate: true });
                                                             }
                                                             setMovesSearch('');
                                                         }}
                                                         className="capitalize"
                                                     >
-                                                        {moveName.replace('-', ' ')}
+                                                        {move.move.name.replace('-', ' ')}
                                                     </CommandItem>
                                                 ))}
                                             </CommandGroup>
@@ -546,4 +546,6 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
 }
 
     
+    
+
     

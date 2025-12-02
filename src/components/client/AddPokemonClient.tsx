@@ -266,12 +266,20 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
     
     // Use the form-specific data if available, otherwise use base species data
     const movesDataSource = formSpecificApiData || apiData;
-    const availableMoves = movesDataSource?.moves
+    const availableMoves = (movesDataSource?.moves || [])
         .map((m: any) => m.move.name)
         .filter((name: string) => !moveset.includes(name))
         .filter((name: string) => name.toLowerCase().includes(movesSearch.toLowerCase()));
 
-    const availableForms = apiData?.varieties?.filter((v: any) => v.pokemon.name !== apiData.name) || [];
+    const availableForms = apiData?.varieties?.filter((v: any) => {
+      // Exclude gender forms, mega forms, gmax forms etc. - we want regional forms primarily.
+      const name = v.pokemon.name.toLowerCase();
+      const baseName = apiData.name.toLowerCase();
+      if (name === baseName) return false;
+      // This is not perfect, but it's a good heuristic to get regional variants and other major forms
+      // while excluding temporary battle forms.
+      return !name.includes('-mega') && !name.includes('-gmax') && !name.includes('-totem') && !name.includes('-starter');
+    }) || [];
 
     const formatFormName = (varietyName: string) => {
         const baseName = apiData.name;
@@ -324,9 +332,8 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                                                         key={p.pokedexNumber}
                                                         value={p.speciesName}
                                                         onSelect={(currentValue) => {
-                                                            const properName = fullPokedex.find(p => p.speciesName.toLowerCase() === currentValue)?.speciesName || currentValue;
-                                                            form.setValue("speciesName", properName, { shouldValidate: true });
-                                                            setCommandValue(properName);
+                                                            form.setValue("speciesName", currentValue, { shouldValidate: true });
+                                                            setCommandValue(currentValue);
                                                             setFilteredPokedex([]);
                                                             setPopoverOpen(false);
                                                         }}
@@ -334,7 +341,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                                                         <Check
                                                             className={cn(
                                                                 "mr-2 h-4 w-4",
-                                                                form.watch('speciesName') === p.speciesName ? "opacity-100" : "opacity-0"
+                                                                form.watch('speciesName')?.toLowerCase() === p.speciesName.toLowerCase() ? "opacity-100" : "opacity-0"
                                                             )}
                                                         />
                                                         {p.speciesName}
@@ -538,4 +545,5 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
     );
 }
 
+    
     

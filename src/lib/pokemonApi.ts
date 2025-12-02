@@ -56,33 +56,61 @@ export async function getPokemonDetailsByName(name: string): Promise<any> {
 
 export async function getAllPokemon(firestore: Firestore, userId: string): Promise<Pokemon[]> {
   if (!userId) return [];
-  const pokemonColRef = collection(firestore, 'users', userId, 'pokemon');
-  const snapshot = await getDocs(pokemonColRef);
-  
-  if (snapshot.empty) {
-    return [];
+  try {
+    const pokemonColRef = collection(firestore, 'users', userId, 'pokemon');
+    const snapshot = await getDocs(pokemonColRef);
+    
+    if (snapshot.empty) {
+      return [];
+    }
+    
+    const pokemonList = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    } as Pokemon));
+    
+    return pokemonList;
+  } catch (error) {
+    console.error(`[Server API Error] Failed to fetch pokemon for userId ${userId}:`, error);
+    return []; // Return empty array on error to prevent crashes
   }
-  
-  const pokemonList = snapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data()
-  } as Pokemon));
-  
-  return pokemonList;
 }
 
-export async function getUserProfile(firestore: Firestore, userId: string): Promise<UserProfile | null> {
-    if (!userId) {
+export async function getUserProfile(firestore: Firestore, userIdOrDisplayName: string): Promise<UserProfile | null> {
+    if (!userIdOrDisplayName) {
+        console.log('[Server Page] getUserProfile called with no userIdOrDisplayName.');
         return null;
     }
-    const userDocRef = doc(firestore, 'users', userId);
-    const docSnap = await getDoc(userDocRef);
 
-    if (docSnap.exists()) {
-        return { uid: docSnap.id, ...docSnap.data() } as UserProfile;
-    } else {
-        // This is a crucial part. If the document doesn't exist, we return null.
-        // The calling Server Component will then use notFound() to render a 404 page.
+    try {
+        // 1. First, assume the identifier is a UID and try to get the document directly.
+        const userDocRef = doc(firestore, 'users', userIdOrDisplayName);
+        const docSnap = await getDoc(userDocRef);
+
+        if (docSnap.exists()) {
+            console.log(`[Server Page] Found profile for UID: ${userIdOrDisplayName}`);
+            return { uid: docSnap.id, ...docSnap.data() } as UserProfile;
+        }
+
+        // 2. If that fails, assume it might be a display name and query the collection.
+        console.log(`[Server Page] No document for UID ${userIdOrDisplayName}. Trying to find by displayName.`);
+        const usersRef = collection(firestore, 'users');
+        const q = query(usersRef, where('displayName', '==', userIdOrDisplayName), limit(1));
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+            const userDoc = querySnapshot.docs[0];
+            console.log(`[Server Page] Found profile for displayName: ${userIdOrDisplayName}`);
+            return { uid: userDoc.id, ...userDoc.data() } as UserProfile;
+        }
+
+        // 3. If neither method works, the user does not exist.
+        console.log(`[Server Page] No profile found for identifier: ${userIdOrDisplayName}`);
+        return null;
+
+    } catch (error) {
+        console.error(`[Server API Error] Failed to fetch profile for identifier ${userIdOrDisplayName}:`, error);
+        // In case of a database error, we also return null to trigger notFound().
         return null;
     }
 }

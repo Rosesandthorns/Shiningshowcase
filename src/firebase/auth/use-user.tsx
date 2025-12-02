@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -11,7 +12,9 @@ import {
   useContext,
   type ReactNode,
 } from 'react';
-import { useAuth } from '../provider';
+import { useAuth, useFirestore } from '../provider';
+import { doc, getDoc } from 'firebase/firestore';
+import { updateUserProfile } from '@/lib/user';
 
 export type UserState = {
   user: User | null;
@@ -25,22 +28,43 @@ const UserContext = createContext<UserState>({
 
 export function UserProvider({ children }: { children: ReactNode }) {
   const auth = useAuth();
+  const firestore = useFirestore();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         console.log(`Auth state changed: User is signed in as ${user.displayName} (${user.email})`);
+        
+        // Ensure user profile exists in Firestore.
+        const userDocRef = doc(firestore, 'users', user.uid);
+        const docSnap = await getDoc(userDocRef);
+        
+        if (!docSnap.exists()) {
+          console.log(`User profile for ${user.uid} not found. Creating one...`);
+          try {
+            await updateUserProfile(firestore, user, { displayName: user.displayName || undefined });
+            console.log(`Successfully created profile for ${user.uid}.`);
+            // We might need to refresh the user object to get the new display name if it was generated
+            await user.reload(); 
+            setUser(auth.currentUser); // Set the updated user object
+          } catch (error) {
+            console.error("Failed to create user profile on login:", error);
+          }
+        } else {
+           setUser(user);
+        }
+
       } else {
         console.log("Auth state changed: No user is signed in.");
+        setUser(null);
       }
+      setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [auth]);
+  }, [auth, firestore]);
 
   return (
     <UserContext.Provider value={{ user, loading }}>

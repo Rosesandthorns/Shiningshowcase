@@ -81,8 +81,15 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
             <CardTitle className="text-3xl font-bold font-headline mt-4">{displayName}</CardTitle>
             {currentUser?.email && isOwner && <CardDescription>{currentUser.email}</CardDescription>}
           </CardHeader>
-          <CardContent className="text-center space-y-4">
-             {isOwner && currentUser && (
+          <CardContent className="text-center p-6">
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
+              <Button asChild variant="outline">
+                <Link href={`/profile/${profile.uid}/list`}>View List</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href={`/profile/${profile.uid}/analytics`}>View Analytics</Link>
+              </Button>
+               {isOwner && currentUser && (
                 <Dialog>
                     <DialogTrigger asChild>
                     <Button>Edit Profile</Button>
@@ -96,14 +103,6 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                     </DialogContent>
                 </Dialog>
              )}
-
-            <div className="flex justify-center gap-2">
-              <Button asChild variant="outline">
-                <Link href={`/profile/${profile.uid}/list`}>View List</Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link href={`/profile/${profile.uid}/analytics`}>View Analytics</Link>
-              </Button>
             </div>
           </CardContent>
         </Card>

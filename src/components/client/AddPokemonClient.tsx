@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
@@ -166,7 +167,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
             setCurrentStep(currentStep + 1);
         } else {
             // Final submission
-            handleSubmit(newFormData, formSpecificApiData || apiData);
+            await handleSubmit(newFormData, formSpecificApiData || apiData);
         }
     };
     
@@ -222,7 +223,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                 tags: finalData.tags ? finalData.tags.split(',').map((t: string) => t.trim()).filter((t: string) => t) : [],
             };
             
-            addPokemon(firestore, user.uid, newPokemonData);
+            await addPokemon(firestore, user.uid, newPokemonData);
             
             toast({
                 title: 'Pokémon Added!',
@@ -315,295 +316,297 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                 <Progress value={progress} className="mt-2" />
             </CardHeader>
             <CardContent>
-                <form onSubmit={form.handleSubmit(handleNext)} className="space-y-6">
-                    {steps[currentStep].id === 'species' && (
-                         <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        role="combobox"
-                                        aria-expanded={popoverOpen}
-                                        className="w-full justify-between"
-                                    >
-                                        {form.watch('speciesName') || "Select Pokémon..."}
-                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-[--radix-popover-trigger-width] max-h-[--radix-popover-content-available-height] p-0">
-                                    <Command>
-                                        <CommandInput 
-                                            placeholder="Search Pokémon..."
-                                            value={commandValue}
-                                            onValueChange={setCommandValue}
-                                        />
-                                        <CommandEmpty>No Pokémon found.</CommandEmpty>
-                                        <CommandList>
-                                            <CommandGroup>
-                                                {filteredPokedex.map((p) => (
-                                                    <CommandItem
-                                                        key={p.pokedexNumber}
-                                                        value={p.speciesName}
-                                                        onSelect={(currentValue) => {
-                                                            handleSelectSpecies(currentValue);
-                                                        }}
-                                                    >
-                                                         <Check
-                                                            className={cn(
-                                                                "mr-2 h-4 w-4",
-                                                                form.getValues('speciesName')?.toLowerCase() === p.speciesName.toLowerCase() ? "opacity-100" : "opacity-0"
-                                                            )}
-                                                            />
-                                                        {p.speciesName}
-                                                    </CommandItem>
-                                                ))}
-                                            </CommandGroup>
-                                        </CommandList>
-                                    </Command>
-                                </PopoverContent>
-                            </Popover>
-                    )}
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(handleNext)} className="space-y-6">
+                        {steps[currentStep].id === 'species' && (
+                            <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            role="combobox"
+                                            aria-expanded={popoverOpen}
+                                            className="w-full justify-between"
+                                        >
+                                            {form.watch('speciesName') || "Select Pokémon..."}
+                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[--radix-popover-trigger-width] max-h-[--radix-popover-content-available-height] p-0">
+                                        <Command>
+                                            <CommandInput 
+                                                placeholder="Search Pokémon..."
+                                                value={commandValue}
+                                                onValueChange={setCommandValue}
+                                            />
+                                            <CommandEmpty>No Pokémon found.</CommandEmpty>
+                                            <CommandList>
+                                                <CommandGroup>
+                                                    {filteredPokedex.map((p) => (
+                                                        <CommandItem
+                                                            key={p.pokedexNumber}
+                                                            value={p.speciesName}
+                                                            onSelect={(currentValue) => {
+                                                                handleSelectSpecies(currentValue);
+                                                            }}
+                                                        >
+                                                            <Check
+                                                                className={cn(
+                                                                    "mr-2 h-4 w-4",
+                                                                    form.getValues('speciesName')?.toLowerCase() === p.speciesName.toLowerCase() ? "opacity-100" : "opacity-0"
+                                                                )}
+                                                                />
+                                                            {p.speciesName}
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
+                        )}
 
-                    {steps[currentStep].id === 'details' && (
-                        <>
+                        {steps[currentStep].id === 'details' && (
+                            <>
+                                <FormField
+                                    control={form.control}
+                                    name="nickname"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Nickname</FormLabel>
+                                            <FormControl><Input placeholder="Sparky" {...field} /></FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                
+                                {availableForms.length > 1 && (
+                                    <FormField
+                                    control={form.control}
+                                    name="form"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Form</FormLabel>
+                                            <Select onValueChange={(value) => handleFormChange(value)} defaultValue={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select a form" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    {availableForms.map((v: any) => (
+                                                        <SelectItem key={v.pokemon.name} value={v.pokemon.name}>
+                                                            {formatFormName(v.pokemon.name)}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                    />
+                                )}
+
+                                <FormField
+                                    control={form.control}
+                                    name="level"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Level</FormLabel>
+                                            <FormControl><Input type="number" min="1" max="100" placeholder="1-100" {...field} /></FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={form.control}
+                                    name="nature"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Nature</FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger><SelectValue placeholder="Select a nature" /></SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    {natures.map(n => <SelectItem key={n} value={n}>{n}</SelectItem>)}
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </>
+                        )}
+
+                        {steps[currentStep].id === 'origin' && (
+                            <>
+                            <FormField
+                                    control={form.control}
+                                    name="gameOrigin"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Game Origin</FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger><SelectValue placeholder="Select a game" /></SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    {games.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="ball"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Pokéball</FormLabel>
+                                            <FormControl><Input placeholder="e.g., Master Ball" {...field} /></FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="gender"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Gender</FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="male">Male</SelectItem>
+                                                    <SelectItem value="female">Female</SelectItem>
+                                                    <SelectItem value="genderless">Genderless</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </>
+                        )}
+
+                        {steps[currentStep].id === 'moves' && movesDataSource && (
                             <FormField
                                 control={form.control}
-                                name="nickname"
+                                name="moveset"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Nickname</FormLabel>
-                                        <FormControl><Input placeholder="Sparky" {...field} /></FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            
-                            {availableForms.length > 1 && (
-                                <FormField
-                                control={form.control}
-                                name="form"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Form</FormLabel>
-                                         <Select onValueChange={(value) => handleFormChange(value)} defaultValue={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Select a form" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {availableForms.map((v: any) => (
-                                                    <SelectItem key={v.pokemon.name} value={v.pokemon.name}>
-                                                        {formatFormName(v.pokemon.name)}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
+                                    <FormLabel>Moves (select up to 4)</FormLabel>
+                                    <Popover open={openMoves} onOpenChange={setOpenMoves}>
+                                            <PopoverTrigger asChild>
+                                                <Button variant="outline" className="w-full justify-start h-auto min-h-10">
+                                                    {moveset.length > 0 ? (
+                                                        <div className="flex gap-1 flex-wrap">
+                                                            {moveset.map(move => (
+                                                                <Badge key={move} variant="secondary" className="capitalize">
+                                                                    {move.replace('-', ' ')}
+                                                                    <button
+                                                                        className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                                                        onClick={(e) => {
+                                                                            e.preventDefault();
+                                                                            e.stopPropagation();
+                                                                            field.onChange(moveset.filter(m => m !== move));
+                                                                        }}
+                                                                    ><X className="h-3 w-3" /></button>
+                                                                </Badge>
+                                                            ))}
+                                                        </div>
+                                                    ) : "Select moves..."}
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                                                <Command>
+                                                    <CommandInput 
+                                                        placeholder="Search moves..." 
+                                                        value={movesSearch} 
+                                                        onValueChange={setMovesSearch}
+                                                    />
+                                                    <CommandList>
+                                                        <CommandEmpty>No moves found.</CommandEmpty>
+                                                        <CommandGroup>
+                                                            {availableMoves.map((move: any) => (
+                                                                <CommandItem
+                                                                    key={move.move.name}
+                                                                    onSelect={() => {
+                                                                        if (moveset.length < 4) {
+                                                                            field.onChange([...moveset, move.move.name]);
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    {move.move.name.replace('-', ' ')}
+                                                                </CommandItem>
+                                                            ))}
+                                                        </CommandGroup>
+                                                    </CommandList>
+                                                </Command>
+                                            </PopoverContent>
+                                        </Popover>
+                                    <FormMessage />
                                     </FormItem>
                                 )}
                                 />
-                            )}
-
+                        )}
+                        
+                        {steps[currentStep].id === 'tags' && (
                             <FormField
                                 control={form.control}
-                                name="level"
+                                name="tags"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Level</FormLabel>
-                                        <FormControl><Input type="number" min="1" max="100" placeholder="1-100" {...field} /></FormControl>
-                                        <FormMessage />
+                                    <FormLabel>Tags</FormLabel>
+                                    <FormControl><Input placeholder="e.g., favorite, starter, legendary (comma separated)" {...field} /></FormControl>
+                                    <FormDescription>Separate tags with a comma.</FormDescription>
+                                    <FormMessage />
                                     </FormItem>
                                 )}
                             />
-
-                             <FormField
-                                control={form.control}
-                                name="nature"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Nature</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger><SelectValue placeholder="Select a nature" /></SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {natures.map(n => <SelectItem key={n} value={n}>{n}</SelectItem>)}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </>
-                    )}
-
-                    {steps[currentStep].id === 'origin' && (
-                        <>
-                           <FormField
-                                control={form.control}
-                                name="gameOrigin"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Game Origin</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger><SelectValue placeholder="Select a game" /></SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {games.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                             <FormField
-                                control={form.control}
-                                name="ball"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Pokéball</FormLabel>
-                                        <FormControl><Input placeholder="e.g., Master Ball" {...field} /></FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                             <FormField
-                                control={form.control}
-                                name="gender"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Gender</FormLabel>
-                                         <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="male">Male</SelectItem>
-                                                <SelectItem value="female">Female</SelectItem>
-                                                <SelectItem value="genderless">Genderless</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </>
-                    )}
-
-                    {steps[currentStep].id === 'moves' && movesDataSource && (
-                         <FormField
-                            control={form.control}
-                            name="moveset"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Moves (select up to 4)</FormLabel>
-                                 <Popover open={openMoves} onOpenChange={setOpenMoves}>
-                                        <PopoverTrigger asChild>
-                                            <Button variant="outline" className="w-full justify-start h-auto min-h-10">
-                                                 {moveset.length > 0 ? (
-                                                    <div className="flex gap-1 flex-wrap">
-                                                        {moveset.map(move => (
-                                                             <Badge key={move} variant="secondary" className="capitalize">
-                                                                {move.replace('-', ' ')}
-                                                                <button
-                                                                    className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                                                                    onClick={(e) => {
-                                                                        e.preventDefault();
-                                                                        e.stopPropagation();
-                                                                        field.onChange(moveset.filter(m => m !== move));
-                                                                    }}
-                                                                ><X className="h-3 w-3" /></button>
-                                                            </Badge>
-                                                        ))}
-                                                    </div>
-                                                 ) : "Select moves..."}
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                                            <Command>
-                                                <CommandInput 
-                                                    placeholder="Search moves..." 
-                                                    value={movesSearch} 
-                                                    onValueChange={setMovesSearch}
-                                                />
-                                                <CommandList>
-                                                    <CommandEmpty>No moves found.</CommandEmpty>
-                                                    <CommandGroup>
-                                                        {availableMoves.map((move: any) => (
-                                                            <CommandItem
-                                                                key={move.move.name}
-                                                                onSelect={() => {
-                                                                    if (moveset.length < 4) {
-                                                                        field.onChange([...moveset, move.move.name]);
-                                                                    }
-                                                                }}
-                                                            >
-                                                                {move.move.name.replace('-', ' ')}
-                                                            </CommandItem>
-                                                        ))}
-                                                    </CommandGroup>
-                                                </CommandList>
-                                            </Command>
-                                        </PopoverContent>
-                                    </Popover>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                            />
-                    )}
-                    
-                    {steps[currentStep].id === 'tags' && (
-                        <FormField
-                            control={form.control}
-                            name="tags"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Tags</FormLabel>
-                                <FormControl><Input placeholder="e.g., favorite, starter, legendary (comma separated)" {...field} /></FormControl>
-                                <FormDescription>Separate tags with a comma.</FormDescription>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    )}
-
-                    {steps[currentStep].id === 'review' && apiData && (
-                        <div className="space-y-4 rounded-lg border p-4">
-                            <div className="flex justify-center">
-                                <Image src={formSpecificApiData?.sprites?.front_shiny || apiData.sprites.front_shiny} alt={formData.nickname} width={128} height={128} />
-                            </div>
-                            <h3 className="text-center text-lg font-bold">{formData.nickname}</h3>
-                            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                                <p><strong>Species:</strong> {apiData.name}</p>
-                                {formData.form && formData.form !== apiData.name && <p><strong>Form:</strong> {formData.form}</p>}
-                                <p><strong>Level:</strong> {formData.level}</p>
-                                <p><strong>Nature:</strong> {formData.nature}</p>
-                                <p><strong>Gender:</strong> {formData.gender}</p>
-                                <p><strong>Origin:</strong> {formData.gameOrigin}</p>
-                                <p><strong>Ball:</strong> {formData.ball}</p>
-                                <p className="col-span-2"><strong>Moves:</strong> {formData.moveset.join(', ')}</p>
-                                <p className="col-span-2"><strong>Tags:</strong> {formData.tags || 'None'}</p>
-                            </div>
-                        </div>
-                    )}
-
-
-                    <div className="flex justify-between pt-4">
-                        <Button type="button" variant="outline" onClick={handleBack} disabled={currentStep === 0 || isLoading}>
-                            Back
-                        </Button>
-                        {currentStep < steps.length - 1 ? (
-                            <Button type="submit" disabled={isLoading}>
-                                {isLoading ? 'Loading...' : 'Next'}
-                            </Button>
-                        ) : (
-                             <Button type="button" onClick={() => handleSubmit(formData, formSpecificApiData || apiData)} disabled={isLoading}>
-                                {isLoading ? 'Saving...' : 'Add to Collection'}
-                            </Button>
                         )}
-                    </div>
-                </form>
+
+                        {steps[currentStep].id === 'review' && apiData && (
+                            <div className="space-y-4 rounded-lg border p-4">
+                                <div className="flex justify-center">
+                                    <Image src={formSpecificApiData?.sprites?.front_shiny || apiData.sprites.front_shiny} alt={formData.nickname} width={128} height={128} />
+                                </div>
+                                <h3 className="text-center text-lg font-bold">{formData.nickname}</h3>
+                                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                                    <p><strong>Species:</strong> {apiData.name}</p>
+                                    {formData.form && formData.form !== apiData.name && <p><strong>Form:</strong> {formData.form}</p>}
+                                    <p><strong>Level:</strong> {formData.level}</p>
+                                    <p><strong>Nature:</strong> {formData.nature}</p>
+                                    <p><strong>Gender:</strong> {formData.gender}</p>
+                                    <p><strong>Origin:</strong> {formData.gameOrigin}</p>
+                                    <p><strong>Ball:</strong> {formData.ball}</p>
+                                    <p className="col-span-2"><strong>Moves:</strong> {formData.moveset.join(', ')}</p>
+                                    <p className="col-span-2"><strong>Tags:</strong> {formData.tags || 'None'}</p>
+                                </div>
+                            </div>
+                        )}
+
+
+                        <div className="flex justify-between pt-4">
+                            <Button type="button" variant="outline" onClick={handleBack} disabled={currentStep === 0 || isLoading}>
+                                Back
+                            </Button>
+                            {currentStep < steps.length - 1 ? (
+                                <Button type="submit" disabled={isLoading}>
+                                    {isLoading ? 'Loading...' : 'Next'}
+                                </Button>
+                            ) : (
+                                <Button type="submit" disabled={isLoading}>
+                                    {isLoading ? 'Saving...' : 'Add to Collection'}
+                                </Button>
+                            )}
+                        </div>
+                    </form>
+                </Form>
             </CardContent>
         </Card>
     );

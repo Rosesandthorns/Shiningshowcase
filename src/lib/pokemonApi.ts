@@ -47,19 +47,11 @@ async function fetchWithCache(url: string, cache: Map<string, any>): Promise<any
 
 export async function getPokemonDetailsByName(name: string): Promise<any> {
     const speciesUrl = `https://pokeapi.co/api/v2/pokemon-species/${name.toLowerCase()}`;
-    const speciesData = await fetchWithCache(speciesUrl, speciesDetailCache);
+    return await fetchWithCache(speciesUrl, speciesDetailCache);
+}
 
-    const defaultVarietyUrl = speciesData.varieties.find((v: any) => v.is_default)?.pokemon.url;
-    if (!defaultVarietyUrl) throw new Error("Default variety not found for " + name);
-    
-    const defaultPokemonData = await fetchWithCache(defaultVarietyUrl, pokemonDetailCache);
-
-    const allData = {
-        ...defaultPokemonData,
-        ...speciesData
-    };
-    
-    return allData;
+export async function getPokemonDetailsByUrl(url: string): Promise<any> {
+    return await fetchWithCache(url, pokemonDetailCache);
 }
 
 
@@ -235,4 +227,5 @@ export async function getUserIdFromDisplayName(firestore: Firestore, displayName
     return querySnapshot.docs[0].id;
 }
 
+    
     

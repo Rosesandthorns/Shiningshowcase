@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { getPokemonDetailsByName, getNationalPokedex } from '@/lib/pokemonApi';
+import { getPokemonDetailsByName, getNationalPokedex, getPokemonDetailsByUrl } from '@/lib/pokemonApi';
 import type { Pokemon as PokemonType, PokedexEntry } from '@/types/pokemon';
 import type { User } from 'firebase/auth';
 import type { Firestore } from 'firebase/firestore';
@@ -75,7 +75,8 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
     const [currentStep, setCurrentStep] = useState(0);
     const [formData, setFormData] = useState<FormData>({});
     const [isLoading, setIsLoading] = useState(false);
-    const [apiData, setApiData] = useState<any>(null);
+    const [apiData, setApiData] = useState<any>(null); // Holds species data
+    const [formSpecificApiData, setFormSpecificApiData] = useState<any>(null); // Holds data for the selected form
     const [fullPokedex, setFullPokedex] = useState<PokedexEntry[]>([]);
     const [filteredPokedex, setFilteredPokedex] = useState<PokedexEntry[]>([]);
     const [popoverOpen, setPopoverOpen] = useState(false);
@@ -163,17 +164,13 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
             try {
                 const details = await getPokemonDetailsByName(data.speciesName);
                 setApiData(details);
+                setFormSpecificApiData(details); // Initially, the form data is the same as the base species data
                 setFormData({ ...formData, ...data });
                 // Pre-fill nickname with species name
-                const speciesDisplayName = data.speciesName.charAt(0).toUpperCase() + data.speciesName.slice(1);
+                const speciesDisplayName = details.name.charAt(0).toUpperCase() + details.name.slice(1);
                 form.setValue('nickname', speciesDisplayName);
-                 // Set default form if available
-                if (details.varieties && details.varieties.length > 0) {
-                    const defaultVariety = details.varieties.find((v:any) => v.is_default);
-                    if (defaultVariety) {
-                         form.setValue('form', defaultVariety.pokemon.name);
-                    }
-                }
+                 // Set default form
+                form.setValue('form', details.name);
 
                 setCurrentStep(currentStep + 1);
             } catch (error) {
@@ -202,16 +199,19 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
 
         const finalTags = formData.tags ? formData.tags.split(',').map((t: string) => t.trim()).filter((t: string) => t) : [];
 
+        // Use the form-specific data for sprites and types
+        const dataSource = formSpecificApiData || apiData;
+
         const newPokemonData: Omit<PokemonType, 'id' | 'shinyViewed' | 'userId'> = {
             name: formData.nickname,
-            speciesName: apiData.name,
+            speciesName: apiData.name, // speciesName is always the base
             pokedexNumber: apiData.id,
             sprites: {
-                default: apiData.sprites.front_default,
-                shiny: apiData.sprites.front_shiny
+                default: dataSource.sprites.front_default,
+                shiny: dataSource.sprites.front_shiny
             },
-            types: apiData.types.map((t: any) => t.type.name),
-            abilities: apiData.abilities.map((a: any) => a.ability.name),
+            types: dataSource.types.map((t: any) => t.type.name),
+            abilities: dataSource.abilities.map((a: any) => a.ability.name),
             level: formData.level,
             nature: formData.nature,
             gameOrigin: formData.gameOrigin,
@@ -241,14 +241,37 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
         }
     };
 
+    const handleFormChange = async (value: string) => {
+        form.setValue('form', value);
+        setIsLoading(true);
+        try {
+            const selectedVariety = apiData?.varieties.find((v: any) => v.pokemon.name === value);
+            if (selectedVariety) {
+                const formDetails = await getPokemonDetailsByUrl(selectedVariety.pokemon.url);
+                setFormSpecificApiData(formDetails);
+            } else {
+                 setFormSpecificApiData(apiData); // Fallback to base data
+            }
+        } catch (error) {
+            console.error("Failed to fetch form details:", error);
+            toast({ variant: 'destructive', title: 'Could not load form data.' });
+            setFormSpecificApiData(apiData); // Fallback to base data on error
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const progress = ((currentStep + 1) / steps.length) * 100;
     const moveset = form.watch('moveset') || [];
-    const availableMoves = apiData?.moves
+    
+    // Use the form-specific data if available, otherwise use base species data
+    const movesDataSource = formSpecificApiData || apiData;
+    const availableMoves = movesDataSource?.moves
         .map((m: any) => m.move.name)
         .filter((name: string) => !moveset.includes(name))
         .filter((name: string) => name.toLowerCase().includes(movesSearch.toLowerCase()));
 
-    const availableForms = apiData?.varieties?.filter((v: any) => !v.is_default) || [];
+    const availableForms = apiData?.varieties?.filter((v: any) => v.pokemon.name !== apiData.name) || [];
 
     const formatFormName = (varietyName: string) => {
         const baseName = apiData.name;
@@ -301,8 +324,9 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                                                         key={p.pokedexNumber}
                                                         value={p.speciesName}
                                                         onSelect={(currentValue) => {
-                                                            form.setValue("speciesName", currentValue, { shouldValidate: true });
-                                                            setCommandValue(currentValue);
+                                                            const properName = fullPokedex.find(p => p.speciesName.toLowerCase() === currentValue)?.speciesName || currentValue;
+                                                            form.setValue("speciesName", properName, { shouldValidate: true });
+                                                            setCommandValue(properName);
                                                             setFilteredPokedex([]);
                                                             setPopoverOpen(false);
                                                         }}
@@ -310,7 +334,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                                                         <Check
                                                             className={cn(
                                                                 "mr-2 h-4 w-4",
-                                                                form.watch('speciesName').toLowerCase() === p.speciesName.toLowerCase() ? "opacity-100" : "opacity-0"
+                                                                form.watch('speciesName') === p.speciesName ? "opacity-100" : "opacity-0"
                                                             )}
                                                         />
                                                         {p.speciesName}
@@ -336,8 +360,8 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                            {availableForms.length > 0 && (
                                 <div>
                                     <label htmlFor="form" className="block text-sm font-medium mb-1">Form</label>
-                                    <Select onValueChange={(value) => form.setValue('form', value)} defaultValue={form.watch('form')}>
-                                        <SelectTrigger>
+                                    <Select onValueChange={handleFormChange} defaultValue={form.watch('form')}>
+                                        <SelectTrigger disabled={isLoading}>
                                             <SelectValue placeholder="Select a form" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -408,7 +432,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                         </>
                     )}
 
-                    {steps[currentStep].id === 'moves' && apiData && (
+                    {steps[currentStep].id === 'moves' && movesDataSource && (
                          <div>
                             <label className="block text-sm font-medium mb-2">Moves (select up to 4)</label>
                             <Popover open={openMoves} onOpenChange={setOpenMoves}>
@@ -478,10 +502,10 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                     {steps[currentStep].id === 'review' && apiData && (
                         <div className="space-y-4">
                             <div className="flex justify-center">
-                                <Image src={apiData.sprites.front_shiny} alt={formData.speciesName} width={128} height={128} />
+                                <Image src={movesDataSource.sprites.front_shiny || apiData.sprites.front_shiny} alt={formData.speciesName} width={128} height={128} />
                             </div>
                             <p><strong>Nickname:</strong> {formData.nickname}</p>
-                            <p><strong>Species:</strong> {formData.speciesName}</p>
+                            <p><strong>Species:</strong> {apiData.name}</p>
                             {formData.form && formData.form !== apiData.name && <p><strong>Form:</strong> {formatFormName(formData.form)}</p>}
                             <p><strong>Level:</strong> {formData.level}</p>
                             <p><strong>Nature:</strong> {formData.nature}</p>
@@ -513,3 +537,5 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
         </Card>
     );
 }
+
+    

@@ -1,9 +1,12 @@
 
-"use client";
+'use client';
 import type { Pokemon } from '@/types/pokemon';
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { getEvolutionChainByPokedexNumber, getNationalPokedex, shinyLockedPokemon, getAllPokemon } from '@/lib/pokemonApi';
+import { getEvolutionChainByPokedexNumber, getNationalPokedex, shinyLockedPokemon } from '@/lib/pokemonApi';
 import { useFirestore } from '@/firebase';
+import { useCollection } from 'react-firebase-hooks/firestore';
+import { collection, query, orderBy, type Firestore } from 'firebase/firestore';
+import { useMemoFirebase } from '@/hooks/use-memo-firebase';
 
 interface PokemonContextType {
   pokemonList: Pokemon[];
@@ -19,25 +22,31 @@ interface PokemonContextType {
 const PokemonContext = createContext<PokemonContextType | undefined>(undefined);
 
 export const PokemonProvider = ({ children, initialPokemon, userId }: { children: ReactNode, initialPokemon: Pokemon[], userId: string }) => {
-  const [pokemonList, setPokemonList] = useState<Pokemon[]>(initialPokemon);
-  const [isLoading, setIsLoading] = useState(true);
+  const firestore = useFirestore();
   const [evolutionLine, setEvolutionLine] = useState<Pokemon[] | null>(null);
   const [selectedPokemonId, setSelectedPokemonId] = useState<string | null>(null);
   const [isEvolutionLoading, setIsEvolutionLoading] = useState(false);
-  const firestore = useFirestore();
 
+  // Memoize the query to prevent re-creating it on every render
+  const pokemonQuery = useMemoFirebase(
+    () => (firestore && userId ? query(collection(firestore, `users/${userId}/pokemon`), orderBy('pokedexNumber')) : null),
+    [firestore, userId]
+  );
+  
+  // Use the useCollection hook for real-time updates
+  const [snapshot, isLoading, error] = useCollection(pokemonQuery);
+
+  const pokemonList = useMemoFirebase(() => {
+    if (!snapshot) return initialPokemon;
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Pokemon));
+  }, [snapshot, initialPokemon]);
+  
   useEffect(() => {
-     if (!firestore || !userId) return;
-    
-    setIsLoading(true);
-    getAllPokemon(firestore, userId)
-        .then(data => {
-            setPokemonList(data);
-        })
-        .catch(console.error)
-        .finally(() => setIsLoading(false));
-        
-  }, [firestore, userId]);
+    if (error) {
+      console.error("Error fetching pokemon collection:", error);
+    }
+  }, [error]);
+
 
   const showEvolutionLine = async (pokemon: Pokemon) => {
     if (pokemon.pokedexNumber === 0) return;

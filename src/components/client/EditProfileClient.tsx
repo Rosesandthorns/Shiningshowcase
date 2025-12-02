@@ -11,7 +11,8 @@ import { useToast } from '@/hooks/use-toast';
 import { type User } from 'firebase/auth';
 import { useState } from 'react';
 import { updateUserProfile } from '@/lib/user';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
+import type { UserProfile } from '@/types/user';
 
 const MAX_FILE_SIZE = 500 * 1024; // 500 KB
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
@@ -40,25 +41,34 @@ const profileFormSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 interface EditProfileClientProps {
-  user: User;
-  profile: { displayName?: string; photoURL?: string; bannerURL?: string; } | null;
-  onSave: () => void;
+  profile: UserProfile;
+  onSave?: () => void;
 }
 
-export function EditProfileClient({ user, profile, onSave }: EditProfileClientProps) {
+export function EditProfileClient({ profile, onSave }: EditProfileClientProps) {
   const { toast } = useToast();
   const firestore = useFirestore();
+  const { user } = useUser(); // Get user from the client-side hook
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
-      displayName: profile?.displayName || user.displayName || '',
+      displayName: profile?.displayName || '',
     },
     mode: 'onChange',
   });
 
   async function onSubmit(data: ProfileFormValues) {
+    if (!user) {
+      toast({
+        variant: 'destructive',
+        title: 'Not Authenticated',
+        description: 'You must be signed in to update your profile.',
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     toast({
       title: 'Updating profile...',
@@ -78,7 +88,10 @@ export function EditProfileClient({ user, profile, onSave }: EditProfileClientPr
         description: 'Your profile has been successfully updated.',
       });
       
-      onSave();
+      if(onSave) onSave();
+      
+      // Force a page reload to see changes
+      window.location.reload();
 
     } catch (error: any) {
       console.error('Error updating profile:', error);

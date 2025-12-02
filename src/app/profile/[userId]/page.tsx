@@ -8,8 +8,34 @@ import { getUserProfile } from '@/lib/pokemonApi';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ProfilePageClient } from '@/components/client/ProfilePageClient';
 import type { UserProfile } from '@/types/user';
+import { cookies } from 'next/headers';
+import { getAuth } from 'firebase-admin/auth';
+import { EditProfileClient } from '@/components/client/EditProfileClient';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+
+// This is a helper function for server-side auth checking.
+// It should not be used in client components.
+async function getCurrentUser() {
+  const session = cookies().get('session')?.value;
+  if (!session) return null;
+
+  try {
+    // We need to initialize the admin app here to verify the session cookie.
+    // This is a standard pattern for server-side auth in Next.js with Firebase.
+    const { getAdminApp } = await import('@/firebase/admin');
+    getAdminApp(); // Ensures admin app is initialized
+    
+    const decodedIdToken = await getAuth().verifySessionCookie(session, true);
+    // We fetch the full user object from auth to get all details
+    const user = await getAuth().getUser(decodedIdToken.uid);
+    return user;
+  } catch (error) {
+    console.warn("[Auth Check Failed on Server]:", error);
+    return null;
+  }
+}
+
 
 type ProfilePageProps = {
   params: {
@@ -21,8 +47,11 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   const { firestore } = initializeFirebase();
   const profileId = params.userId;
 
-  const profile: UserProfile | null = await getUserProfile(firestore, profileId);
-  
+  const [profile, currentUser] = await Promise.all([
+    getUserProfile(firestore, profileId),
+    getCurrentUser()
+  ]);
+
   if (!profile) {
     notFound();
   }
@@ -31,6 +60,8 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   const photoURL = profile.photoURL;
   const bannerURL = profile.bannerURL;
   const fallbackInitial = displayName.charAt(0).toUpperCase();
+
+  const isOwner = currentUser && currentUser.uid === profile.uid;
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
@@ -48,9 +79,23 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
               <AvatarFallback>{fallbackInitial}</AvatarFallback>
             </Avatar>
             <CardTitle className="text-3xl font-bold font-headline mt-4">{displayName}</CardTitle>
+            {currentUser?.email && isOwner && <CardDescription>{currentUser.email}</CardDescription>}
           </CardHeader>
           <CardContent className="text-center space-y-4">
-            <ProfilePageClient profile={profile} />
+             {isOwner && currentUser && (
+                <Dialog>
+                    <DialogTrigger asChild>
+                    <Button>Edit Profile</Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle>Edit profile</DialogTitle>
+                    </DialogHeader>
+                    {/* The EditProfileClient still needs the user object which we can only get on the client */}
+                    <EditProfileClient profile={profile} />
+                    </DialogContent>
+                </Dialog>
+             )}
 
             <div className="flex justify-center gap-2">
               <Button asChild variant="outline">

@@ -54,7 +54,7 @@ const originSchema = z.object({
 });
 
 const movesSchema = z.object({
-    moveset: z.array(z.string()).min(1, 'Select at least one move.').max(4, 'You can select up to 4 moves.'),
+    moveset: z.array(z.string()).min(0, 'Select up to 4 moves.').max(4, 'You can select up to 4 moves.'),
 });
 
 const tagsSchema = z.object({
@@ -84,7 +84,6 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
 
     const [movesSearch, setMovesSearch] = useState('');
     const [openMoves, setOpenMoves] = useState(false);
-
 
     const { toast } = useToast();
     const router = useRouter();
@@ -141,25 +140,6 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
     const handleNext = async (data: any) => {
         form.clearErrors();
 
-        let apiDetails = null;
-
-        if (currentStep === 0) { // Species step
-            setIsLoading(true);
-            try {
-                apiDetails = await getPokemonDetailsByName(data.speciesName);
-                setApiData(apiDetails);
-                setFormSpecificApiData(apiDetails); // Set initial form data
-                form.setValue('nickname', apiDetails.name.charAt(0).toUpperCase() + apiDetails.name.slice(1));
-                form.setValue('level', 50);
-            } catch (error) {
-                toast({ variant: 'destructive', title: 'Error', description: 'Could not find that Pokémon.' });
-                setIsLoading(false);
-                return;
-            } finally {
-                setIsLoading(false);
-            }
-        }
-
         const newFormData = { ...formData, ...data };
         setFormData(newFormData);
 
@@ -167,31 +147,27 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
             setCurrentStep(currentStep + 1);
         } else {
             // Final submission
-            await handleSubmit(newFormData, formSpecificApiData || apiData);
+            await handleSubmit(newFormData);
         }
     };
     
     const handleSelectSpecies = async (selectedValue: string) => {
-        const selectedPokemon = fullPokedex.find(p => p.speciesName.toLowerCase() === selectedValue.toLowerCase());
+        const speciesName = selectedValue;
+        form.setValue('speciesName', speciesName);
+        setPopoverOpen(false);
 
-        if (selectedPokemon) {
-            const speciesName = selectedPokemon.speciesName;
-            form.setValue('speciesName', speciesName);
-            setPopoverOpen(false);
-
-            setIsLoading(true);
-            try {
-                const apiDetails = await getPokemonDetailsByName(speciesName.toLowerCase().replace(/[\s.'é]+/g, '-'));
-                setApiData(apiDetails);
-                setFormSpecificApiData(apiDetails);
-                form.setValue('nickname', speciesName);
-                form.setValue('level', 50);
-                setCurrentStep(1); // Auto-advance to next step
-            } catch (error) {
-                toast({ variant: 'destructive', title: 'Error', description: 'Could not find details for that Pokémon.' });
-            } finally {
-                setIsLoading(false);
-            }
+        setIsLoading(true);
+        try {
+            const apiDetails = await getPokemonDetailsByName(speciesName.toLowerCase().replace(/[\s.'é]+/g, '-'));
+            setApiData(apiDetails);
+            setFormSpecificApiData(apiDetails);
+            form.setValue('nickname', speciesName);
+            form.setValue('level', 50);
+            setCurrentStep(1); // Auto-advance to next step
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not find details for that Pokémon.' });
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -200,22 +176,22 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
         setCurrentStep(currentStep - 1);
     };
 
-    const handleSubmit = async (finalData: FormData, finalApiData: any) => {
+    const handleSubmit = async (finalData: FormData) => {
         setIsLoading(true);
         try {
             const newPokemonData: Omit<PokemonType, 'id' | 'userId' | 'shinyViewed'> = {
                 name: finalData.nickname,
-                pokedexNumber: finalApiData.id,
-                speciesName: finalApiData.name,
+                pokedexNumber: apiData.id, // Always use the base species ID
+                speciesName: formSpecificApiData.name, // Use the form-specific name
                 sprites: {
-                    default: finalApiData.sprites.front_default,
-                    shiny: finalApiData.sprites.front_shiny,
+                    default: formSpecificApiData.sprites.front_default,
+                    shiny: formSpecificApiData.sprites.front_shiny,
                 },
-                types: finalApiData.types.map((t: any) => t.type.name),
-                abilities: finalApiData.abilities.map((a: any) => a.ability.name),
+                types: formSpecificApiData.types.map((t: any) => t.type.name),
+                abilities: formSpecificApiData.abilities.map((a: any) => a.ability.name),
                 level: finalData.level,
                 nature: finalData.nature,
-                form: finalData.form || finalApiData.name,
+                form: finalData.form || formSpecificApiData.name,
                 gameOrigin: finalData.gameOrigin,
                 ball: finalData.ball,
                 gender: finalData.gender,
@@ -223,7 +199,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                 tags: finalData.tags ? finalData.tags.split(',').map((t: string) => t.trim()).filter((t: string) => t) : [],
             };
             
-            await addPokemon(firestore, user.uid, newPokemonData);
+            addPokemon(firestore, user.uid, newPokemonData);
             
             toast({
                 title: 'Pokémon Added!',
@@ -270,9 +246,8 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
         .filter((move: any) => !moveset.includes(move.move.name))
         .filter((move: any) => {
             const searchTerm = movesSearch.toLowerCase();
-            const moveName = move.move.name.toLowerCase();
             // Match if search term is in the move name, ignoring hyphens for searching
-            return moveName.replace(/-/g, ' ').includes(searchTerm);
+            return move.move.name.replace(/-/g, ' ').includes(searchTerm);
         });
 
 
@@ -346,6 +321,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                                                             key={p.pokedexNumber}
                                                             value={p.speciesName}
                                                             onSelect={(currentValue) => {
+                                                                form.setValue('speciesName', currentValue);
                                                                 handleSelectSpecies(currentValue);
                                                             }}
                                                         >
@@ -577,8 +553,8 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                                 </div>
                                 <h3 className="text-center text-lg font-bold">{formData.nickname}</h3>
                                 <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                                    <p><strong>Species:</strong> {apiData.name}</p>
-                                    {formData.form && formData.form !== apiData.name && <p><strong>Form:</strong> {formData.form}</p>}
+                                    <p><strong>Species:</strong> {formSpecificApiData.name}</p>
+                                    <p><strong>Pokédex #:</strong> {apiData.id}</p>
                                     <p><strong>Level:</strong> {formData.level}</p>
                                     <p><strong>Nature:</strong> {formData.nature}</p>
                                     <p><strong>Gender:</strong> {formData.gender}</p>

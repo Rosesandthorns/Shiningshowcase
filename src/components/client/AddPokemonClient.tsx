@@ -266,8 +266,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                                                         key={p.pokedexNumber}
                                                         value={p.speciesName}
                                                         onSelect={(currentValue) => {
-                                                            const selectedName = fullPokedex.find(pk => pk.speciesName.toLowerCase() === currentValue)?.speciesName || "";
-                                                            form.setValue("speciesName", selectedName, { shouldValidate: true });
+                                                            form.setValue("speciesName", currentValue === form.watch("speciesName") ? "" : currentValue, { shouldValidate: true });
                                                             setCommandValue("");
                                                             setFilteredPokedex([]);
                                                             setPopoverOpen(false);
@@ -404,7 +403,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
 
 
                     <div className="flex justify-between mt-8">
-                        <Button type="button" variant="outline" onClick={handleBack} disabled={isLoading}>
+                        <Button type="button" variant="outline" onClick={handleBack} disabled={isLoading || currentStep === 0}>
                             Back
                         </Button>
                         {currentStep < steps.length - 1 ? (

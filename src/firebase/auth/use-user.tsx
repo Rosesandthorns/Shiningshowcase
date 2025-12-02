@@ -37,22 +37,35 @@ export function UserProvider({ children }: { children: ReactNode }) {
       if (user) {
         console.log(`Auth state changed: User is signed in as ${user.displayName} (${user.email})`);
         
-        // Ensure user profile exists in Firestore.
+        // Ensure user profile exists in Firestore and has a UID.
         const userDocRef = doc(firestore, 'users', user.uid);
         const docSnap = await getDoc(userDocRef);
         
         if (!docSnap.exists()) {
+          // Document doesn't exist, create it.
           console.log(`User profile for ${user.uid} not found. Creating one...`);
           try {
             await updateUserProfile(firestore, user, { displayName: user.displayName || undefined });
             console.log(`Successfully created profile for ${user.uid}.`);
-            // We might need to refresh the user object to get the new display name if it was generated
             await user.reload(); 
-            setUser(auth.currentUser); // Set the updated user object
+            setUser(auth.currentUser);
           } catch (error) {
             console.error("Failed to create user profile on login:", error);
+            setUser(user);
+          }
+        } else if (!docSnap.data().uid) {
+          // Document exists but is missing the UID field. This will repair it.
+          console.log(`User profile for ${user.uid} is missing the 'uid' field. Updating...`);
+          try {
+            await updateUserProfile(firestore, user, {}); // Calling with empty data triggers the UID update.
+            console.log(`Successfully updated profile for ${user.uid} with UID.`);
+            setUser(auth.currentUser);
+          } catch (error) {
+            console.error("Failed to update user profile with UID on login:", error);
+            setUser(user);
           }
         } else {
+           // Document exists and is correct.
            setUser(user);
         }
 

@@ -24,8 +24,7 @@ export default function PokemonDetailPage() {
 
   useEffect(() => {
     if (!firestore || !userId || !pokemonId) {
-      if (!userId || !pokemonId) {
-        setLoading(false);
+      if (!loading && (!userId || !pokemonId)) {
         setPokemon(null);
       }
       return;
@@ -35,7 +34,7 @@ export default function PokemonDetailPage() {
       setLoading(true);
       try {
         const fetchedPokemon = await getPokemonById(firestore, userId, pokemonId);
-        setPokemon(fetchedPokemon);
+        setPokemon(fetchedPokemon || null);
       } catch (error) {
         console.error("Failed to fetch pokemon:", error);
         setPokemon(null);
@@ -45,7 +44,7 @@ export default function PokemonDetailPage() {
     };
 
     fetchPokemon();
-  }, [firestore, userId, pokemonId]);
+  }, [firestore, userId, pokemonId, loading]);
 
   if (loading) {
     return (

@@ -19,7 +19,7 @@ type AnalyticsPageProps = {
 };
 
 export default function AnalyticsPage({ params }: AnalyticsPageProps) {
-    const { user: currentUser } = useUser();
+    const { user: currentUser, loading: authLoading } = useUser();
     const firestore = useFirestore();
 
     const [pokemon, setPokemon] = useState<Pokemon[] | null>(null);
@@ -57,7 +57,7 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
     }, [firestore, displayName]);
 
 
-    if (loading) {
+    if (loading || authLoading) {
         return (
              <div className="flex flex-col min-h-screen bg-background text-foreground">
                 <Header />
@@ -89,7 +89,7 @@ export default function AnalyticsPage({ params }: AnalyticsPageProps) {
                         </CardHeader>
                         <CardContent>
                              <Button asChild variant="outline">
-                                <Link href={`/profile/${params.displayName}`}>Back to Profile</Link>
+                                <Link href={`/profile/${params.displayName}/list`}>Back to List</Link>
                             </Button>
                         </CardContent>
                     </Card>

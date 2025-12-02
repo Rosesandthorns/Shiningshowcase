@@ -19,7 +19,7 @@ type ListPageProps = {
 };
 
 export default function ListPage({ params }: ListPageProps) {
-    const { user: currentUser } = useUser();
+    const { user: currentUser, loading: authLoading } = useUser();
     const firestore = useFirestore();
 
     const [pokemon, setPokemon] = useState<Pokemon[] | null>(null);
@@ -56,7 +56,7 @@ export default function ListPage({ params }: ListPageProps) {
 
     }, [firestore, displayName]);
 
-    if (loading) {
+    if (loading || authLoading) {
         return (
              <div className="flex flex-col min-h-screen bg-background text-foreground">
                 <Header />
@@ -71,8 +71,27 @@ export default function ListPage({ params }: ListPageProps) {
         notFound();
     }
 
+    if (!pokemon) {
+        // This case handles when the pokemon fetch is done but the list is null (e.g. initial state or error)
+        // We can show a generic loading/error or empty state here as well.
+         return (
+             <div className="flex flex-col min-h-screen bg-background text-foreground">
+                <Header />
+                <main className="flex-1 container mx-auto p-4 md:p-6 flex justify-center items-center">
+                    <Card className="w-full max-w-md text-center shadow-lg">
+                        <CardHeader>
+                            <CardTitle>Loading Collection</CardTitle>
+                            <CardDescription>Just a moment...</CardDescription>
+                        </CardHeader>
+                    </Card>
+                </main>
+            </div>
+        )
+    }
+
+
     // A non-owner viewing a profile without Pokemon
-    if (!currentUser && pokemon?.length === 0) {
+    if (currentUser?.uid !== profileUserId && pokemon.length === 0) {
         return (
              <div className="flex flex-col min-h-screen bg-background text-foreground">
                 <Header />
@@ -94,7 +113,7 @@ export default function ListPage({ params }: ListPageProps) {
     }
 
     // The owner viewing their own empty list
-    if (currentUser?.uid === profileUserId && pokemon?.length === 0) {
+    if (currentUser?.uid === profileUserId && pokemon.length === 0) {
          return (
              <div className="flex flex-col min-h-screen bg-background text-foreground">
                 <Header />

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { ChevronDown, LogIn, LogOut, UserSearch } from 'lucide-react';
+import { ChevronDown, LogIn, LogOut, LayoutList, BarChart2, Target, UserSearch } from 'lucide-react';
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
@@ -41,13 +41,13 @@ export function Header() {
         </Link>
         <nav className="flex items-center gap-2 md:gap-4">
           <Link href="/" className="text-sm md:text-base hover:underline">Home</Link>
-           {!loading && user && user.displayName && (
+          {!loading && user && user.displayName && (
             <>
-              <Link href={`/profile/${encodeURIComponent(user.displayName)}/list`} className="text-sm md:text-base hover:underline">My List</Link>
-              <Link href={`/profile/${encodeURIComponent(user.displayName)}/analytics`} className="text-sm md:text-base hover:underline">My Analytics</Link>
+              <Link href={`/profile/${encodeURIComponent(user.displayName)}/list`} className="text-sm md:text-base hover:underline hidden md:inline">My List</Link>
+              <Link href={`/profile/${encodeURIComponent(user.displayName)}/analytics`} className="text-sm md:text-base hover:underline hidden md:inline">My Analytics</Link>
             </>
           )}
-          <Link href="/hunts" className="text-sm md:text-base hover:underline">Hunts</Link>
+          <Link href="/hunts" className="text-sm md:text-base hover:underline hidden md:inline">Hunts</Link>
           
           <DropdownMenu>
             <DropdownMenuTrigger className="flex items-center text-sm md:text-base hover:underline outline-none">
@@ -56,9 +56,33 @@ export function Header() {
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               {!loading && user && (
-                <DropdownMenuItem asChild>
-                  <Link href="/profile">My Profile</Link>
-                </DropdownMenuItem>
+                <>
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile">My Profile</Link>
+                  </DropdownMenuItem>
+                   <DropdownMenuItem asChild className="md:hidden">
+                    <Link href="/hunts">
+                      <Target className="mr-2 h-4 w-4" />
+                      Hunts
+                    </Link>
+                  </DropdownMenuItem>
+                   {user.displayName && (
+                    <>
+                      <DropdownMenuItem asChild className="md:hidden">
+                        <Link href={`/profile/${encodeURIComponent(user.displayName)}/list`}>
+                          <LayoutList className="mr-2 h-4 w-4" />
+                          My List
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild className="md:hidden">
+                        <Link href={`/profile/${encodeURIComponent(user.displayName)}/analytics`}>
+                          <BarChart2 className="mr-2 h-4 w-4" />
+                          My Analytics
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </>
               )}
                <DropdownMenuItem asChild>
                 <Link href="/search">

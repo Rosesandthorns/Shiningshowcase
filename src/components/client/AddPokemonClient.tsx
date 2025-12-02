@@ -169,9 +169,9 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                 form.setValue('nickname', speciesDisplayName);
                  // Set default form if available
                 if (details.varieties && details.varieties.length > 0) {
-                    const defaultVariety = details.varieties.find((v:any) => v.name === details.name);
+                    const defaultVariety = details.varieties.find((v:any) => v.is_default);
                     if (defaultVariety) {
-                         form.setValue('form', defaultVariety.name);
+                         form.setValue('form', defaultVariety.pokemon.name);
                     }
                 }
 
@@ -248,7 +248,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
         .filter((name: string) => !moveset.includes(name))
         .filter((name: string) => name.toLowerCase().includes(movesSearch.toLowerCase()));
 
-    const availableForms = apiData?.varieties?.filter((v: any) => v.name !== apiData.name) || [];
+    const availableForms = apiData?.varieties?.filter((v: any) => !v.is_default) || [];
 
     const formatFormName = (varietyName: string) => {
         const baseName = apiData.name;

@@ -51,24 +51,12 @@ export async function getPokemonDetailsByName(name: string): Promise<any> {
 
     const defaultVarietyUrl = speciesData.varieties.find((v: any) => v.is_default)?.pokemon.url;
     if (!defaultVarietyUrl) throw new Error("Default variety not found for " + name);
-
+    
     const defaultPokemonData = await fetchWithCache(defaultVarietyUrl, pokemonDetailCache);
 
-    // Fetch full details for each variety to get form_names
-    const varietiesWithDetails = await Promise.all(
-        speciesData.varieties.map(async (v: any) => {
-            const varietyDetails = await fetchWithCache(v.pokemon.url, pokemonDetailCache);
-            return {
-                name: v.pokemon.name,
-                url: v.pokemon.url,
-                form_names: varietyDetails.form_names,
-            };
-        })
-    );
-
     const allData = {
-        ...defaultPokemonData, // This has sprites, types, etc. of the default form
-        varieties: varietiesWithDetails,
+        ...defaultPokemonData,
+        ...speciesData
     };
     
     return allData;

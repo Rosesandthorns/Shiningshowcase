@@ -16,8 +16,12 @@ service cloud.firestore {
       
       // Rules for user-specific hunts
       match /hunts/{huntId} {
-        // Only the user themselves can read, write, and delete their own hunts.
-        allow read, write, delete: if isOwner(userId);
+        // Allow the owner to read, update, or delete their specific hunt document.
+        allow read, update, delete: if isOwner(userId);
+        
+        // Allow a user to create a new hunt if the new hunt's 'userId' field
+        // matches their own UID. This is crucial for adding new documents.
+        allow create: if isOwner(request.resource.data.userId);
       }
     }
   }

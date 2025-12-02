@@ -7,18 +7,23 @@ import { notFound } from 'next/navigation';
 
 type ListPageProps = {
     params: {
-        userId: string;
+        profileId: string;
     };
 };
 
 // This is a React Server Component. It fetches all necessary data on the server.
 export default async function ListPage({ params }: ListPageProps) {
     const { firestore } = initializeFirebase();
-    const profileUserId = params.userId;
+    const profileUserId = params.profileId;
 
     // 1. Validate user exists on the server. If not, notFound() is called.
-    const userProfile = await getUserProfile(firestore, profileUserId);
-    if (!userProfile) {
+    try {
+        const userProfile = await getUserProfile(firestore, profileUserId);
+        if (!userProfile) {
+            notFound();
+        }
+    } catch (error) {
+        console.error(`[Server Page Error] Failed to fetch profile for list page: ${profileUserId}`, error);
         notFound();
     }
 

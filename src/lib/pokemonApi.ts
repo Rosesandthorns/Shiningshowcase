@@ -10,9 +10,6 @@ const speciesDetailCache = new Map<string, any>();
 const pokemonDetailCache = new Map<string, any>();
 const nationalPokedexCache: PokedexEntry[] = [];
 
-// Simulate API delay
-// const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
 export const shinyLockedPokemon = [
     'victini', 'keldeo', 'meloetta', 'diancie', 'genesect', 'hoopa', 'volcanion', 'magearna',
     'marshadow', 'zarude',
@@ -72,34 +69,29 @@ export async function getAllPokemon(firestore: Firestore, userId: string): Promi
     return pokemonList;
   } catch (error) {
     console.error(`[Server API Error] Failed to fetch pokemon for userId ${userId}:`, error);
-    return []; // Return empty array on error to prevent crashes
+    return [];
   }
 }
 
 export async function getUserProfile(firestore: Firestore, userId: string): Promise<UserProfile | null> {
     if (!userId) {
-        console.log('[Server Page] getUserProfile called with no userId.');
+        console.error("[Server API Error] getUserProfile called with no userId.");
         return null;
     }
 
     try {
-        // Assume the identifier is always a UID and get the document directly.
         const userDocRef = doc(firestore, 'users', userId);
         const docSnap = await getDoc(userDocRef);
 
         if (docSnap.exists()) {
-            console.log(`[Server Page] Found profile for UID: ${userId}`);
             return { uid: docSnap.id, ...docSnap.data() } as UserProfile;
+        } else {
+            console.log(`[Server API] No profile document found for userId: ${userId}`);
+            return null;
         }
-
-        // If direct lookup fails, the user does not exist.
-        console.log(`[Server Page] No profile found for UID: ${userId}`);
-        return null;
-
     } catch (error) {
-        console.error(`[Server API Error] Failed to fetch profile for UID ${userId}:`, error);
-        // In case of a database error, we also return null to trigger notFound().
-        return null;
+        console.error(`[Server API Error] Failed to fetch profile for ID ${userId}:`, error);
+        return null; 
     }
 }
 

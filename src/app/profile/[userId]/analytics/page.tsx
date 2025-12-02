@@ -10,18 +10,24 @@ import { notFound } from 'next/navigation';
 
 type AnalyticsPageProps = {
     params: {
-        userId: string;
+        profileId: string;
     };
 };
 
 // This is now a React Server Component. It fetches data on the server before rendering.
 export default async function AnalyticsPage({ params }: AnalyticsPageProps) {
     const { firestore } = initializeFirebase();
-    const profileUserId = params.userId;
+    const profileUserId = params.profileId;
 
     // 1. Validate user exists on the server. If not, this will trigger a 404.
-    const userProfile = await getUserProfile(firestore, profileUserId);
-    if (!userProfile) {
+    let userProfile;
+    try {
+        userProfile = await getUserProfile(firestore, profileUserId);
+        if (!userProfile) {
+            notFound();
+        }
+    } catch (error) {
+        console.error(`[Server Page Error] Failed to fetch profile for analytics: ${profileUserId}`, error);
         notFound();
     }
     

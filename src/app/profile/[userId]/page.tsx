@@ -9,6 +9,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ProfilePageClient } from '@/components/client/ProfilePageClient';
+import type { UserProfile } from '@/types/user';
 
 type ProfilePageProps = {
   params: {
@@ -16,28 +17,13 @@ type ProfilePageProps = {
   };
 };
 
-// This is a React Server Component.
-// It fetches the profile data on the server before rendering.
 export default async function ProfilePage({ params }: ProfilePageProps) {
   const { firestore } = initializeFirebase();
-  const profileUserId = params.userId;
+  const profileId = params.userId;
 
-  let profile;
-  try {
-    // Fetch the user's profile from Firestore on the server.
-    profile = await getUserProfile(firestore, profileUserId);
-  } catch (error) {
-    console.error(`[Server Page Error] Failed to fetch profile for userId ${profileUserId}:`, error);
-    // In a real app, you might render a generic error page here.
-    // For now, we'll proceed to notFound().
-    profile = null;
-  }
+  const profile: UserProfile | null = await getUserProfile(firestore, profileId);
   
-
-  // If no profile is found for the given userId, render a 404 page.
-  // This is the correct way to handle "not found" cases in a server component.
   if (!profile) {
-    console.log(`[Server Page] No profile found for ${profileUserId}, rendering 404.`);
     notFound();
   }
 
@@ -64,7 +50,6 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
             <CardTitle className="text-3xl font-bold font-headline mt-4">{displayName}</CardTitle>
           </CardHeader>
           <CardContent className="text-center space-y-4">
-            {/* The client component handles interactive elements like the edit button */}
             <ProfilePageClient profile={profile} />
 
             <div className="flex justify-center gap-2">

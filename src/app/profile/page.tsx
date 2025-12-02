@@ -13,24 +13,21 @@ export default function MyProfileRedirectPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Wait until the authentication state is resolved.
     if (authLoading) {
       return; 
     }
     
-    // If auth is resolved and there's no user, redirect to login.
     if (!user) {
       router.replace('/login');
       return;
     }
 
-    // If we have a user, redirect to their UID-based profile page.
-    // This is the most reliable way to handle the user's own profile.
-    router.replace(`/profile/${user.uid}`);
+    if (user.uid) {
+        router.replace(`/profile/${user.uid}`);
+    }
 
   }, [user, authLoading, router]);
 
-  // Display a full-page loading skeleton while we wait for auth and redirect.
   return (
       <div className="flex flex-col min-h-screen bg-background text-foreground">
         <Header />

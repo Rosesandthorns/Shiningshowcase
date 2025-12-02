@@ -29,7 +29,7 @@ const formSchema = z.object({
   customMethod: z.string().optional(),
   shinyCharm: z.boolean().default(false),
 }).refine(data => {
-    if (data.method === 'Other' && (!data.customMethod || data.customMethod.trim() === '')) {
+    if (data.method === 'Other...' && (!data.customMethod || data.customMethod.trim() === '')) {
         return false;
     }
     return true;
@@ -96,7 +96,7 @@ export function NewHuntForm({ user, firestore, onHuntCreated }: NewHuntFormProps
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
 
-    const finalMethod = values.method === 'Other' ? values.customMethod! : values.method;
+    const finalMethod = values.method === 'Other...' ? values.customMethod! : values.method;
 
     try {
         const odds = calculateOdds(finalMethod, values.shinyCharm);

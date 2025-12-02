@@ -1,6 +1,6 @@
 
 import type { Pokemon, PokedexEntry } from '@/types/pokemon';
-import { collection, getDocs, query, where, limit, type Firestore } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, query, where, limit, type Firestore } from 'firebase/firestore';
 
 
 // In-memory cache
@@ -54,6 +54,7 @@ export async function getPokemonDetailsByName(name: string): Promise<any> {
 
 
 export async function getAllPokemon(firestore: Firestore, userId: string): Promise<Pokemon[]> {
+  if (!userId) return [];
   const pokemonColRef = collection(firestore, 'users', userId, 'pokemon');
   const snapshot = await getDocs(pokemonColRef);
   
@@ -71,8 +72,15 @@ export async function getAllPokemon(firestore: Firestore, userId: string): Promi
 
 
 export async function getPokemonById(firestore: Firestore, userId: string, pokemonId: string): Promise<Pokemon | undefined> {
-  const allPokemon = await getAllPokemon(firestore, userId);
-  return allPokemon.find(p => p.id === pokemonId);
+  if (!userId || !pokemonId) return undefined;
+  const pokemonDocRef = doc(firestore, 'users', userId, 'pokemon', pokemonId);
+  const docSnap = await getDoc(pokemonDocRef);
+
+  if (!docSnap.exists()) {
+    return undefined;
+  }
+
+  return { id: docSnap.id, ...docSnap.data() } as Pokemon;
 }
 
 export async function getUniqueTags(firestore: Firestore, userId: string): Promise<string[]> {
@@ -178,14 +186,4 @@ export async function getNationalPokedex(): Promise<PokedexEntry[]> {
         console.error("Could not fetch National Pokedex:", error);
         return [];
     }
-}
-
-export async function getUserIdFromDisplayName(firestore: Firestore, displayName: string): Promise<string | null> {
-    const usersRef = collection(firestore, "users");
-    const q = query(usersRef, where("displayName", "==", displayName), limit(1));
-    const querySnapshot = await getDocs(q);
-    if (querySnapshot.empty) {
-        return null;
-    }
-    return querySnapshot.docs[0].id;
 }

@@ -24,8 +24,7 @@ export default function PokemonDetailPage() {
 
   useEffect(() => {
     if (!firestore || !userId || !pokemonId) {
-      // If we are missing essential info after the initial load, it's a "not found" case.
-      if (!loading && (!userId || !pokemonId)) {
+      if (!loading) { // Avoid setting to null during initial render
         setPokemon(null);
       }
       return;
@@ -45,7 +44,6 @@ export default function PokemonDetailPage() {
     };
 
     fetchPokemon();
-    // Intentionally not re-running on `loading` to prevent loops.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [firestore, userId, pokemonId]);
 

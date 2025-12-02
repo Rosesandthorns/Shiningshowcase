@@ -31,10 +31,20 @@ function fileToDataUrl(file: File): Promise<string> {
  */
 export async function isDisplayNameUnique(firestore: Firestore, displayName: string, currentUserId: string): Promise<boolean> {
     const usersRef = collection(firestore, 'users');
-    if (/^\d+$/.test(displayName)) return false; // Purely numeric names are not allowed
-    const q = query(usersRef, where('displayName', '==', displayName), where('uid', '!=', currentUserId));
+    // Display names purely made of numbers are disallowed.
+    if (/^\d+$/.test(displayName)) return false; 
+    
+    const q = query(usersRef, where('displayName', '==', displayName));
     const querySnapshot = await getDocs(q);
-    return querySnapshot.empty; // If it's empty, the name is unique
+
+    if (querySnapshot.empty) {
+        return true; // Name is not taken at all.
+    }
+    
+    // If name is taken, check if it's by the current user.
+    const isTakenByOther = querySnapshot.docs.some(doc => doc.id !== currentUserId);
+
+    return !isTakenByOther;
 }
 
 /**

@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { notFound } from 'next/navigation';
-import { getAllPokemon, getUserIdFromDisplayName } from '@/lib/pokemonApi';
+import { getAllPokemon } from '@/lib/pokemonApi';
 import type { Pokemon } from '@/types/pokemon';
 import { doc, getDoc } from 'firebase/firestore';
 

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ThemeToggle } from './ThemeToggle';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { ChevronDown, LogIn, LogOut, LayoutList, BarChart2, Target, UserSearch, User as UserIcon } from 'lucide-react';
+import { ChevronDown, LogIn, LogOut, LayoutList, BarChart2, Target, UserSearch, User as UserIcon, PlusCircle } from 'lucide-react';
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
@@ -64,6 +64,12 @@ export function Header() {
                     <Link href="/profile">
                       <UserIcon className="mr-2 h-4 w-4" />
                       My Profile
+                    </Link>
+                  </DropdownMenuItem>
+                   <DropdownMenuItem asChild>
+                    <Link href="/add-pokemon">
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Add Pokémon
                     </Link>
                   </DropdownMenuItem>
                   {userId && (

@@ -268,17 +268,32 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
     const movesDataSource = formSpecificApiData || apiData;
     const availableMoves = (movesDataSource?.moves || [])
         .filter((move: any) => !moveset.includes(move.move.name))
-        .filter((move: any) => move.move.name.toLowerCase().includes(movesSearch.toLowerCase()));
+        .filter((move: any) => {
+            const searchTerm = movesSearch.toLowerCase();
+            const moveName = move.move.name.toLowerCase();
+            // Match if search term is in the move name, ignoring hyphens for searching
+            return moveName.replace(/-/g, ' ').includes(searchTerm);
+        });
 
 
     const availableForms = apiData?.varieties?.filter((v: any) => {
       // Exclude gender forms, mega forms, gmax forms etc. - we want regional forms primarily.
       const name = v.pokemon.name.toLowerCase();
       const baseName = apiData.name.toLowerCase();
-      if (name === baseName) return false;
-      // This is not perfect, but it's a good heuristic to get regional variants and other major forms
-      // while excluding temporary battle forms.
-      return !name.includes('-mega') && !name.includes('-gmax') && !name.includes('-totem') && !name.includes('-starter');
+      if (name === baseName) return true; // Include the default form
+      
+      const formDetails = v.pokemon.name.replace(baseName + '-', '');
+
+      if(apiData.form_names?.find((fn: any) => fn.name === formDetails && fn.language.name === 'en')) {
+        return true;
+      }
+
+      // Fallback for things like regional forms that aren't in form_names
+      if (name.includes('-alola') || name.includes('-galar') || name.includes('-hisui') || name.includes('-paldea')) {
+          return true;
+      }
+      
+      return false;
     }) || [];
 
     const formatFormName = (varietyName: string) => {
@@ -289,7 +304,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                 .map(part => part.charAt(0).toUpperCase() + part.slice(1))
                 .join(' ');
         }
-        return varietyName;
+        return varietyName.charAt(0).toUpperCase() + varietyName.slice(1);
     };
 
 
@@ -332,8 +347,9 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                                                         key={p.pokedexNumber}
                                                         value={p.speciesName}
                                                         onSelect={(currentValue) => {
-                                                            form.setValue("speciesName", p.speciesName, { shouldValidate: true });
-                                                            setCommandValue(p.speciesName);
+                                                            const properCasedValue = fullPokedex.find(pk => pk.speciesName.toLowerCase() === currentValue)?.speciesName || currentValue;
+                                                            form.setValue("speciesName", properCasedValue, { shouldValidate: true });
+                                                            setCommandValue(properCasedValue);
                                                             setFilteredPokedex([]);
                                                             setPopoverOpen(false);
                                                         }}
@@ -364,7 +380,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                                 <Input id="nickname" {...form.register('nickname')} placeholder="e.g., Sparky" />
                                 {form.formState.errors.nickname && <p className="text-sm text-destructive mt-1">{form.formState.errors.nickname.message as string}</p>}
                             </div>
-                           {availableForms.length > 0 && (
+                           {availableForms.length > 1 && (
                                 <div>
                                     <label htmlFor="form" className="block text-sm font-medium mb-1">Form</label>
                                     <Select onValueChange={handleFormChange} defaultValue={form.watch('form')}>
@@ -372,7 +388,6 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                                             <SelectValue placeholder="Select a form" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value={apiData.name}>Default</SelectItem>
                                             {availableForms.map((v: any) => (
                                                 <SelectItem key={v.pokemon.name} value={v.pokemon.name}>
                                                     {formatFormName(v.pokemon.name)}

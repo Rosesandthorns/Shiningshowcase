@@ -27,44 +27,34 @@ export default function ListPage({ params }: ListPageProps) {
     const profileUserId = params.userId;
 
     useEffect(() => {
-        console.log(`[ListPage] useEffect triggered. userId: ${profileUserId}`);
-
         if (!firestore || !profileUserId) {
-            console.log('[ListPage] Firestore or userId is missing. Bailing out.');
             setLoading(false);
             return;
         }
 
         const fetchUserData = async () => {
-            console.log('[ListPage] Starting fetchUserData...');
             setLoading(true);
             setError(null);
             try {
                 // 1. Check if user exists
-                console.log(`[ListPage] Checking for user document at 'users/${profileUserId}'`);
                 const userDocRef = doc(firestore, 'users', profileUserId);
                 const userDocSnap = await getDoc(userDocRef);
 
                 if (!userDocSnap.exists()) {
-                    console.warn(`[ListPage] User document NOT found for userId: ${profileUserId}`);
                     setUserExists(false);
                     setLoading(false);
                     return;
                 }
-                console.log(`[ListPage] User document FOUND for userId: ${profileUserId}`);
                 setUserExists(true);
 
                 // 2. Fetch Pokémon
-                console.log(`[ListPage] Fetching all pokemon for userId: ${profileUserId}`);
                 const userPokemon = await getAllPokemon(firestore, profileUserId);
-                console.log(`[ListPage] Found ${userPokemon.length} pokemon.`);
                 setPokemon(userPokemon);
 
             } catch (err: any) {
-                console.error("[ListPage] CRITICAL ERROR fetching list page data:", err);
+                console.error("CRITICAL ERROR fetching list page data:", err);
                 setError(`Failed to load data: ${err.message}`);
             } finally {
-                console.log('[ListPage] fetchUserData finished.');
                 setLoading(false);
             }
         };
@@ -74,7 +64,6 @@ export default function ListPage({ params }: ListPageProps) {
     }, [firestore, profileUserId]);
 
     if (loading || userExists === undefined) {
-        console.log(`[ListPage] Render: Loading state. loading: ${loading}, userExists: ${userExists}`);
         return (
              <div className="flex flex-col min-h-screen bg-background text-foreground">
                 <Header />
@@ -86,12 +75,10 @@ export default function ListPage({ params }: ListPageProps) {
     }
     
     if (!userExists || error) {
-        console.error(`[ListPage] Render: Triggering 404. userExists: ${userExists}, error: ${error}`);
         notFound();
     }
 
     if (!pokemon) {
-         console.log('[ListPage] Render: Pokemon is null, showing loading-like state.');
          return (
              <div className="flex flex-col min-h-screen bg-background text-foreground">
                 <Header />
@@ -106,7 +93,6 @@ export default function ListPage({ params }: ListPageProps) {
         )
     }
     
-    console.log('[ListPage] Render: Rendering ListTab.');
     return (
         <div className="flex flex-col min-h-screen bg-background text-foreground">
             <Header />

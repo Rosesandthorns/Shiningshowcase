@@ -39,38 +39,31 @@ export default function ProfilePage({ params }: ProfilePageProps) {
   const userIdFromParam = params.userId;
 
   useEffect(() => {
-    console.log(`[ProfilePage] useEffect triggered. userIdFromParam: ${userIdFromParam}`);
-
     if (!firestore || !userIdFromParam) {
       if (!authLoading) {
-        console.warn('[ProfilePage] Firestore or userIdFromParam is missing. Setting loading to false.');
         setLoading(false);
       }
       return;
     }
 
-    console.log(`[ProfilePage] Setting up Firestore listener for 'users/${userIdFromParam}'`);
     setLoading(true);
     const userRef = doc(firestore, 'users', userIdFromParam);
 
     const unsubscribe = onSnapshot(userRef, (docSnap) => {
       if (docSnap.exists()) {
         const profileData = docSnap.data() as Omit<UserProfile, 'uid'>;
-        console.log('[ProfilePage] Firestore listener: Document data FOUND.', profileData);
         setProfile({ ...profileData, uid: docSnap.id });
       } else {
-        console.warn('[ProfilePage] Firestore listener: Document data NOT FOUND.');
-        setProfile(null); // User not found
+        setProfile(null);
       }
       setLoading(false);
     }, (error) => {
-      console.error("[ProfilePage] Firestore listener: CRITICAL ERROR fetching profile:", error);
+      console.error("Error fetching profile:", error);
       setLoading(false);
       setProfile(null);
     });
 
     return () => {
-      console.log('[ProfilePage] Cleanup: Unsubscribing from Firestore listener.');
       unsubscribe();
     };
   }, [firestore, userIdFromParam, authLoading]);
@@ -80,7 +73,6 @@ export default function ProfilePage({ params }: ProfilePageProps) {
   }, [currentUser, profile, authLoading]);
 
   if (loading || authLoading) {
-    console.log(`[ProfilePage] Render: Loading state. loading: ${loading}, authLoading: ${authLoading}`);
     return (
       <div className="flex flex-col min-h-screen bg-background text-foreground">
         <Header />
@@ -101,11 +93,9 @@ export default function ProfilePage({ params }: ProfilePageProps) {
   }
 
   if (!profile) {
-    console.error('[ProfilePage] Render: Profile is null after loading. Triggering 404.');
     notFound();
   }
 
-  console.log('[ProfilePage] Render: Rendering profile page for', profile.displayName);
   const displayName = profile.displayName || 'User';
   const photoURL = profile.photoURL;
   const bannerURL = profile.bannerURL;

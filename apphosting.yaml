@@ -6,6 +6,11 @@ runConfig:
   # more instances in response to increased traffic.
   maxInstances: 1
 # Add a rewrite rule to handle all routes through the Next.js app
+headers:
+  - source: /.*
+    headers:
+      - key: Cache-Control
+        value: 'no-store'
 rewrites:
   - source: /.*
     run:

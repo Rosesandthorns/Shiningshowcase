@@ -58,8 +58,7 @@ export default function RegisterPage() {
       // 1. Create user in Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       
-      // 2. Create their profile document in Firestore with the chosen display name
-      // This function now also ensures the display name is unique.
+      // 2. Create their profile document in Firestore. This function now throws detailed errors.
       await updateUserProfile(firestore, userCredential.user, { displayName: values.displayName });
 
       toast({
@@ -70,22 +69,24 @@ export default function RegisterPage() {
       router.push("/");
 
     } catch (error: any) {
-      console.error("Sign up error", error);
+      console.error("A critical error occurred during sign-up:", error);
+      
       let description = "An unexpected error occurred. Please try again.";
-       if (error instanceof FirebaseError) {
+      
+       if (error instanceof FirebaseError) { // Catch specific Firebase Auth errors
         if (error.code === 'auth/email-already-in-use') {
-          description = 'This email address is already in use.';
+          description = 'This email address is already in use by another account.';
         } else {
-          description = error.message;
+          description = `Authentication error: ${error.message}`;
         }
-      } else if (error.message) {
-        // Catch custom errors from updateUserProfile, like "Display name is already taken"
+      } else { // Catch custom errors from updateUserProfile or other sources
         description = error.message;
       }
+
       toast({
         variant: "destructive",
         title: "Sign Up Failed",
-        description,
+        description: description, // Display the detailed error message.
       });
     }
   }

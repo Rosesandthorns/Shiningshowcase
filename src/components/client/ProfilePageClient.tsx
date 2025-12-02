@@ -5,7 +5,7 @@ import { useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { useState, useMemo } from 'react';
 import { EditProfileClient } from '@/components/client/EditProfileClient';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import type { UserProfile } from '@/types/user';
 
 interface ProfilePageClientProps {
@@ -25,17 +25,17 @@ export function ProfilePageClient({ profile }: ProfilePageClientProps) {
 
   // Don't render anything until we know the auth state.
   if (authLoading) {
-    return null;
+    return <div className="h-10"></div>; // Placeholder for button height
   }
   
   if (!isOwner) {
-    return null;
+    return <div className="h-10"></div>; // Placeholder for button height
   }
 
   // Only render the "Edit Profile" button if the current user is the owner.
   return (
     <>
-      {currentUser?.email && <CardDescription>{currentUser.email}</CardDescription>}
+      {currentUser?.email && <DialogDescription>{currentUser.email}</DialogDescription>}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogTrigger asChild>
           <Button>Edit Profile</Button>

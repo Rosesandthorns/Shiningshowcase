@@ -1,5 +1,5 @@
 
-import { initializeFirebase, useUser } from '@/firebase';
+import { initializeFirebase } from '@/firebase';
 import { Header } from '@/components/Header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -22,12 +22,22 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   const { firestore } = initializeFirebase();
   const profileUserId = params.userId;
 
-  // Fetch the user's profile from Firestore on the server.
-  const profile = await getUserProfile(firestore, profileUserId);
+  let profile;
+  try {
+    // Fetch the user's profile from Firestore on the server.
+    profile = await getUserProfile(firestore, profileUserId);
+  } catch (error) {
+    console.error(`[Server Page Error] Failed to fetch profile for userId ${profileUserId}:`, error);
+    // In a real app, you might render a generic error page here.
+    // For now, we'll proceed to notFound().
+    profile = null;
+  }
+  
 
   // If no profile is found for the given userId, render a 404 page.
   // This is the correct way to handle "not found" cases in a server component.
   if (!profile) {
+    console.log(`[Server Page] No profile found for ${profileUserId}, rendering 404.`);
     notFound();
   }
 
@@ -53,16 +63,18 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
             </Avatar>
             <CardTitle className="text-3xl font-bold font-headline mt-4">{displayName}</CardTitle>
           </CardHeader>
-          <CardContent className="text-center p-6 space-x-2">
+          <CardContent className="text-center space-y-4">
             {/* The client component handles interactive elements like the edit button */}
             <ProfilePageClient profile={profile} />
 
-            <Button asChild variant="outline">
-              <Link href={`/profile/${profile.uid}/list`}>View List</Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link href={`/profile/${profile.uid}/analytics`}>View Analytics</Link>
-            </Button>
+            <div className="flex justify-center gap-2">
+              <Button asChild variant="outline">
+                <Link href={`/profile/${profile.uid}/list`}>View List</Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link href={`/profile/${profile.uid}/analytics`}>View Analytics</Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </main>

@@ -17,7 +17,7 @@ function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
+    reader.onerror = (error) => reject(new Error('Failed to convert file to data URL.'));
     reader.readAsDataURL(file);
   });
 }
@@ -30,11 +30,9 @@ function fileToDataUrl(file: File): Promise<string> {
  * @returns A promise that resolves to true if the name is unique, false otherwise.
  */
 export async function isDisplayNameUnique(firestore: Firestore, displayName: string, currentUserId: string): Promise<boolean> {
-    console.log(`[isDisplayNameUnique] Checking uniqueness for displayName: '${displayName}'`);
     const usersRef = collection(firestore, 'users');
     // Display names purely made of numbers are disallowed.
     if (/^\d+$/.test(displayName)) {
-        console.warn('[isDisplayNameUnique] Display name is purely numeric, which is not allowed.');
         return false;
     }
     
@@ -42,18 +40,12 @@ export async function isDisplayNameUnique(firestore: Firestore, displayName: str
     const querySnapshot = await getDocs(q);
 
     if (querySnapshot.empty) {
-        console.log(`[isDisplayNameUnique] '${displayName}' is unique.`);
         return true; // Name is not taken at all.
     }
     
     // If name is taken, check if it's by the current user.
     const isTakenByOther = querySnapshot.docs.some(doc => doc.id !== currentUserId);
-    if (isTakenByOther) {
-        console.warn(`[isDisplayNameUnique] '${displayName}' is taken by another user.`);
-    } else {
-        console.log(`[isDisplayNameUnique] '${displayName}' is taken by the current user, which is allowed.`);
-    }
-
+    
     return !isTakenByOther;
 }
 
@@ -70,74 +62,65 @@ export async function updateUserProfile(
   user: User,
   data: UpdateData
 ): Promise<string> {
-  console.log(`[updateUserProfile] Starting profile update for user: ${user.uid}`);
   const { displayName, photoFile, bannerFile } = data;
   const userDocRef = doc(firestore, 'users', user.uid);
   
   const firestoreUpdateData: { [key: string]: any } = {};
 
-  // 1. Handle Display Name
-  if (displayName) {
-    console.log(`[updateUserProfile] Received new displayName: '${displayName}'`);
-    const isUnique = await isDisplayNameUnique(firestore, displayName, user.uid);
-    if (!isUnique) {
-      console.error(`[updateUserProfile] Display name '${displayName}' is not unique.`);
-      throw new Error('Display name is already taken or invalid. Please choose another one.');
+  try {
+    // 1. Handle Display Name
+    if (displayName) {
+      const isUnique = await isDisplayNameUnique(firestore, displayName, user.uid);
+      if (!isUnique) {
+        throw new Error('Display name is already taken or invalid. Please choose another one.');
+      }
+      if (displayName !== user.displayName) {
+        await updateProfile(user, { displayName });
+      }
+      firestoreUpdateData.displayName = displayName;
     }
-    // Update both Auth and Firestore if it's different
-    if (displayName !== user.displayName) {
-      console.log(`[updateUserProfile] Updating Firebase Auth profile with new displayName.`);
-      await updateProfile(user, { displayName });
+
+    // 2. Ensure Firestore document has a display name
+    const docSnap = await getDoc(userDocRef);
+    if (!docSnap.exists() || !docSnap.data()?.displayName) {
+       if (!firestoreUpdateData.displayName) {
+          const baseName = user.email?.split('@')[0] || `user`;
+          let newDisplayName = `${baseName}${Math.floor(Math.random() * 1000)}`;
+          let attempts = 0;
+          while (!(await isDisplayNameUnique(firestore, newDisplayName, user.uid)) && attempts < 10) {
+              attempts++;
+              newDisplayName = `${baseName}${Math.floor(Math.random() * 10000)}`;
+          }
+          if (attempts >= 10) {
+              throw new Error("Failed to generate a unique display name.");
+          }
+          firestoreUpdateData.displayName = newDisplayName;
+          if (user.displayName !== newDisplayName) {
+              await updateProfile(user, { displayName: newDisplayName });
+          }
+       }
     }
-    firestoreUpdateData.displayName = displayName;
-  }
 
-  // 2. Ensure Firestore document has a display name
-  console.log(`[updateUserProfile] Checking for existing document for user ${user.uid}`);
-  const docSnap = await getDoc(userDocRef);
-  if (!docSnap.exists() || !docSnap.data()?.displayName) {
-     console.log(`[updateUserProfile] Document does not exist or has no displayName.`);
-     if (!firestoreUpdateData.displayName) {
-        console.log(`[updateUserProfile] No new displayName provided, generating a unique one.`);
-        // If no new name provided and none exists, generate one.
-        const baseName = user.email?.split('@')[0] || `user`;
-        let newDisplayName = `${baseName}${Math.floor(Math.random() * 1000)}`;
-        let attempts = 0;
-        while (!(await isDisplayNameUnique(firestore, newDisplayName, user.uid)) && attempts < 10) {
-            attempts++;
-            newDisplayName = `${baseName}${Math.floor(Math.random() * 10000)}`;
-        }
-        if (attempts >= 10) {
-            console.error('[updateUserProfile] Failed to generate a unique display name after 10 attempts.');
-            throw new Error("Failed to generate a unique display name.");
-        }
-        
-        console.log(`[updateUserProfile] Generated unique name: '${newDisplayName}'. Updating Auth and Firestore.`);
-        firestoreUpdateData.displayName = newDisplayName;
-        if (user.displayName !== newDisplayName) {
-            await updateProfile(user, { displayName: newDisplayName });
-        }
-     }
-  }
+    // 3. Handle file uploads
+    if (photoFile) {
+      firestoreUpdateData.photoURL = await fileToDataUrl(photoFile);
+    }
+    if (bannerFile) {
+      firestoreUpdateData.bannerURL = await fileToDataUrl(bannerFile);
+    }
 
-  // 3. Handle file uploads
-  if (photoFile) {
-    console.log(`[updateUserProfile] Converting photoFile to data URL.`);
-    firestoreUpdateData.photoURL = await fileToDataUrl(photoFile);
-    console.log(`[updateUserProfile] photoURL set.`);
-  }
-  if (bannerFile) {
-    console.log(`[updateUserProfile] Converting bannerFile to data URL.`);
-    firestoreUpdateData.bannerURL = await fileToDataUrl(bannerFile);
-    console.log(`[updateUserProfile] bannerURL set.`);
-  }
+    // 4. Perform the Firestore update
+    firestoreUpdateData.uid = user.uid;
+    await setDoc(userDocRef, firestoreUpdateData, { merge: true });
+    
+    return user.uid;
 
-  // 4. Perform the Firestore update
-  // Always set the UID field for consistency.
-  firestoreUpdateData.uid = user.uid;
-  console.log(`[updateUserProfile] Committing data to Firestore at 'users/${user.uid}'.`, firestoreUpdateData);
-  await setDoc(userDocRef, firestoreUpdateData, { merge: true });
-  console.log(`[updateUserProfile] Firestore document successfully updated for user ${user.uid}.`);
-
-  return user.uid;
+  } catch (error: any) {
+    console.error("Error in updateUserProfile:", error);
+    // Re-throw the error with a more specific message to be caught by the UI
+    if (error.code && (error.code.startsWith('firestore/') || error.code.startsWith('auth/'))) {
+        throw new Error(`A database or authentication error occurred: ${error.message}`);
+    }
+    throw error; // Re-throw original error if it's a custom one (e.g., "Display name is already taken")
+  }
 }

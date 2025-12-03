@@ -3,7 +3,7 @@
 import type { Pokemon } from '@/types/pokemon';
 import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
 import { getEvolutionChainByPokedexNumber, getNationalPokedex, shinyLockedPokemon } from '@/lib/pokemonApi';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import { useCollection } from 'react-firebase-hooks/firestore';
 import { collection, query, orderBy, type Firestore } from 'firebase/firestore';
 import { useMemoFirebase } from '@/hooks/use-memo-firebase';
@@ -16,13 +16,17 @@ interface PokemonContextType {
   showEvolutionLine: (pokemon: Pokemon) => Promise<void>;
   clearEvolutionLine: () => void;
   isEvolutionLoading: boolean;
-  userId: string;
+  userId: string | null;
 }
 
 const PokemonContext = createContext<PokemonContextType | undefined>(undefined);
 
-export const PokemonProvider = ({ children, initialPokemon, userId }: { children: ReactNode, initialPokemon: Pokemon[], userId: string }) => {
+// Provider that can be used in the root layout
+export const PokemonProvider = ({ children }: { children: ReactNode }) => {
   const firestore = useFirestore();
+  const { user, loading: userLoading } = useUser();
+  const userId = user?.uid ?? null;
+
   const [evolutionLine, setEvolutionLine] = useState<Pokemon[] | null>(null);
   const [selectedPokemonId, setSelectedPokemonId] = useState<string | null>(null);
   const [isEvolutionLoading, setIsEvolutionLoading] = useState(false);
@@ -34,16 +38,16 @@ export const PokemonProvider = ({ children, initialPokemon, userId }: { children
   );
   
   // Use the useCollection hook for real-time updates
-  const [snapshot, isLoading, error] = useCollection(pokemonQuery);
+  const [snapshot, collectionLoading, error] = useCollection(pokemonQuery);
 
   const pokemonList = useMemo(() => {
-    // Prioritize the real-time snapshot data. If it exists, use it.
+    // If we have a snapshot from the real-time listener, use it
     if (snapshot) {
       return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Pokemon));
     }
-    // Otherwise, fall back to the initial data passed from the server component.
-    return initialPokemon;
-  }, [snapshot, initialPokemon]);
+    // Otherwise, return an empty array.
+    return [];
+  }, [snapshot]);
   
   useEffect(() => {
     if (error) {
@@ -137,7 +141,7 @@ export const PokemonProvider = ({ children, initialPokemon, userId }: { children
 
   const value = {
     pokemonList,
-    isLoading,
+    isLoading: userLoading || collectionLoading,
     evolutionLine,
     selectedPokemonId,
     showEvolutionLine,

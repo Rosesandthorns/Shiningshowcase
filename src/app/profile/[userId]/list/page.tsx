@@ -15,7 +15,7 @@ type ListPageProps = {
 // This is a React Server Component. It fetches all necessary data on the server.
 export default async function ListPage({ params }: ListPageProps) {
     const { firestore } = initializeFirebase();
-    const profileUserId = params.userId;
+    const profileUserId = decodeURIComponent(params.userId);
 
     // 1. Validate user exists on the server.
     try {

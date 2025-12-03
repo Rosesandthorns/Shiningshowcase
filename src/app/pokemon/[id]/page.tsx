@@ -5,7 +5,6 @@ import { notFound, useParams, useSearchParams } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { PokemonDetailClient } from '@/components/client/PokemonDetailClient';
 import { getPokemonById } from '@/lib/pokemonApi';
-import { PokemonProvider } from '@/contexts/PokemonContext';
 import { useEffect, useState } from 'react';
 import { useFirestore } from '@/firebase';
 import type { Pokemon } from '@/types/pokemon';
@@ -62,13 +61,12 @@ export default function PokemonDetailPage() {
     notFound();
   }
 
-  // The PokemonProvider needs a valid userId to function correctly.
+  // The PokemonDetailClient needs a valid userId to function correctly.
   if (!userId) {
     notFound();
   }
 
   return (
-    <PokemonProvider initialPokemon={[pokemon]} userId={userId}>
       <div className="flex flex-col min-h-screen bg-background text-foreground">
         <Header />
         <main className="flex-1 container mx-auto p-4 md:p-6">
@@ -78,6 +76,5 @@ export default function PokemonDetailPage() {
           © 2025 Rosie. All rights reserved.
         </footer>
       </div>
-    </PokemonProvider>
   );
 }

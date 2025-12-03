@@ -5,6 +5,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { UserProvider } from '@/firebase/auth/use-user';
+import { PokemonProvider } from '@/contexts/PokemonContext';
 
 export const metadata: Metadata = {
   title: "Shining Showcase",
@@ -28,7 +29,9 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           <FirebaseClientProvider>
             <UserProvider>
-              {children}
+              <PokemonProvider>
+                {children}
+              </PokemonProvider>
               <Toaster />
             </UserProvider>
           </FirebaseClientProvider>
@@ -37,5 +40,3 @@ export default function RootLayout({
     </html>
   );
 }
-
-    

@@ -35,6 +35,14 @@ service cloud.firestore {
         // A user can only delete their own pokemon.
         allow delete: if isOwner(userId);
       }
+
+      // Rules for following other users
+      match /following/{followedUserId} {
+      	// A user can only manage their own following list
+        allow read, create, delete: if isOwner(userId);
+        // Ensure the data being written is just a timestamp
+        allow create: if request.resource.data.keys().hasOnly(['followedAt']);
+      }
     }
   }
 }

@@ -109,9 +109,22 @@
         "gender": { "type": "string", "enum": ["male", "female", "genderless"] },
         "form": { "type": "string" },
         "gameOrigin": { "type": "string" },
-        "encounters": { "type": "number" }
+        "encounters": { "type": "number" },
+        "caughtAt": { "type": "number", "description": "Timestamp of when the pokemon was caught." }
       },
-      "required": ["userId", "name", "pokedexNumber", "speciesName", "sprites"]
+      "required": ["userId", "name", "pokedexNumber", "speciesName", "sprites", "caughtAt"]
+    },
+    "Follow": {
+        "title": "Follow Relationship",
+        "description": "Indicates that one user is following another.",
+        "type": "object",
+        "properties": {
+            "followedAt": {
+                "type": "number",
+                "description": "Timestamp of when the follow action occurred."
+            }
+        },
+        "required": ["followedAt"]
     }
   },
   "auth": {
@@ -135,6 +148,12 @@
         "$ref": "#/entities/Pokemon"
       },
       "description": "Stores the Pokémon collection for a specific user."
+    },
+    "/users/{userId}/following/{followedUserId}": {
+      "schema": {
+        "$ref": "#/entities/Follow"
+      },
+      "description": "A list of users that {userId} is following. The document ID is the UID of the user being followed."
     }
   }
 }

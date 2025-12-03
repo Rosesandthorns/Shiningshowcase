@@ -197,6 +197,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                 gender: finalData.gender,
                 moveset: finalData.moveset,
                 tags: finalData.tags ? finalData.tags.split(',').map((t: string) => t.trim()).filter((t: string) => t) : [],
+                caughtAt: Date.now(),
             };
             
             addPokemon(firestore, user.uid, newPokemonData);

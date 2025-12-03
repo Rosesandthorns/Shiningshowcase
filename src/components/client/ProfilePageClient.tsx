@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useUser } from '@/firebase';
+import { useUser, useFirestore } from '@/firebase';
 import type { UserProfile } from '@/types/user';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -12,6 +12,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { EditProfileClient } from '@/components/client/EditProfileClient';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { useEffect, useState } from 'react';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
+import { followUser, unfollowUser } from '@/lib/social';
+import { useToast } from '@/hooks/use-toast';
+import { UserPlus, UserCheck } from 'lucide-react';
+
 
 interface ProfilePageClientProps {
   profile: UserProfile;
@@ -19,6 +25,51 @@ interface ProfilePageClientProps {
 
 export function ProfilePageClient({ profile }: ProfilePageClientProps) {
   const { user: currentUser, loading } = useUser();
+  const firestore = useFirestore();
+  const { toast } = useToast();
+  
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isFollowLoading, setIsFollowLoading] = useState(true);
+
+  const isOwner = currentUser && currentUser.uid === profile.uid;
+  const canFollow = currentUser && !isOwner;
+
+  useEffect(() => {
+    if (!canFollow || !firestore || !currentUser) {
+      setIsFollowLoading(false);
+      return;
+    }
+    const followDocRef = doc(firestore, 'users', currentUser.uid, 'following', profile.uid);
+    const unsubscribe = onSnapshot(followDocRef, (doc) => {
+      setIsFollowing(doc.exists());
+      setIsFollowLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [firestore, currentUser, profile.uid, canFollow]);
+
+
+  const handleFollowToggle = async () => {
+    if (!canFollow || !firestore || !currentUser) return;
+    
+    setIsFollowLoading(true);
+    try {
+      if (isFollowing) {
+        await unfollowUser(firestore, currentUser.uid, profile.uid);
+        toast({ title: 'Unfollowed', description: `You are no longer following ${profile.displayName}.` });
+      } else {
+        await followUser(firestore, currentUser.uid, profile.uid);
+        toast({ title: 'Followed!', description: `You are now following ${profile.displayName}.` });
+      }
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Error', description: error.message });
+    } finally {
+      // The onSnapshot listener will update the final state, so we don't strictly need to setLoading(false) here,
+      // but it can prevent a brief flicker if the snapshot is slow.
+       setIsFollowLoading(false);
+    }
+  };
+
 
   const getBorderClass = (state?: string) => {
     switch (state) {
@@ -34,20 +85,22 @@ export function ProfilePageClient({ profile }: ProfilePageClientProps) {
 
   if (loading) {
       return (
-          <Card className="w-full max-w-2xl shadow-xl animate-pulse">
+          <div className={cn("w-full max-w-2xl animate-pulse", getBorderClass(profile.state))}>
+            <Card className="w-full shadow-xl overflow-hidden relative bg-transparent">
               <div className="h-48 bg-muted"></div>
-              <CardHeader className="text-center -mt-16">
+              <CardHeader className="text-center -mt-16 relative z-10">
                   <Avatar className="w-24 h-24 border-4 border-background mx-auto shadow-lg bg-muted"></Avatar>
                   <div className="h-8 bg-muted rounded w-1/2 mx-auto mt-4"></div>
                   <div className="h-5 bg-muted rounded w-2/3 mx-auto mt-2"></div>
               </CardHeader>
-              <CardContent className="text-center p-6">
+              <CardContent className="text-center p-6 relative z-10">
                   <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
                       <div className="h-10 bg-muted rounded w-24"></div>
                       <div className="h-10 bg-muted rounded w-24"></div>
                   </div>
               </CardContent>
-          </Card>
+            </Card>
+          </div>
       );
   }
 
@@ -55,8 +108,6 @@ export function ProfilePageClient({ profile }: ProfilePageClientProps) {
   const photoURL = profile.photoURL;
   const bannerURL = profile.bannerURL;
   const fallbackInitial = displayName.charAt(0).toUpperCase();
-
-  const isOwner = currentUser && currentUser.uid === profile.uid;
 
   const renderStateBadge = () => {
     if (profile.state === 'owner' || profile.state === 'dev') {
@@ -107,6 +158,12 @@ export function ProfilePageClient({ profile }: ProfilePageClientProps) {
                   <EditProfileClient profile={profile} />
                 </DialogContent>
               </Dialog>
+            )}
+             {canFollow && (
+              <Button onClick={handleFollowToggle} disabled={isFollowLoading} variant={isFollowing ? "secondary" : "default"}>
+                {isFollowing ? <UserCheck className="mr-2 h-4 w-4" /> : <UserPlus className="mr-2 h-4 w-4" />}
+                {isFollowing ? 'Following' : 'Follow'}
+              </Button>
             )}
           </div>
         </CardContent>

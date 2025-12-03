@@ -39,6 +39,7 @@ export interface Pokemon {
   form?: string;
   gameOrigin?: string;
   encounters?: number;
+  caughtAt?: number;
 }
 
 export interface PokedexEntry {

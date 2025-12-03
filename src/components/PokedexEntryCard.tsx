@@ -29,7 +29,7 @@ export function PokedexEntryCard({ entry }: PokedexEntryCardProps) {
             pokedexNumber: entry.pokedexNumber,
             speciesName: entry.speciesName,
             sprites: {
-                default: entry.sprite,
+                default: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${entry.pokedexNumber}.png`,
                 shiny: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${entry.pokedexNumber}.png`,
             },
             tags: [],
@@ -45,9 +45,6 @@ export function PokedexEntryCard({ entry }: PokedexEntryCardProps) {
 
     if (entry.status === 'uncaught') {
         imageFilter = 'brightness(0)';
-    } else if (entry.status === 'caught') {
-        // Construct shiny sprite URL. Note: This might not be accurate for all forms.
-        spriteUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${entry.pokedexNumber}.png`;
     }
 
     return (

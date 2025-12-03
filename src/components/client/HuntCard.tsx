@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { Hunt } from '@/types/hunts';
 import { Play, Pause, Plus, Trash2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { type Firestore, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import {
   AlertDialog,
@@ -42,6 +42,8 @@ export function HuntCard({ hunt, firestore }: HuntCardProps) {
     const [isActive, setIsActive] = useState(hunt.isActive);
 
     const huntDocRef = doc(firestore, 'users', hunt.userId, 'hunts', hunt.id);
+    const timeRef = useRef(time);
+    timeRef.current = time;
 
     // Timer effect
     useEffect(() => {
@@ -56,20 +58,23 @@ export function HuntCard({ hunt, firestore }: HuntCardProps) {
         };
     }, [isActive]);
     
-    // Sync time to Firestore every 10 seconds
+    // Save time on unmount or when isActive changes to false
     useEffect(() => {
-        const syncInterval = setInterval(async () => {
-            if(isActive){
-                await updateDoc(huntDocRef, { timeElapsed: time });
+        return () => {
+            // This cleanup function runs when the component unmounts
+            // or before the effect runs again. We only care about unmount.
+            if (timeRef.current !== hunt.timeElapsed) {
+                updateDoc(huntDocRef, { timeElapsed: timeRef.current, isActive: false });
             }
-        }, 10000);
-        return () => clearInterval(syncInterval);
-    }, [time, isActive, huntDocRef]);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
 
     const handleToggleTimer = async () => {
         const newIsActive = !isActive;
         setIsActive(newIsActive);
+        // Only write to DB when toggling the state, not every second
         await updateDoc(huntDocRef, { isActive: newIsActive, timeElapsed: time });
     };
 
@@ -140,3 +145,5 @@ export function HuntCard({ hunt, firestore }: HuntCardProps) {
         </Card>
     );
 }
+
+    

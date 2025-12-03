@@ -42,10 +42,15 @@ export function SearchClient() {
         );
         
         const querySnapshot = await getDocs(q);
-        const users = querySnapshot.docs.map(doc => ({
-          uid: doc.id,
-          ...doc.data(),
-        } as UserProfile));
+        const users = querySnapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                uid: doc.id,
+                displayName: data.displayName,
+                photoURL: data.photoURL,
+                state: data.state,
+            } as UserProfile;
+        });
 
         setResults(users);
       } catch (error) {

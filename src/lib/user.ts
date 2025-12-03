@@ -1,4 +1,6 @@
 
+'use client';
+
 import { doc, setDoc, getDoc, collection, query, where, getDocs, Firestore } from 'firebase/firestore';
 import { updateProfile, type User } from 'firebase/auth';
 

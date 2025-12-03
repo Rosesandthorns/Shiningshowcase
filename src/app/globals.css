@@ -556,7 +556,7 @@ body {
     background-color: rgba(30, 30, 50, 0.3);
   }
 
-  /* New Glowing Border Animation for Feature Cards */
+  /* --- Special User State Borders --- */
   @keyframes rotate-hue {
     to {
       filter: hue-rotate(1turn);
@@ -579,6 +579,57 @@ body {
     background: conic-gradient(from 90deg at 50% 50%, #f600ff, #00c8ff, #3bff00, #fff400, #ff0000, #f600ff);
     animation: rotate-hue 6s linear infinite;
   }
+
+  @keyframes supporter-swirl {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+
+  .supporter-card-border {
+    position: relative;
+    overflow: hidden;
+    padding: 1px; /* The border width */
+  }
+
+  .supporter-card-border::before {
+    content: "";
+    position: absolute;
+    top: 0; right: 0; bottom: 0; left: 0;
+    z-index: -1;
+    margin: -1px; /* The border width */
+    border-radius: inherit;
+    background: linear-gradient(120deg, #FFD700, #FFB84D, #FFD700, #FFFACD, #FFD700);
+    background-size: 300% 300%;
+    animation: supporter-swirl 8s ease infinite;
+  }
+
+  .supporter-card-border::after {
+     content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: linear-gradient(
+      100deg,
+      transparent 20%,
+      rgba(255, 255, 255, 0.4) 40%,
+      rgba(255, 255, 255, 0.4) 60%,
+      transparent 80%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 5s infinite linear;
+    pointer-events: none;
+    z-index: 0; 
+    border-radius: inherit; 
+  }
 }
 
 /* Ensure particle container is set up for positioning */
@@ -592,5 +643,3 @@ body {
   overflow: hidden; 
   z-index: 0; 
 }
-
-    

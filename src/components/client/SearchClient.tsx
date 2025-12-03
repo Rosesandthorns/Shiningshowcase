@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -9,12 +8,8 @@ import { Card, CardContent } from '../ui/card';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Skeleton } from '../ui/skeleton';
-
-interface UserProfile {
-  uid: string;
-  displayName: string;
-  photoURL?: string;
-}
+import { cn } from '@/lib/utils';
+import type { UserProfile } from '@/types/user';
 
 export function SearchClient() {
   const firestore = useFirestore();
@@ -69,6 +64,18 @@ export function SearchClient() {
     return () => clearTimeout(debounceTimeout);
   }, [searchTerm, firestore, hasSearched]);
 
+  const getBorderClass = (state?: string) => {
+    switch (state) {
+      case 'owner':
+      case 'dev':
+        return 'feature-card-border';
+      case 'supporter':
+        return 'supporter-card-border';
+      default:
+        return '';
+    }
+  };
+
   return (
     <div>
       <div className="text-center mb-8">
@@ -109,12 +116,12 @@ export function SearchClient() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {results.map(user => (
               <Link key={user.uid} href={`/profile/${user.uid}`} legacyBehavior>
-                <a className="block">
-                  <Card className="hover:bg-accent hover:border-primary transition-colors cursor-pointer">
+                <a className={cn("block rounded-lg", getBorderClass(user.state))}>
+                  <Card className="hover:bg-accent/50 transition-colors cursor-pointer h-full bg-card/80 backdrop-blur-sm">
                     <CardContent className="p-4 flex items-center space-x-4">
                       <Avatar className="h-12 w-12">
                         {user.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName} />}
-                        <AvatarFallback>{user.displayName.charAt(0).toUpperCase()}</AvatarFallback>
+                        <AvatarFallback>{user.displayName?.charAt(0).toUpperCase()}</AvatarFallback>
                       </Avatar>
                       <div>
                         <p className="font-semibold text-card-foreground">{user.displayName}</p>

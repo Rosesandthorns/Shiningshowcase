@@ -1,6 +1,7 @@
+
 'use client';
 
-import { collection, addDoc, type Firestore } from 'firebase/firestore';
+import { collection, addDoc, doc, deleteDoc, updateDoc, type Firestore } from 'firebase/firestore';
 import type { Pokemon } from '@/types/pokemon';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
@@ -25,4 +26,34 @@ export function addPokemon(firestore: Firestore, userId: string, pokemonData: Om
       errorEmitter.emit('permission-error', permissionError);
       throw serverError; // Re-throw for the form to handle
     });
+}
+
+
+export async function deletePokemon(firestore: Firestore, userId: string, pokemonId: string): Promise<void> {
+  const pokemonDocRef = doc(firestore, 'users', userId, 'pokemon', pokemonId);
+  try {
+    await deleteDoc(pokemonDocRef);
+  } catch (serverError: any) {
+    const permissionError = new FirestorePermissionError({
+      path: pokemonDocRef.path,
+      operation: 'delete',
+    } satisfies SecurityRuleContext);
+    errorEmitter.emit('permission-error', permissionError);
+    throw serverError;
+  }
+}
+
+export async function updatePokemon(firestore: Firestore, userId: string, pokemonId: string, data: Partial<Pokemon>): Promise<void> {
+    const pokemonDocRef = doc(firestore, 'users', userId, 'pokemon', pokemonId);
+    try {
+        await updateDoc(pokemonDocRef, data);
+    } catch (serverError: any) {
+        const permissionError = new FirestorePermissionError({
+            path: pokemonDocRef.path,
+            operation: 'update',
+            requestResourceData: data,
+        } satisfies SecurityRuleContext);
+        errorEmitter.emit('permission-error', permissionError);
+        throw serverError;
+    }
 }

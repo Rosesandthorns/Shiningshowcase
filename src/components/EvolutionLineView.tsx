@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import type { Pokemon } from "@/types/pokemon";
@@ -29,6 +30,7 @@ export function EvolutionLineView({ evolutionLine, selectedPokemonId }: Evolutio
                         <PokemonCard 
                             pokemon={pokemon} 
                             displayFullDetail={pokemon.id === selectedPokemonId}
+                            isInEvolutionLine={true}
                         />
                     </div>
                 ))}

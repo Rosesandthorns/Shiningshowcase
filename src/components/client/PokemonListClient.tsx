@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -8,15 +9,22 @@ import { SearchBar } from '@/components/SearchBar';
 import { FilterControls } from '@/components/FilterControls';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EvolutionLineView } from '@/components/EvolutionLineView';
+import { useUser } from '@/firebase';
+import { Button } from '../ui/button';
+import Link from 'next/link';
+import { PlusCircle } from 'lucide-react';
 
 interface PokemonListClientProps {
   uniqueTags: string[];
 }
 
 export function PokemonListClient({ uniqueTags }: PokemonListClientProps) {
-  const { pokemonList, isLoading, evolutionLine, isEvolutionLoading, selectedPokemonId } = usePokemon();
+  const { pokemonList, isLoading, evolutionLine, isEvolutionLoading, selectedPokemonId, userId } = usePokemon();
+  const { user: currentUser } = useUser();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  
+  const isOwner = currentUser?.uid === userId;
 
   const handleTagChange = (tag: string, checked: boolean) => {
     setSelectedTags(prev =>
@@ -78,9 +86,20 @@ export function PokemonListClient({ uniqueTags }: PokemonListClientProps) {
         <FilterControls tags={uniqueTags} selectedTags={selectedTags} onTagChange={handleTagChange} />
       </div>
 
-      <h2 id="pokemon-list-title" className="text-2xl font-bold mb-6 text-center font-headline">
-        All Pokémon ({filteredPokemon.length})
-      </h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 id="pokemon-list-title" className="text-2xl font-bold text-center font-headline">
+          All Pokémon ({filteredPokemon.length})
+        </h2>
+        {isOwner && (
+            <Button asChild>
+                <Link href="/add-pokemon">
+                  <PlusCircle className="mr-2" />
+                  Add Pokémon
+                </Link>
+            </Button>
+        )}
+      </div>
+
       {filteredPokemon.length > 0 ? (
         <div className="flex overflow-x-auto gap-6 pb-4">
           {filteredPokemon.map(pokemon => (

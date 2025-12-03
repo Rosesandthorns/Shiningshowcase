@@ -1,4 +1,5 @@
 
+
 import Image from 'next/image';
 import Link from 'next/link';
 import type { Pokemon } from '@/types/pokemon';
@@ -9,10 +10,13 @@ import { cn } from '@/lib/utils';
 import React, { useEffect, useState, useRef } from 'react';
 import { useOnScreen } from '@/hooks/useOnScreen';
 import { usePokemon } from '@/contexts/PokemonContext';
+import { EditPokemonDialog } from './EditPokemonDialog';
+import { useUser } from '@/firebase';
 
 interface PokemonCardProps {
   pokemon: Pokemon;
   displayFullDetail?: boolean; 
+  isInEvolutionLine?: boolean;
 }
 
 const getTagSpecificClasses = (tag: string): string => {
@@ -62,16 +66,27 @@ const ShieldSVG = () => (
 );
 
 
-export function PokemonCard({ pokemon, displayFullDetail = false }: PokemonCardProps) {
+export function PokemonCard({ pokemon, displayFullDetail = false, isInEvolutionLine = false }: PokemonCardProps) {
   const ref = useRef<HTMLDivElement>(null);
   const isVisible = useOnScreen(ref);
   const { showEvolutionLine, userId } = usePokemon();
+  const { user: currentUser } = useUser();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const isOwner = currentUser && currentUser.uid === userId;
 
   const handleCardClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (pokemon.isPlaceholder || pokemon.isShinyLocked) {
       e.preventDefault();
       return;
     }
+
+    if (isInEvolutionLine && isOwner) {
+      e.preventDefault();
+      setIsDialogOpen(true);
+      return;
+    }
+    
     // Prevent link navigation to trigger context function
     e.preventDefault();
     showEvolutionLine(pokemon);
@@ -113,7 +128,8 @@ export function PokemonCard({ pokemon, displayFullDetail = false }: PokemonCardP
   };
 
   const CardWrapper = ({ children }: { children: React.ReactNode }) => {
-    if (pokemon.isPlaceholder || pokemon.isShinyLocked) {
+    // If it's a placeholder OR it's the owner in an evo line, the wrapper is not a link.
+    if (pokemon.isPlaceholder || pokemon.isShinyLocked || (isInEvolutionLine && isOwner)) {
         return <div className="block group h-full">{children}</div>;
     }
     return <Link href={`/pokemon/${pokemon.id}?user=${userId}`} onClick={(e) => { e.preventDefault(); }} className="block group h-full">{children}</Link>;
@@ -131,129 +147,135 @@ export function PokemonCard({ pokemon, displayFullDetail = false }: PokemonCardP
 
 
   return (
-    <CardWrapper>
-        <div onClick={handleCardClick} className={cn("cursor-pointer h-full", (pokemon.isPlaceholder || pokemon.isShinyLocked) && "cursor-not-allowed")}>
-      <Card ref={ref} className={cn(
-        "h-full overflow-hidden transition-all duration-200 ease-in-out flex flex-col relative",
-        !pokemon.isPlaceholder && !pokemon.isShinyLocked && "group-hover:scale-105 group-hover:shadow-xl hover:border-primary group-hover:z-20",
-        hasFavouriteTag && !pokemon.isPlaceholder && !pokemon.isShinyLocked && "animate-shimmer",
-        pokemon.isShinyLocked && "border-yellow-500 bg-yellow-300/20"
-      )}>
-        {isVisible && hasSteelTag && !pokemon.isPlaceholder && (
-          <div className="card-shield-backdrop">
-            <ShieldSVG />
-          </div>
-        )}
-        <CardHeader className="p-4 relative z-10">
-          <div className="flex justify-between items-start">
-            <CardTitle className="text-xl font-headline">{pokemon.name}</CardTitle>
-            {!pokemon.isPlaceholder && <ShinySparkleIcon viewed={pokemon.shinyViewed} isShinyLocked={!!pokemon.isShinyLocked} />}
-          </div>
-          <CardDescription className="text-sm">{pokemon.speciesName} (#{pokemon.pokedexNumber})</CardDescription>
-        </CardHeader>
-        <CardContent className="p-4 pt-0 flex flex-col items-center flex-grow relative z-10">
-          <div className="relative w-32 h-32 mb-3 z-10"> 
-            <Image
-              src={imageToShow} 
-              alt={`${pokemon.name} shiny sprite`}
-              fill
-              style={{ objectFit: 'contain', filter: imageFilters }}
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              data-ai-hint={`${pokemon.speciesName} shiny sprite`}
-            />
-          </div>
-          {displayFullDetail && pokemon.description && (
-            <p className="text-xs text-muted-foreground mb-2 text-center">{pokemon.description}</p>
-          )}
-          {displayFullDetail && !pokemon.isPlaceholder && (
-            <div className="text-xs text-muted-foreground mb-2 w-full">
-              {pokemon.level && <p><strong>Level:</strong> {pokemon.level}</p>}
-              {pokemon.nature && <p><strong>Nature:</strong> {pokemon.nature}</p>}
-              {pokemon.moveset && pokemon.moveset.length > 0 && (
-                <div>
-                  <strong>Moves:</strong>
-                  <ul className="list-disc list-inside">
-                    {pokemon.moveset.map(move => <li key={move}>{move}</li>)}
-                  </ul>
+    <EditPokemonDialog 
+      pokemon={pokemon}
+      isOpen={isDialogOpen}
+      onOpenChange={setIsDialogOpen}
+    >
+        <CardWrapper>
+            <div onClick={handleCardClick} className={cn("cursor-pointer h-full", (pokemon.isPlaceholder || pokemon.isShinyLocked) && "cursor-not-allowed")}>
+          <Card ref={ref} className={cn(
+            "h-full overflow-hidden transition-all duration-200 ease-in-out flex flex-col relative",
+            !pokemon.isPlaceholder && !pokemon.isShinyLocked && "group-hover:scale-105 group-hover:shadow-xl hover:border-primary group-hover:z-20",
+            hasFavouriteTag && !pokemon.isPlaceholder && !pokemon.isShinyLocked && "animate-shimmer",
+            pokemon.isShinyLocked && "border-yellow-500 bg-yellow-300/20"
+          )}>
+            {isVisible && hasSteelTag && !pokemon.isPlaceholder && (
+              <div className="card-shield-backdrop">
+                <ShieldSVG />
+              </div>
+            )}
+            <CardHeader className="p-4 relative z-10">
+              <div className="flex justify-between items-start">
+                <CardTitle className="text-xl font-headline">{pokemon.name}</CardTitle>
+                {!pokemon.isPlaceholder && <ShinySparkleIcon viewed={pokemon.shinyViewed} isShinyLocked={!!pokemon.isShinyLocked} />}
+              </div>
+              <CardDescription className="text-sm">{pokemon.speciesName} (#{pokemon.pokedexNumber})</CardDescription>
+            </CardHeader>
+            <CardContent className="p-4 pt-0 flex flex-col items-center flex-grow relative z-10">
+              <div className="relative w-32 h-32 mb-3 z-10"> 
+                <Image
+                  src={imageToShow} 
+                  alt={`${pokemon.name} shiny sprite`}
+                  fill
+                  style={{ objectFit: 'contain', filter: imageFilters }}
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  data-ai-hint={`${pokemon.speciesName} shiny sprite`}
+                />
+              </div>
+              {displayFullDetail && pokemon.description && (
+                <p className="text-xs text-muted-foreground mb-2 text-center">{pokemon.description}</p>
+              )}
+              {displayFullDetail && !pokemon.isPlaceholder && (
+                <div className="text-xs text-muted-foreground mb-2 w-full">
+                  {pokemon.level && <p><strong>Level:</strong> {pokemon.level}</p>}
+                  {pokemon.nature && <p><strong>Nature:</strong> {pokemon.nature}</p>}
+                  {pokemon.moveset && pokemon.moveset.length > 0 && (
+                    <div>
+                      <strong>Moves:</strong>
+                      <ul className="list-disc list-inside">
+                        {pokemon.moveset.map(move => <li key={move}>{move}</li>)}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
-          )}
-          <div className="flex flex-wrap gap-1 justify-center mt-auto pt-2">
-            {pokemon.tags.map(tag => (
-              <Badge 
-                key={tag} 
-                className={cn("text-xs capitalize", getTagSpecificClasses(tag))}
-                variant={getTagSpecificClasses(tag).includes("bg-secondary") ? "secondary" : "default"} 
-              >
-                {tag}
-              </Badge>
-            ))}
-          </div>
-        </CardContent>
+              <div className="flex flex-wrap gap-1 justify-center mt-auto pt-2">
+                {pokemon.tags.map(tag => (
+                  <Badge 
+                    key={tag} 
+                    className={cn("text-xs capitalize", getTagSpecificClasses(tag))}
+                    variant={getTagSpecificClasses(tag).includes("bg-secondary") ? "secondary" : "default"} 
+                  >
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            </CardContent>
 
-        {isVisible && !pokemon.isPlaceholder && !pokemon.isShinyLocked && (hasWaterTag || hasFireTag || hasGrassTag || hasGhostTag || hasFairyTag || hasNormalTag || hasFightingTag || hasPsychicTag || hasFlyingTag || hasPoisonTag || hasElectricTag || hasDragonTag || hasBugTag || hasIceTag || hasRockTag || hasDarkTag) && (
-          <div className="particle-container">
-            {hasWaterTag && Array.from({ length: 3 }).map((_, i) => (
-              <div key={`water-${pokemon.id}-${i}`} className="particle-water-drop" style={{ left: `${20 + i * 25}%`, animationDelay: `${i * 0.5}s`, animationDuration: getAnimationDuration(3) }} />
-            ))}
-            {hasFireTag && Array.from({ length: 4 }).map((_, i) => {
-              const emberColor = emberTypes[Math.floor(Math.random() * emberTypes.length)];
-              const baseDurations = { red: 2.5, orange: 2.8, yellow: 2.2 };
-              return <div key={`fire-${pokemon.id}-${i}`} className={`particle-ember-${emberColor}`} style={{ left: `${15 + i * 20}%`, bottom: `${10 + Math.random()*10}%`, animationDelay: `${i * 0.3}s`, animationDuration: getAnimationDuration(baseDurations[emberColor]) }} />
-            })}
-            {hasGrassTag && Array.from({ length: 3 }).map((_, i) => (
-              <div key={`grass-${pokemon.id}-${i}`} className="particle-leaf" style={{ left: `${25 + i * 20}%`, animationDelay: `${i * 0.6}s`, transformOrigin: 'bottom left', animationDuration: getAnimationDuration(4) }} />
-            ))}
-            {hasGhostTag && Array.from({length: 2}).map((_,i) => (
-              <div key={`ghost-${pokemon.id}-${i}`} className="particle-ghost-wisp" style={{ top: `${20 + i*30}%`, left: `${10 + i*60}%`, animationDelay: `${i*0.7}s`, animationDuration: getAnimationDuration(5) }} />
-            ))}
-            {hasFairyTag && Array.from({ length: 4 }).map((_, i) => (
-                <div key={`fairy-${pokemon.id}-${i}`} className="particle-fairy-dust" style={{ bottom: `${5 + Math.random()*15 + i*5}%`, left: `${10 + i * 22 + Math.random()*10}%`, animationDelay: `${i * 0.4 + Math.random() * 0.5}s`, animationDuration: getAnimationDuration(3.5) }} />
-            ))}
-            {hasNormalTag && (
-              <div className="particle-normal-light" style={{ top: '10%', right: '10%', animationDelay: `${Math.random() * 1}s`, animationDuration: getAnimationDuration(3) }} />
+            {isVisible && !pokemon.isPlaceholder && !pokemon.isShinyLocked && (hasWaterTag || hasFireTag || hasGrassTag || hasGhostTag || hasFairyTag || hasNormalTag || hasFightingTag || hasPsychicTag || hasFlyingTag || hasPoisonTag || hasElectricTag || hasDragonTag || hasBugTag || hasIceTag || hasRockTag || hasDarkTag) && (
+              <div className="particle-container">
+                {hasWaterTag && Array.from({ length: 3 }).map((_, i) => (
+                  <div key={`water-${pokemon.id}-${i}`} className="particle-water-drop" style={{ left: `${20 + i * 25}%`, animationDelay: `${i * 0.5}s`, animationDuration: getAnimationDuration(3) }} />
+                ))}
+                {hasFireTag && Array.from({ length: 4 }).map((_, i) => {
+                  const emberColor = emberTypes[Math.floor(Math.random() * emberTypes.length)];
+                  const baseDurations = { red: 2.5, orange: 2.8, yellow: 2.2 };
+                  return <div key={`fire-${pokemon.id}-${i}`} className={`particle-ember-${emberColor}`} style={{ left: `${15 + i * 20}%`, bottom: `${10 + Math.random()*10}%`, animationDelay: `${i * 0.3}s`, animationDuration: getAnimationDuration(baseDurations[emberColor]) }} />
+                })}
+                {hasGrassTag && Array.from({ length: 3 }).map((_, i) => (
+                  <div key={`grass-${pokemon.id}-${i}`} className="particle-leaf" style={{ left: `${25 + i * 20}%`, animationDelay: `${i * 0.6}s`, transformOrigin: 'bottom left', animationDuration: getAnimationDuration(4) }} />
+                ))}
+                {hasGhostTag && Array.from({length: 2}).map((_,i) => (
+                  <div key={`ghost-${pokemon.id}-${i}`} className="particle-ghost-wisp" style={{ top: `${20 + i*30}%`, left: `${10 + i*60}%`, animationDelay: `${i*0.7}s`, animationDuration: getAnimationDuration(5) }} />
+                ))}
+                {hasFairyTag && Array.from({ length: 4 }).map((_, i) => (
+                    <div key={`fairy-${pokemon.id}-${i}`} className="particle-fairy-dust" style={{ bottom: `${5 + Math.random()*15 + i*5}%`, left: `${10 + i * 22 + Math.random()*10}%`, animationDelay: `${i * 0.4 + Math.random() * 0.5}s`, animationDuration: getAnimationDuration(3.5) }} />
+                ))}
+                {hasNormalTag && (
+                  <div className="particle-normal-light" style={{ top: '10%', right: '10%', animationDelay: `${Math.random() * 1}s`, animationDuration: getAnimationDuration(3) }} />
+                )}
+                {hasFightingTag && (
+                  <>
+                    <div className="particle-fighting-fist" style={{ position: 'absolute', left: '5%', top: '40%', animationDelay: '0s', animationDuration: getAnimationDuration(1) }}><FightingFistSVG/></div>
+                    <div className="particle-fighting-fist" style={{ position: 'absolute', right: '5%', top: '40%', animationDelay: '0.2s', animationDuration: getAnimationDuration(1) }}><FightingFistSVG/></div>
+                  </>
+                )}
+                {hasPsychicTag && !hasFightingTag && ( 
+                  <>
+                    <div className="particle-psychic-spoon" style={{ position: 'absolute', left: '10%', bottom: '20%', animationDelay: '0s', animationDuration: getAnimationDuration(3) }}><PsychicSpoonSVG/></div>
+                    <div className="particle-psychic-spoon" style={{ position: 'absolute', right: '10%', bottom: '25%', animationDelay: '0.3s', animationDuration: getAnimationDuration(3) }}><PsychicSpoonSVG/></div>
+                  </>
+                )}
+                {hasFlyingTag && Array.from({length: 3}).map((_,i) => (
+                   <div key={`fly-${pokemon.id}-${i}`} className="particle-flying-wind" style={{ top: `${30 + i*15}%`, animationDelay: `${i*0.4}s`, animationDuration: getAnimationDuration(2) }} />
+                ))}
+                {hasPoisonTag && Array.from({length: 3}).map((_,i) => (
+                  <div key={`poison-${pokemon.id}-${i}`} className="particle-poison-drop" style={{ left: `${20 + i * 25}%`, animationDelay: `${i * 0.6}s`, animationDuration: getAnimationDuration(3.5) }} />
+                ))}
+                {hasElectricTag && Array.from({length: 5}).map((_,i) => (
+                  <div key={`elec-${pokemon.id}-${i}`} className="particle-electric-spark" style={{ top: `${Math.random()*80 + 10}%`, left: `${Math.random()*80 + 10}%`, animationDelay: `${i*0.1}s`, animationDuration: getAnimationDuration(0.5) }} />
+                ))}
+                {hasDragonTag && (
+                  <div className="particle-dragon-tail" style={{ position: 'absolute', right: '5%', bottom: '5%', transformOrigin: 'top left', animationDelay: '0s', animationDuration: getAnimationDuration(3) }}><DragonTailSVG /></div>
+                )}
+                {hasBugTag && Array.from({ length: 1 }).map((_, i) => ( 
+                  <div key={`bug-${pokemon.id}-${i}`} className="particle-bug-fly" style={{ top: `${20 + Math.random() * 60}%`, left: `${10 + Math.random() * 70}%`, animationDelay: `${i * 1.5}s`, animationDuration: getAnimationDuration(4) }} />
+                ))}
+                {hasIceTag && Array.from({ length: 5 }).map((_, i) => (
+                  <div key={`ice-${pokemon.id}-${i}`} className="particle-ice-snowflake" style={{ left: `${10 + Math.random() * 80}%`, animationDelay: `${i * 0.4 + Math.random() * 0.5}s`, animationDuration: getAnimationDuration(8) }}>❄</div>
+                ))}
+                {hasRockTag && Array.from({ length: 4 }).map((_, i) => (
+                  <div key={`rock-${pokemon.id}-${i}`} className="particle-rock-pebble" style={{ left: `${15 + i * 20 + Math.random() * 10}%`, animationDelay: `${i * 0.4}s`, animationDuration: getAnimationDuration(3) }} />
+                ))}
+                {hasDarkTag && Array.from({length: 2}).map((_,i) => (
+                  <div key={`dark-${pokemon.id}-${i}`} className="particle-dark-wisp" style={{ top: `${30 + i*20}%`, left: `${15 + i*50}%`, animationDelay: `${i*0.8}s`, animationDuration: getAnimationDuration(6) }} />
+                ))}
+              </div>
             )}
-            {hasFightingTag && (
-              <>
-                <div className="particle-fighting-fist" style={{ position: 'absolute', left: '5%', top: '40%', animationDelay: '0s', animationDuration: getAnimationDuration(1) }}><FightingFistSVG/></div>
-                <div className="particle-fighting-fist" style={{ position: 'absolute', right: '5%', top: '40%', animationDelay: '0.2s', animationDuration: getAnimationDuration(1) }}><FightingFistSVG/></div>
-              </>
-            )}
-            {hasPsychicTag && !hasFightingTag && ( 
-              <>
-                <div className="particle-psychic-spoon" style={{ position: 'absolute', left: '10%', bottom: '20%', animationDelay: '0s', animationDuration: getAnimationDuration(3) }}><PsychicSpoonSVG/></div>
-                <div className="particle-psychic-spoon" style={{ position: 'absolute', right: '10%', bottom: '25%', animationDelay: '0.3s', animationDuration: getAnimationDuration(3) }}><PsychicSpoonSVG/></div>
-              </>
-            )}
-            {hasFlyingTag && Array.from({length: 3}).map((_,i) => (
-               <div key={`fly-${pokemon.id}-${i}`} className="particle-flying-wind" style={{ top: `${30 + i*15}%`, animationDelay: `${i*0.4}s`, animationDuration: getAnimationDuration(2) }} />
-            ))}
-            {hasPoisonTag && Array.from({length: 3}).map((_,i) => (
-              <div key={`poison-${pokemon.id}-${i}`} className="particle-poison-drop" style={{ left: `${20 + i * 25}%`, animationDelay: `${i * 0.6}s`, animationDuration: getAnimationDuration(3.5) }} />
-            ))}
-            {hasElectricTag && Array.from({length: 5}).map((_,i) => (
-              <div key={`elec-${pokemon.id}-${i}`} className="particle-electric-spark" style={{ top: `${Math.random()*80 + 10}%`, left: `${Math.random()*80 + 10}%`, animationDelay: `${i*0.1}s`, animationDuration: getAnimationDuration(0.5) }} />
-            ))}
-            {hasDragonTag && (
-              <div className="particle-dragon-tail" style={{ position: 'absolute', right: '5%', bottom: '5%', transformOrigin: 'top left', animationDelay: '0s', animationDuration: getAnimationDuration(3) }}><DragonTailSVG /></div>
-            )}
-            {hasBugTag && Array.from({ length: 1 }).map((_, i) => ( 
-              <div key={`bug-${pokemon.id}-${i}`} className="particle-bug-fly" style={{ top: `${20 + Math.random() * 60}%`, left: `${10 + Math.random() * 70}%`, animationDelay: `${i * 1.5}s`, animationDuration: getAnimationDuration(4) }} />
-            ))}
-            {hasIceTag && Array.from({ length: 5 }).map((_, i) => (
-              <div key={`ice-${pokemon.id}-${i}`} className="particle-ice-snowflake" style={{ left: `${10 + Math.random() * 80}%`, animationDelay: `${i * 0.4 + Math.random() * 0.5}s`, animationDuration: getAnimationDuration(8) }}>❄</div>
-            ))}
-            {hasRockTag && Array.from({ length: 4 }).map((_, i) => (
-              <div key={`rock-${pokemon.id}-${i}`} className="particle-rock-pebble" style={{ left: `${15 + i * 20 + Math.random() * 10}%`, animationDelay: `${i * 0.4}s`, animationDuration: getAnimationDuration(3) }} />
-            ))}
-            {hasDarkTag && Array.from({length: 2}).map((_,i) => (
-              <div key={`dark-${pokemon.id}-${i}`} className="particle-dark-wisp" style={{ top: `${30 + i*20}%`, left: `${15 + i*50}%`, animationDelay: `${i*0.8}s`, animationDuration: getAnimationDuration(6) }} />
-            ))}
+          </Card>
           </div>
-        )}
-      </Card>
-      </div>
-    </CardWrapper>
+        </CardWrapper>
+    </EditPokemonDialog>
   );
 }

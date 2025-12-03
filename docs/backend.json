@@ -21,6 +21,10 @@
         "bannerURL": {
           "type": "string",
           "description": "Data URL for the user's profile banner. Can be a very long string."
+        },
+        "state": {
+          "type": "string",
+          "description": "The state of the user account (e.g., 'user', 'admin')."
         }
       },
       "required": ["uid", "displayName"]

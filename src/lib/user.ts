@@ -6,6 +6,7 @@ interface UpdateData {
   displayName?: string;
   photoFile?: File;
   bannerFile?: File;
+  state?: string;
 }
 
 /**
@@ -62,7 +63,7 @@ export async function updateUserProfile(
   user: User,
   data: UpdateData
 ): Promise<string> {
-  const { displayName, photoFile, bannerFile } = data;
+  const { displayName, photoFile, bannerFile, state } = data;
   const userDocRef = doc(firestore, 'users', user.uid);
   
   const firestoreUpdateData: { [key: string]: any } = {};
@@ -99,6 +100,13 @@ export async function updateUserProfile(
               await updateProfile(user, { displayName: newDisplayName });
           }
        }
+    }
+    
+    // Set the user state if it's a new user or not already set
+    if (!docSnap.exists() || !docSnap.data()?.state) {
+      firestoreUpdateData.state = state || 'user';
+    } else if (state) { // Allow updating state if provided
+      firestoreUpdateData.state = state;
     }
 
     // 3. Handle file uploads

@@ -4,4 +4,5 @@ export interface UserProfile {
   displayName?: string;
   photoURL?: string;
   bannerURL?: string;
+  state?: string;
 }

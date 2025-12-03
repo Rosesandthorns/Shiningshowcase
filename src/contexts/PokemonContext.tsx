@@ -1,7 +1,7 @@
 
 'use client';
 import type { Pokemon } from '@/types/pokemon';
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
 import { getEvolutionChainByPokedexNumber, getNationalPokedex, shinyLockedPokemon } from '@/lib/pokemonApi';
 import { useFirestore } from '@/firebase';
 import { useCollection } from 'react-firebase-hooks/firestore';
@@ -36,9 +36,13 @@ export const PokemonProvider = ({ children, initialPokemon, userId }: { children
   // Use the useCollection hook for real-time updates
   const [snapshot, isLoading, error] = useCollection(pokemonQuery);
 
-  const pokemonList = useMemoFirebase(() => {
-    if (!snapshot) return initialPokemon;
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Pokemon));
+  const pokemonList = useMemo(() => {
+    // Prioritize the real-time snapshot data. If it exists, use it.
+    if (snapshot) {
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Pokemon));
+    }
+    // Otherwise, fall back to the initial data passed from the server component.
+    return initialPokemon;
   }, [snapshot, initialPokemon]);
   
   useEffect(() => {

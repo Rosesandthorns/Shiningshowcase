@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Skeleton } from '../ui/skeleton';
 import { cn } from '@/lib/utils';
 import type { UserProfile } from '@/types/user';
+import { Badge } from '../ui/badge';
 
 const getBorderClass = (state?: string) => {
     switch (state) {
@@ -82,6 +83,16 @@ export function SearchClient() {
     return () => clearTimeout(debounceTimeout);
   }, [searchTerm, firestore, hasSearched]);
   
+  const renderStateBadge = (user: UserProfile) => {
+    if (user.state === 'owner' || user.state === 'dev') {
+      return <Badge className="bg-blue-500 text-white ml-2">Dev</Badge>;
+    }
+    if (user.state === 'supporter') {
+      return <Badge variant="outline" className="border-yellow-500 text-yellow-500 text-xs ml-2">Support</Badge>;
+    }
+    return null;
+  };
+  
   return (
     <div>
       <div className="text-center mb-8">
@@ -122,19 +133,20 @@ export function SearchClient() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {results.map(user => (
               <Link key={user.uid} href={`/profile/${user.uid}`} className="block h-full">
-                  <div className={cn("h-full", getBorderClass(user.state))}>
-                    <Card className="hover:bg-accent/50 transition-colors cursor-pointer h-full relative">
+                <div className={cn("h-full", getBorderClass(user.state))}>
+                    <Card className="hover:bg-accent/50 transition-colors cursor-pointer h-full relative bg-transparent">
                       <CardContent className="p-4 flex items-center space-x-4">
                         <Avatar className="h-12 w-12">
                           {user.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName} />}
                           <AvatarFallback>{user.displayName?.charAt(0).toUpperCase()}</AvatarFallback>
                         </Avatar>
-                        <div>
+                        <div className="flex items-center">
                           <p className="font-semibold text-card-foreground">{user.displayName}</p>
+                          {renderStateBadge(user)}
                         </div>
                       </CardContent>
                     </Card>
-                  </div>
+                </div>
               </Link>
             ))}
           </div>

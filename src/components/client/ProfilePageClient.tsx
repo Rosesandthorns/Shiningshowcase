@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { EditProfileClient } from '@/components/client/EditProfileClient';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 interface ProfilePageClientProps {
   profile: UserProfile;
@@ -57,23 +58,36 @@ export function ProfilePageClient({ profile }: ProfilePageClientProps) {
 
   const isOwner = currentUser && currentUser.uid === profile.uid;
 
+  const renderStateBadge = () => {
+    if (profile.state === 'owner' || profile.state === 'dev') {
+      return <Badge className="bg-blue-500 text-white ml-2">Dev</Badge>;
+    }
+    if (profile.state === 'supporter') {
+      return <Badge variant="outline" className="border-yellow-500 text-yellow-500 text-xs ml-2">Support</Badge>;
+    }
+    return null;
+  };
+
   return (
     <div className={cn("w-full max-w-2xl", getBorderClass(profile.state))}>
-      <Card className="w-full shadow-xl overflow-hidden relative">
+      <Card className="w-full shadow-xl overflow-hidden relative bg-transparent">
         <div className="h-48 bg-muted relative">
           {bannerURL && (
             <Image src={bannerURL} alt="Profile banner" layout="fill" objectFit="cover" unoptimized />
           )}
         </div>
-        <CardHeader className="text-center -mt-16">
+        <CardHeader className="text-center -mt-16 relative z-10">
           <Avatar className="w-24 h-24 border-4 border-background mx-auto shadow-lg">
             {photoURL && <AvatarImage src={photoURL} alt={displayName} />}
             <AvatarFallback>{fallbackInitial}</AvatarFallback>
           </Avatar>
-          <CardTitle className="text-3xl font-bold font-headline mt-4">{displayName}</CardTitle>
+          <div className="flex justify-center items-center mt-4">
+             <CardTitle className="text-3xl font-bold font-headline">{displayName}</CardTitle>
+             {renderStateBadge()}
+          </div>
           {currentUser?.email && isOwner && <CardDescription>{currentUser.email}</CardDescription>}
         </CardHeader>
-        <CardContent className="text-center p-6">
+        <CardContent className="text-center p-6 relative z-10">
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
             <Button asChild variant="outline">
               <Link href={`/profile/${profile.uid}/list`}>View List</Link>

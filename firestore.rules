@@ -30,8 +30,10 @@ service cloud.firestore {
       match /pokemon/{pokemonId} {
         // Anyone can read a user's pokemon list
         allow read: if true; 
-        // A user can only create, update, or delete pokemon for themselves.
-        allow create, update, delete: if isOwner(userId) && request.resource.data.userId == request.auth.uid;
+        // A user can only create or update pokemon for themselves.
+        allow create, update: if isOwner(userId) && request.resource.data.userId == request.auth.uid;
+        // A user can only delete their own pokemon.
+        allow delete: if isOwner(userId);
       }
     }
   }

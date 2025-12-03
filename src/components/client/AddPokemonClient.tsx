@@ -161,7 +161,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
             const apiDetails = await getPokemonDetailsByName(speciesName.toLowerCase().replace(/[\s.'é]+/g, '-'));
             setApiData(apiDetails);
             setFormSpecificApiData(apiDetails);
-            form.setValue('nickname', speciesName);
+            form.setValue('nickname', apiDetails.name.charAt(0).toUpperCase() + apiDetails.name.slice(1));
             form.setValue('level', 50);
             setCurrentStep(1); // Auto-advance to next step
         } catch (error) {
@@ -321,7 +321,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                                                             key={p.pokedexNumber}
                                                             value={p.speciesName}
                                                             onSelect={(currentValue) => {
-                                                                form.setValue('speciesName', currentValue);
+                                                                form.setValue('speciesName', currentValue.charAt(0).toUpperCase() + currentValue.slice(1));
                                                                 handleSelectSpecies(currentValue);
                                                             }}
                                                         >

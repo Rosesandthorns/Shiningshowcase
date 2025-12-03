@@ -29,7 +29,7 @@ export function EvolutionLineView({ evolutionLine, selectedPokemonId }: Evolutio
                     <div key={pokemon.isPlaceholder ? `${pokemon.pokedexNumber}-${index}` : pokemon.id} className="w-64 flex-shrink-0">
                         <PokemonCard 
                             pokemon={pokemon} 
-                            displayFullDetail={pokemon.id === selectedPokemonId}
+                            displayFullDetail={pokemon.id === selectedPokemonId || !pokemon.isPlaceholder}
                             isInEvolutionLine={true}
                         />
                     </div>

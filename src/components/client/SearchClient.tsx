@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -120,18 +121,20 @@ export function SearchClient() {
         {!loading && results.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {results.map(user => (
-              <Link key={user.uid} href={`/profile/${user.uid}`} className={cn("block rounded-lg", getBorderClass(user.state))}>
-                  <Card className="hover:bg-accent/50 transition-colors cursor-pointer h-full bg-card/80 backdrop-blur-sm">
-                    <CardContent className="p-4 flex items-center space-x-4">
-                      <Avatar className="h-12 w-12">
-                        {user.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName} />}
-                        <AvatarFallback>{user.displayName?.charAt(0).toUpperCase()}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-semibold text-card-foreground">{user.displayName}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
+              <Link key={user.uid} href={`/profile/${user.uid}`} className="block h-full">
+                  <div className={cn("h-full", getBorderClass(user.state))}>
+                    <Card className="hover:bg-accent/50 transition-colors cursor-pointer h-full relative">
+                      <CardContent className="p-4 flex items-center space-x-4">
+                        <Avatar className="h-12 w-12">
+                          {user.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName} />}
+                          <AvatarFallback>{user.displayName?.charAt(0).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-semibold text-card-foreground">{user.displayName}</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
               </Link>
             ))}
           </div>

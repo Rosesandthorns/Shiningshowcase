@@ -58,8 +58,8 @@ export function ProfilePageClient({ profile }: ProfilePageClientProps) {
   const isOwner = currentUser && currentUser.uid === profile.uid;
 
   return (
-    <div className={cn("w-full max-w-2xl rounded-lg", getBorderClass(profile.state))}>
-      <Card className="w-full shadow-xl overflow-hidden bg-card/80 backdrop-blur-sm">
+    <div className={cn("w-full max-w-2xl", getBorderClass(profile.state))}>
+      <Card className="w-full shadow-xl overflow-hidden relative">
         <div className="h-48 bg-muted relative">
           {bannerURL && (
             <Image src={bannerURL} alt="Profile banner" layout="fill" objectFit="cover" unoptimized />

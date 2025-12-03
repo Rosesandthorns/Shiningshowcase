@@ -566,15 +566,15 @@ body {
   .feature-card-border {
     position: relative;
     overflow: hidden;
-    padding: 1px; /* The border width */
+    padding: 2px; /* The border width */
+    border-radius: 0.75rem; /* Match card's rounded-lg */
   }
 
   .feature-card-border::before {
     content: "";
     position: absolute;
     top: 0; right: 0; bottom: 0; left: 0;
-    z-index: -1;
-    margin: -1px; /* The border width */
+    margin: -2px; /* Match the padding */
     border-radius: inherit;
     background: conic-gradient(from 90deg at 50% 50%, #f600ff, #00c8ff, #3bff00, #fff400, #ff0000, #f600ff);
     animation: rotate-hue 6s linear infinite;
@@ -595,15 +595,15 @@ body {
   .supporter-card-border {
     position: relative;
     overflow: hidden;
-    padding: 1px; /* The border width */
+    padding: 2px; /* The border width */
+    border-radius: 0.75rem; /* Match card's rounded-lg */
   }
 
   .supporter-card-border::before {
     content: "";
     position: absolute;
     top: 0; right: 0; bottom: 0; left: 0;
-    z-index: -1;
-    margin: -1px; /* The border width */
+    margin: -2px; /* Match the padding */
     border-radius: inherit;
     background: linear-gradient(120deg, #FFD700, #FFB84D, #FFD700, #FFFACD, #FFD700);
     background-size: 300% 300%;

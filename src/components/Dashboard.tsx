@@ -55,13 +55,14 @@ export function Dashboard() {
 
     // Memoize queries
     const huntsQuery = useMemoFirebase(() => userId ? query(collection(firestore, `users/${userId}/hunts`), orderBy('createdAt', 'desc'), limit(1)) : null, [firestore, userId]);
-    const pokemonQuery = useMemoFirebase(() => userId ? query(collection(firestore, `users/${userId}/pokemon`), orderBy('caughtAt', 'desc')) : null, [firestore, userId]);
+    // Fetch all pokemon, then sort client-side to handle old data without `caughtAt`
+    const pokemonQuery = useMemoFirebase(() => userId ? collection(firestore, `users/${userId}/pokemon`) : null, [firestore, userId]);
     const followingQuery = useMemoFirebase(() => userId ? query(collection(firestore, `users/${userId}/following`)) : null, [firestore, userId]);
 
 
     useEffect(() => {
         if (!userId || !firestore || !huntsQuery || !pokemonQuery || !followingQuery) {
-            if(user) setLoading(false); // If user is loaded but no queries, stop loading
+            if(user) setLoading(false);
             return;
         };
 
@@ -87,8 +88,12 @@ export function Dashboard() {
         unsubs.push(onSnapshot(pokemonQuery, snapshot => {
             const pokemon = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Pokemon));
             setAllPokemon(pokemon);
-            setRecentPokemon(pokemon.length > 0 ? pokemon[0] : null);
-             if(initialLoads < totalInitialLoads) checkLoading();
+
+            // Sort by caughtAt client-side to find the most recent
+            const sortedPokemon = [...pokemon].sort((a, b) => (b.caughtAt || 0) - (a.caughtAt || 0));
+            setRecentPokemon(sortedPokemon.length > 0 ? sortedPokemon[0] : null);
+
+            if(initialLoads < totalInitialLoads) checkLoading();
         }, () => {
             if(initialLoads < totalInitialLoads) checkLoading();
         }));
@@ -133,7 +138,6 @@ export function Dashboard() {
         return <DashboardSkeleton />;
     }
 
-    // This handles the case where a user is logged in but has no data at all.
     const hasAnyData = latestHunt !== null || recentPokemon !== null || allPokemon.length > 0;
     if (!user || !hasAnyData && followingFeed === null) {
         return (
@@ -285,5 +289,7 @@ export function Dashboard() {
             </div>
         </main>
     );
+
+    
 
     

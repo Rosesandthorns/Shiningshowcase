@@ -63,6 +63,16 @@ export function HomeTab() {
         </div>
       </section>
 
+      {/* Disclaimer Section */}
+      <section className="my-12">
+        <div className="max-w-3xl mx-auto text-center">
+           <h3 className="text-2xl font-bold mb-4">Disclaimer</h3>
+           <p className="text-sm text-muted-foreground">
+            This website was made with the help of AI due to my lack of decent programming skills, as is another reason I do not want to make a profit off of this site, however this site still costs upkeep and any support is greatly appreciated, none of it will go towards me, and all of it will be used for this site and its upkeep
+          </p>
+        </div>
+      </section>
+
       {/* Support Section */}
       <section className="my-12 py-10 bg-muted/50 rounded-lg">
         <div className="max-w-3xl mx-auto text-center">
@@ -75,5 +85,3 @@ export function HomeTab() {
     </main>
   );
 }
-
-    

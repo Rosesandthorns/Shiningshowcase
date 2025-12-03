@@ -125,6 +125,20 @@
             }
         },
         "required": ["followedAt"]
+    },
+    "ChangelogPost": {
+      "title": "Changelog Post",
+      "description": "A single entry in the site's changelog.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The UID of the author." },
+        "userDisplayName": { "type": "string", "description": "The display name of the author at time of posting." },
+        "userPhotoURL": { "type": "string", "description": "The profile picture of the author at time of posting." },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "createdAt": { "type": "number", "description": "Timestamp of when the post was created." }
+      },
+      "required": ["userId", "userDisplayName", "title", "content", "createdAt"]
     }
   },
   "auth": {
@@ -154,6 +168,12 @@
         "$ref": "#/entities/Follow"
       },
       "description": "A list of users that {userId} is following. The document ID is the UID of the user being followed."
+    },
+    "/changelog/{postId}": {
+      "schema": {
+        "$ref": "#/entities/ChangelogPost"
+      },
+      "description": "Stores all changelog posts for the website."
     }
   }
 }

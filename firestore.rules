@@ -12,6 +12,10 @@ service cloud.firestore {
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
+    
+    function isDeveloper() {
+        return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.state in ['dev', 'owner'];
+    }
 
     // Rules for user profiles
     match /users/{userId} {
@@ -43,6 +47,14 @@ service cloud.firestore {
         // Ensure the data being written is just a timestamp
         allow create: if request.resource.data.keys().hasOnly(['followedAt']);
       }
+    }
+    
+    // Rules for changelog
+    match /changelog/{postId} {
+        // Anyone can read the changelog
+        allow read: if true;
+        // Only developers can write to the changelog
+        allow create, update, delete: if isDeveloper();
     }
   }
 }

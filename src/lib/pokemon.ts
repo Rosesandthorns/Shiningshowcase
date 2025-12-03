@@ -1,10 +1,11 @@
-
 'use client';
 
 import { collection, addDoc, doc, deleteDoc, updateDoc, type Firestore } from 'firebase/firestore';
 import type { Pokemon } from '@/types/pokemon';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
+import { getAuth } from 'firebase/auth';
+import { useAuth } from '@/firebase';
 
 
 export function addPokemon(firestore: Firestore, userId: string, pokemonData: Omit<Pokemon, 'id' | 'shinyViewed' | 'userId'>): void {
@@ -30,6 +31,11 @@ export function addPokemon(firestore: Firestore, userId: string, pokemonData: Om
 
 
 export async function deletePokemon(firestore: Firestore, userId: string, pokemonId: string): Promise<void> {
+  const auth = getAuth(firestore.app);
+  if (!auth.currentUser || auth.currentUser.uid !== userId) {
+      throw new Error("You must be logged in to delete a Pokémon.");
+  }
+
   const pokemonDocRef = doc(firestore, 'users', userId, 'pokemon', pokemonId);
   try {
     await deleteDoc(pokemonDocRef);
@@ -44,6 +50,10 @@ export async function deletePokemon(firestore: Firestore, userId: string, pokemo
 }
 
 export async function updatePokemon(firestore: Firestore, userId: string, pokemonId: string, data: Partial<Pokemon>): Promise<void> {
+    const auth = getAuth(firestore.app);
+    if (!auth.currentUser || auth.currentUser.uid !== userId) {
+        throw new Error("You must be logged in to update a Pokémon.");
+    }
     const pokemonDocRef = doc(firestore, 'users', userId, 'pokemon', pokemonId);
     try {
         await updateDoc(pokemonDocRef, data);

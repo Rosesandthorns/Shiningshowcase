@@ -26,8 +26,7 @@ const features = [
 ];
 
 const FeatureCard = ({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) => (
-  <div className="feature-card-border rounded-lg h-full">
-    <Card className="h-full bg-card/80 backdrop-blur-sm">
+    <Card className="h-full">
       <CardHeader className="flex flex-col items-center text-center">
         {icon}
         <CardTitle className="mt-4 text-xl font-bold">{title}</CardTitle>
@@ -36,7 +35,6 @@ const FeatureCard = ({ icon, title, description }: { icon: React.ReactNode, titl
         <p className="text-center text-muted-foreground">{description}</p>
       </CardContent>
     </Card>
-  </div>
 );
 
 

@@ -44,11 +44,10 @@ export function Dashboard() {
     const { user } = useUser();
     const firestore = useFirestore();
 
-    const [latestHunt, setLatestHunt] = useState<Hunt | null>(null);
-    const [recentPokemon, setRecentPokemon] = useState<Pokemon | null>(null);
+    const [latestHunt, setLatestHunt] = useState<Hunt | null | undefined>(undefined);
+    const [recentPokemon, setRecentPokemon] = useState<Pokemon | null | undefined>(undefined);
     const [allPokemon, setAllPokemon] = useState<Pokemon[]>([]);
-    const [following, setFollowing] = useState<UserProfile[]>([]);
-    const [followingFeed, setFollowingFeed] = useState<Pokemon | null>(null);
+    const [followingFeed, setFollowingFeed] = useState<Pokemon | null | undefined>(undefined);
     const [loading, setLoading] = useState(true);
 
     const userId = user?.uid;
@@ -59,54 +58,65 @@ export function Dashboard() {
     const followingQuery = useMemoFirebase(() => userId ? query(collection(firestore, `users/${userId}/following`)) : null, [firestore, userId]);
 
 
-    // Fetch user's data
     useEffect(() => {
-        if (!userId || !firestore) return;
-        setLoading(true);
+        if (!userId || !firestore || !huntsQuery || !pokemonQuery || !followingQuery) {
+            if(user) setLoading(false); // If user is loaded but no queries, stop loading
+            return;
+        };
 
-        const unsubscribes = [
-            onSnapshot(huntsQuery!, snapshot => {
-                const hunt = snapshot.docs[0]?.data() as Hunt;
-                setLatestHunt(hunt || null);
-            }),
-            onSnapshot(pokemonQuery!, snapshot => {
-                const pokemon = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Pokemon));
-                setAllPokemon(pokemon);
-                setRecentPokemon(pokemon[0] || null);
-            }),
-            onSnapshot(followingQuery!, async (snapshot) => {
-                const followedUsers = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile));
-                setFollowing(followedUsers);
+        const unsubs: (() => void)[] = [];
+        let huntLoaded = false, pokemonLoaded = false, followingLoaded = false;
 
-                // Fetch latest pokemon from followed users
-                if (followedUsers.length > 0) {
-                    let latestPokemon: Pokemon | null = null;
-                    for (const followedUser of followedUsers) {
-                        const followedPokemonQuery = query(collection(firestore, `users/${followedUser.uid}/pokemon`), orderBy('caughtAt', 'desc'), limit(1));
+        const checkLoading = () => {
+            if (huntLoaded && pokemonLoaded && followingLoaded) {
+                setLoading(false);
+            }
+        };
+
+        unsubs.push(onSnapshot(huntsQuery, snapshot => {
+            const hunt = snapshot.docs.length > 0 ? { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as Hunt : null;
+            setLatestHunt(hunt);
+            huntLoaded = true;
+            checkLoading();
+        }));
+
+        unsubs.push(onSnapshot(pokemonQuery, snapshot => {
+            const pokemon = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Pokemon));
+            setAllPokemon(pokemon);
+            setRecentPokemon(pokemon.length > 0 ? pokemon[0] : null);
+            pokemonLoaded = true;
+            checkLoading();
+        }));
+        
+        unsubs.push(onSnapshot(followingQuery, async (snapshot) => {
+            const followedUsers = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile));
+            
+            if (followedUsers.length > 0) {
+                let latestPokemon: Pokemon | null = null;
+                for (const followedUser of followedUsers) {
+                    const followedPokemonQuery = query(collection(firestore, `users/${followedUser.uid}/pokemon`), orderBy('caughtAt', 'desc'), limit(1));
+                    try {
                         const followedSnapshot = await getDocs(followedPokemonQuery);
-                        const newestPokemon = followedSnapshot.docs[0]?.data() as Pokemon;
-
-                        if (newestPokemon && (!latestPokemon || newestPokemon.caughtAt! > latestPokemon.caughtAt!)) {
-                            latestPokemon = { id: followedSnapshot.docs[0].id, ...newestPokemon };
+                        if (!followedSnapshot.empty) {
+                            const newestPokemon = { id: followedSnapshot.docs[0].id, ...followedSnapshot.docs[0].data() } as Pokemon;
+                            if (newestPokemon && (!latestPokemon || newestPokemon.caughtAt! > latestPokemon.caughtAt!)) {
+                                latestPokemon = newestPokemon;
+                            }
                         }
+                    } catch (e) {
+                       console.error(`Could not fetch pokemon for followed user ${followedUser.uid}`, e);
                     }
-                    setFollowingFeed(latestPokemon);
-                } else {
-                    setFollowingFeed(null);
                 }
-            })
-        ];
+                setFollowingFeed(latestPokemon);
+            } else {
+                 setFollowingFeed(null);
+            }
+            followingLoaded = true;
+            checkLoading();
+        }));
 
-        Promise.all([
-          getDocs(huntsQuery!),
-          getDocs(pokemonQuery!),
-          getDocs(followingQuery!)
-        ]).then(() => setLoading(false))
-        .catch(() => setLoading(false));
-
-
-        return () => unsubscribes.forEach(unsub => unsub());
-    }, [userId, firestore, huntsQuery, pokemonQuery, followingQuery]);
+        return () => unsubs.forEach(unsub => unsub());
+    }, [userId, firestore, huntsQuery, pokemonQuery, followingQuery, user]);
 
 
     const uniqueShiniesCount = useMemo(() => {

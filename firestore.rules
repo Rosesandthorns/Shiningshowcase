@@ -17,6 +17,12 @@ service cloud.firestore {
         return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.state in ['dev', 'owner'];
     }
 
+    function isShardOwner(userId) {
+      // Helper function to check ownership of all pokemon in a shard.
+      // Every pokemon in the 'pokemon' array must have a 'userId' that matches the owner of the shard.
+      return request.resource.data.pokemon.size() == request.resource.data.pokemon.filter(p => p.userId == userId).size();
+    }
+
     // Rules for user profiles
     match /users/{userId} {
       // Anyone can read a public profile
@@ -34,8 +40,11 @@ service cloud.firestore {
       match /pokemonShards/{shardId} {
         // Anyone can read a user's pokemon list
         allow read: if true;
-        // A user can only manage their own collection shards.
-        allow create, update, delete: if isOwner(userId);
+        // A user can only delete their own shard.
+        allow delete: if isOwner(userId);
+        // A user can only create or update a shard if they are the owner
+        // AND every pokemon inside the shard belongs to them.
+        allow create, update: if isOwner(userId) && isShardOwner(userId);
       }
 
       // Rules for following other users

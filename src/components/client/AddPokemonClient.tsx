@@ -180,6 +180,9 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
     const handleSubmit = async (finalData: FormData) => {
         setIsLoading(true);
         try {
+            if (!firestore) {
+              throw new Error("Firestore is not initialized.");
+            }
             const newPokemonData: Omit<PokemonType, 'id' | 'userId' | 'shinyViewed'> = {
                 name: finalData.nickname,
                 pokedexNumber: apiData.id, // Always use the base species ID
@@ -548,15 +551,15 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                             />
                         )}
 
-                        {steps[currentStep].id === 'review' && apiData && (
+                        {steps[currentStep].id === 'review' && (
                             <div className="space-y-4 rounded-lg border p-4">
                                 <div className="flex justify-center">
-                                    <Image src={formSpecificApiData?.sprites?.front_shiny || apiData.sprites.front_shiny} alt={formData.nickname} width={128} height={128} />
+                                    <Image src={formSpecificApiData?.sprites?.front_shiny || apiData?.sprites?.front_shiny || 'https://placehold.co/128x128.png'} alt={formData.nickname || 'Pokémon'} width={128} height={128} />
                                 </div>
                                 <h3 className="text-center text-lg font-bold">{formData.nickname}</h3>
                                 <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                                    <p><strong>Species:</strong> {formSpecificApiData.name}</p>
-                                    <p><strong>Pokédex #:</strong> {apiData.id}</p>
+                                    <p><strong>Species:</strong> {formSpecificApiData?.name}</p>
+                                    <p><strong>Pokédex #:</strong> {apiData?.id}</p>
                                     <p><strong>Level:</strong> {formData.level}</p>
                                     <p><strong>Nature:</strong> {formData.nature}</p>
                                     <p><strong>Gender:</strong> {formData.gender}</p>
@@ -589,3 +592,5 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
         </Card>
     );
 }
+
+    

@@ -69,18 +69,19 @@ export async function getPokemonDetailsByUrl(url: string): Promise<any> {
 export async function getAllPokemon(firestore: Firestore, userId: string): Promise<Pokemon[]> {
   if (!userId) return [];
   try {
-    const pokemonColRef = collection(firestore, 'users', userId, 'pokemon');
-    const snapshot = await getDocs(pokemonColRef);
+    const shardsColRef = collection(firestore, 'users', userId, 'pokemonShards');
+    const snapshot = await getDocs(shardsColRef);
     
     if (snapshot.empty) {
       return [];
     }
     
-    const pokemonList = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    } as Pokemon));
+    // Flatten the arrays from all shards into a single list
+    const pokemonList = snapshot.docs.flatMap(doc => doc.data().pokemon as Pokemon[]);
     
+    // Sort the combined list
+    pokemonList.sort((a, b) => a.pokedexNumber - b.pokedexNumber || a.speciesName.localeCompare(b.speciesName));
+
     return pokemonList;
   } catch (error) {
     console.error(`[Server API Error] Failed to fetch pokemon for userId ${userId}:`, error);
@@ -112,15 +113,11 @@ export async function getUserProfile(firestore: Firestore, userId: string): Prom
 
 
 export async function getPokemonById(firestore: Firestore, userId: string, pokemonId: string): Promise<Pokemon | undefined> {
-  if (!userId || !pokemonId) return undefined;
-  const pokemonDocRef = doc(firestore, 'users', userId, 'pokemon', pokemonId);
-  const docSnap = await getDoc(pokemonDocRef);
-
-  if (!docSnap.exists()) {
-    return undefined;
-  }
-
-  return { id: docSnap.id, ...docSnap.data() } as Pokemon;
+    if (!userId || !pokemonId) return undefined;
+    
+    // To find one Pokémon, we must now fetch all shards and search them.
+    const allPokemon = await getAllPokemon(firestore, userId);
+    return allPokemon.find(p => p.id === pokemonId);
 }
 
 export async function getUniqueTags(firestore: Firestore, userId: string): Promise<string[]> {

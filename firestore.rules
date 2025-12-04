@@ -30,14 +30,12 @@ service cloud.firestore {
         allow create: if isOwner(userId) && request.resource.data.userId == request.auth.uid;
       }
 
-      // Rules for user-specific Pokémon
-      match /pokemon/{pokemonId} {
+      // Rules for user-specific Pokémon shards
+      match /pokemonShards/{shardId} {
         // Anyone can read a user's pokemon list
-        allow read: if true; 
-        // A user can only create or update pokemon for themselves.
-        allow create, update: if isOwner(userId) && request.resource.data.userId == request.auth.uid;
-        // A user can only delete their own pokemon.
-        allow delete: if isOwner(userId);
+        allow read: if true;
+        // A user can only manage their own collection shards.
+        allow create, update, delete: if isOwner(userId);
       }
 
       // Rules for following other users

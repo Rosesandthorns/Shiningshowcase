@@ -14,7 +14,7 @@ export interface StatsSet {
 }
 
 export interface Pokemon {
-  id: string; // Firestore document ID
+  id: string; // A unique ID for this specific Pokémon instance
   userId: string;
   name: string;
   pokedexNumber: number;

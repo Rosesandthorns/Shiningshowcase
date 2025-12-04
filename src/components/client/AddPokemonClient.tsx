@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -200,7 +201,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                 caughtAt: Date.now(),
             };
             
-            addPokemon(firestore, user.uid, newPokemonData);
+            await addPokemon(firestore, user.uid, newPokemonData);
             
             toast({
                 title: 'Pokémon Added!',

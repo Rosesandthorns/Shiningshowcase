@@ -83,9 +83,10 @@
     },
     "Pokemon": {
       "title": "User Pokemon",
-      "description": "Represents a single Pokémon caught by a user.",
+      "description": "Represents a single Pokémon caught by a user. This is intended to be used within an array in a PokemonCollectionShard.",
       "type": "object",
       "properties": {
+        "id": { "type": "string", "description": "A unique ID for the Pokémon within the user's collection." },
         "userId": { "type": "string" },
         "name": { "type": "string" },
         "pokedexNumber": { "type": "number" },
@@ -112,7 +113,23 @@
         "encounters": { "type": "number" },
         "caughtAt": { "type": "number", "description": "Timestamp of when the pokemon was caught." }
       },
-      "required": ["userId", "name", "pokedexNumber", "speciesName", "sprites", "caughtAt"]
+      "required": ["id", "userId", "name", "pokedexNumber", "speciesName", "sprites", "caughtAt"]
+    },
+    "PokemonCollectionShard": {
+        "title": "Pokémon Collection Shard",
+        "description": "A shard of a user's Pokémon collection, containing up to 200 Pokémon.",
+        "type": "object",
+        "properties": {
+            "shardId": { "type": "number", "description": "The numeric ID of this shard (e.g., 1, 2, 3...)." },
+            "pokemon": {
+                "type": "array",
+                "items": { "$ref": "#/entities/Pokemon" }
+            },
+            "createdAt": {
+                "type": "number"
+            }
+        },
+        "required": ["shardId", "pokemon", "createdAt"]
     },
     "Follow": {
         "title": "Follow Relationship",
@@ -157,11 +174,9 @@
       },
       "description": "Stores the shiny hunts for a specific user."
     },
-    "/users/{userId}/pokemon/{pokemonId}": {
-      "schema": {
-        "$ref": "#/entities/Pokemon"
-      },
-      "description": "Stores the Pokémon collection for a specific user."
+    "/users/{userId}/pokemonShards/{shardId}": {
+        "schema": { "$ref": "#/entities/PokemonCollectionShard" },
+        "description": "Stores shards of a user's Pokémon collection. Each document contains an array of Pokémon."
     },
     "/users/{userId}/following/{followedUserId}": {
       "schema": {

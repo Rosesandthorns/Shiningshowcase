@@ -38,19 +38,22 @@ export const PokemonProvider = ({ children, userId: providedUserId, initialPokem
   const [isEvolutionLoading, setIsEvolutionLoading] = useState(false);
   
   // Memoize the query to prevent re-creating it on every render
-  const pokemonQuery = useMemoFirebase(
-    () => (firestore && userId ? query(collection(firestore, `users/${userId}/pokemon`), orderBy('pokedexNumber')) : null),
+  const shardsQuery = useMemoFirebase(
+    () => (firestore && userId ? query(collection(firestore, `users/${userId}/pokemonShards`), orderBy('shardId')) : null),
     [firestore, userId]
   );
   
-  // Use the useCollection hook for real-time updates.
-  // The hook's initial fetch is now less critical if we have initialPokemon.
-  const [snapshot, collectionLoading, error] = useCollection(pokemonQuery);
+  // Use the useCollection hook for real-time updates on the shards.
+  const [snapshot, collectionLoading, error] = useCollection(shardsQuery);
 
   const pokemonList = useMemo(() => {
     // If we have a snapshot from the real-time listener, it's the most up-to-date data.
     if (snapshot) {
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Pokemon));
+        // Flatten the arrays from all shards into a single list
+        const list = snapshot.docs.flatMap(doc => doc.data().pokemon as Pokemon[]);
+        // Sort the combined list
+        list.sort((a, b) => a.pokedexNumber - b.pokedexNumber || a.speciesName.localeCompare(b.speciesName));
+        return list;
     }
     // Otherwise, fall back to the server-provided initial data.
     return initialPokemon;
@@ -58,7 +61,7 @@ export const PokemonProvider = ({ children, userId: providedUserId, initialPokem
   
   useEffect(() => {
     if (error) {
-      console.error("Error fetching pokemon collection:", error);
+      console.error("Error fetching pokemon collection shards:", error);
     }
   }, [error]);
 

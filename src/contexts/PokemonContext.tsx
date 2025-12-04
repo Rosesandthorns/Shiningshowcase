@@ -21,33 +21,40 @@ interface PokemonContextType {
 
 const PokemonContext = createContext<PokemonContextType | undefined>(undefined);
 
-// Provider that can be used in the root layout
-export const PokemonProvider = ({ children }: { children: ReactNode }) => {
-  const firestore = useFirestore();
-  const { user, loading: userLoading } = useUser();
-  const userId = user?.uid ?? null;
+interface PokemonProviderProps {
+  children: ReactNode;
+  userId: string | null;
+  initialPokemon?: Pokemon[];
+}
 
+// Provider that can be used in the root layout
+export const PokemonProvider = ({ children, userId: providedUserId, initialPokemon = [] }: PokemonProviderProps) => {
+  const firestore = useFirestore();
+  const { user: authUser, loading: userLoading } = useUser();
+  const userId = providedUserId ?? authUser?.uid ?? null;
+  
   const [evolutionLine, setEvolutionLine] = useState<Pokemon[] | null>(null);
   const [selectedPokemonId, setSelectedPokemonId] = useState<string | null>(null);
   const [isEvolutionLoading, setIsEvolutionLoading] = useState(false);
-
+  
   // Memoize the query to prevent re-creating it on every render
   const pokemonQuery = useMemoFirebase(
     () => (firestore && userId ? query(collection(firestore, `users/${userId}/pokemon`), orderBy('pokedexNumber')) : null),
     [firestore, userId]
   );
   
-  // Use the useCollection hook for real-time updates
+  // Use the useCollection hook for real-time updates.
+  // The hook's initial fetch is now less critical if we have initialPokemon.
   const [snapshot, collectionLoading, error] = useCollection(pokemonQuery);
 
   const pokemonList = useMemo(() => {
-    // If we have a snapshot from the real-time listener, use it
+    // If we have a snapshot from the real-time listener, it's the most up-to-date data.
     if (snapshot) {
       return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Pokemon));
     }
-    // Otherwise, return an empty array.
-    return [];
-  }, [snapshot]);
+    // Otherwise, fall back to the server-provided initial data.
+    return initialPokemon;
+  }, [snapshot, initialPokemon]);
   
   useEffect(() => {
     if (error) {
@@ -141,7 +148,8 @@ export const PokemonProvider = ({ children }: { children: ReactNode }) => {
 
   const value = {
     pokemonList,
-    isLoading: userLoading || collectionLoading,
+    // Loading is true if we don't have initial server data AND the collection is still loading.
+    isLoading: initialPokemon.length === 0 && (userLoading || collectionLoading),
     evolutionLine,
     selectedPokemonId,
     showEvolutionLine,

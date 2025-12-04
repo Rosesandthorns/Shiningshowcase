@@ -4,11 +4,13 @@ import type { UserProfile } from '@/types/user';
 import { collection, getDocs, doc, getDoc, query, where, limit, type Firestore } from 'firebase/firestore';
 
 
-// In-memory cache
-const evolutionChainCache = new Map<number, { speciesNames: string[], speciesDetailsList: any[] }>();
-const speciesDetailCache = new Map<string, any>();
-const pokemonDetailCache = new Map<string, any>();
-const nationalPokedexCache: PokedexEntry[] = [];
+// In-memory cache with timestamps
+interface CacheEntry {
+    data: any;
+    timestamp: number;
+}
+const apiCache = new Map<string, CacheEntry>();
+const CACHE_DURATION_MS = 60 * 60 * 1000; // 1 hour
 
 export const shinyLockedPokemon = [
     'victini', 'keldeo', 'meloetta', 'diancie', 'genesect', 'hoopa', 'volcanion', 'magearna',
@@ -27,31 +29,40 @@ export const shinyLockedPokemon = [
 ];
 
 
-async function fetchWithCache(url: string, cache: Map<string, any>): Promise<any> {
-    if (cache.has(url)) {
-        return cache.get(url);
+async function fetchWithCache(url: string): Promise<any> {
+    const now = Date.now();
+    const cachedEntry = apiCache.get(url);
+
+    if (cachedEntry && (now - cachedEntry.timestamp < CACHE_DURATION_MS)) {
+        return cachedEntry.data;
     }
+
     try {
         const response = await fetch(url);
         if (!response.ok) {
             throw new Error(`API call failed for ${url}: ${response.status}`);
         }
         const data = await response.json();
-        cache.set(url, data);
+        apiCache.set(url, { data, timestamp: now });
         return data;
     } catch (error) {
         console.error(`Fetch error for ${url}:`, error);
+        // If fetch fails but we have stale data, return it
+        if (cachedEntry) {
+            console.warn(`Returning stale data for ${url} due to fetch error.`);
+            return cachedEntry.data;
+        }
         throw error;
     }
 }
 
 export async function getPokemonDetailsByName(name: string): Promise<any> {
-    const speciesUrl = `https://pokeapi.co/api/v2/pokemon-species/${name.toLowerCase()}`;
-    return await fetchWithCache(speciesUrl, speciesDetailCache);
+    const speciesUrl = `https://pokeapi.co/api/v2/pokemon-species/${name.toLowerCase().replace(/[\s.'é]+/g, '-')}`;
+    return await fetchWithCache(speciesUrl);
 }
 
 export async function getPokemonDetailsByUrl(url: string): Promise<any> {
-    return await fetchWithCache(url, pokemonDetailCache);
+    return await fetchWithCache(url);
 }
 
 
@@ -130,7 +141,7 @@ export async function getUniqueTags(firestore: Firestore, userId: string): Promi
 }
 
 export async function getPokemonSpeciesDetailsByUrl(url: string): Promise<any> {
-    return fetchWithCache(url, speciesDetailCache);
+    return fetchWithCache(url);
 }
 
 async function parseEvolutionChain(chain: any): Promise<{ speciesNames: string[], speciesDetailsList: any[] }> {
@@ -157,34 +168,24 @@ async function parseEvolutionChain(chain: any): Promise<{ speciesNames: string[]
 }
 
 export async function getEvolutionChainByPokedexNumber(pokedexNumber: number): Promise<{ speciesNames: string[], speciesDetailsList: any[] }> {
-    if (evolutionChainCache.has(pokedexNumber)) {
-        return evolutionChainCache.get(pokedexNumber)!;
-    }
+    const speciesUrl = `https://pokeapi.co/api/v2/pokemon-species/${pokedexNumber}/`;
+    const speciesData = await fetchWithCache(speciesUrl);
+    
+    const evolutionChainUrl = speciesData.evolution_chain.url;
+    const evolutionChainData = await fetchWithCache(evolutionChainUrl);
 
-    try {
-        const speciesUrl = `https://pokeapi.co/api/v2/pokemon-species/${pokedexNumber}/`;
-        const speciesData = await fetchWithCache(speciesUrl, speciesDetailCache);
-        
-        const evolutionChainUrl = speciesData.evolution_chain.url;
-        const evolutionChainData = await fetchWithCache(evolutionChainUrl, new Map());
-
-        const { speciesNames, speciesDetailsList } = await parseEvolutionChain(evolutionChainData.chain);
-        
-        const result = { speciesNames, speciesDetailsList };
-        evolutionChainCache.set(pokedexNumber, result);
-        return result;
-    } catch (error) {
-        console.error(`Failed to get evolution chain for Pokedex #${pokedexNumber}:`, error);
-        return { speciesNames: [], speciesDetailsList: [] };
-    }
+    return await parseEvolutionChain(evolutionChainData.chain);
 }
 
 export async function getNationalPokedex(): Promise<PokedexEntry[]> {
-    if (nationalPokedexCache.length > 0) {
-        return nationalPokedexCache;
+    const pokedexUrl = 'https://pokeapi.co/api/v2/pokemon-species?limit=1025';
+    const cachedEntry = apiCache.get(pokedexUrl);
+     if (cachedEntry && (Date.now() - cachedEntry.timestamp < CACHE_DURATION_MS)) {
+        return cachedEntry.data;
     }
+
     try {
-        const response = await fetch('https://pokeapi.co/api/v2/pokemon-species?limit=1025');
+        const response = await fetch(pokedexUrl);
         if (!response.ok) {
             throw new Error('Failed to fetch national pokedex list');
         }
@@ -208,11 +209,15 @@ export async function getNationalPokedex(): Promise<PokedexEntry[]> {
             };
         }));
         
-        nationalPokedexCache.push(...entries);
+        apiCache.set(pokedexUrl, { data: entries, timestamp: Date.now() });
         return entries;
 
     } catch (error) {
         console.error("Could not fetch National Pokedex:", error);
+        if (cachedEntry) {
+            console.warn("Returning stale Pokedex data due to fetch error.");
+            return cachedEntry.data;
+        }
         return [];
     }
 }
@@ -226,6 +231,3 @@ export async function getUserIdFromDisplayName(firestore: Firestore, displayName
     }
     return querySnapshot.docs[0].id;
 }
-
-    
-    

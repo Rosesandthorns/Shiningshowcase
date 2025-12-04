@@ -20,7 +20,7 @@ service cloud.firestore {
     function isShardOwner(userId) {
       // Helper function to check ownership of all pokemon in a shard.
       // Every pokemon in the 'pokemon' array must have a 'userId' that matches the owner of the shard.
-      return request.resource.data.pokemon.all(p => p.userId == userId);
+      return request.resource.data.pokemon.all(p, p.userId == userId);
     }
 
     // Rules for user profiles

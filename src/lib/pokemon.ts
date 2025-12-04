@@ -1,4 +1,3 @@
-
 'use client';
 
 import { 
@@ -22,6 +21,11 @@ import { getAuth } from 'firebase/auth';
 const SHARD_SIZE = 200;
 
 export async function addPokemon(firestore: Firestore, userId: string, pokemonData: Omit<Pokemon, 'id' | 'shinyViewed' | 'userId'>): Promise<void> {
+    const auth = getAuth(firestore.app);
+    if (!auth.currentUser || auth.currentUser.uid !== userId) {
+        throw new Error("You must be logged in to add a Pokémon.");
+    }
+    
     const shardsRef = collection(firestore, 'users', userId, 'pokemonShards');
 
     const newPokemonWithId: Pokemon = {

@@ -49,8 +49,11 @@ export const PokemonProvider = ({ children, userId: providedUserId, initialPokem
   const pokemonList = useMemo(() => {
     // If we have a snapshot from the real-time listener, it's the most up-to-date data.
     if (snapshot) {
-        // Flatten the arrays from all shards into a single list
-        const list = snapshot.docs.flatMap(doc => doc.data().pokemon as Pokemon[]);
+        // Flatten the pokemon from all shard maps into a single list
+        const list = snapshot.docs.flatMap(doc => {
+            const data = doc.data();
+            return data.pokemonMap ? Object.values(data.pokemonMap) as Pokemon[] : [];
+        });
         // Sort the combined list
         list.sort((a, b) => a.pokedexNumber - b.pokedexNumber || a.speciesName.localeCompare(b.speciesName));
         return list;

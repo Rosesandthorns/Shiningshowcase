@@ -83,7 +83,7 @@
     },
     "Pokemon": {
       "title": "User Pokemon",
-      "description": "Represents a single Pokémon caught by a user. This is intended to be used within an array in a PokemonCollectionShard.",
+      "description": "Represents a single Pokémon caught by a user. This is intended to be used within a map in a PokemonCollectionShard.",
       "type": "object",
       "properties": {
         "id": { "type": "string", "description": "A unique ID for the Pokémon within the user's collection." },
@@ -117,19 +117,26 @@
     },
     "PokemonCollectionShard": {
         "title": "Pokémon Collection Shard",
-        "description": "A shard of a user's Pokémon collection, containing up to 200 Pokémon.",
+        "description": "A shard of a user's Pokémon collection, containing up to 500 Pokémon in a map.",
         "type": "object",
         "properties": {
             "shardId": { "type": "number", "description": "The numeric ID of this shard (e.g., 1, 2, 3...)." },
-            "pokemon": {
-                "type": "array",
-                "items": { "$ref": "#/entities/Pokemon" }
+            "pokemonMap": {
+                "type": "object",
+                "description": "A map of Pokémon objects, keyed by their unique Pokémon ID.",
+                "additionalProperties": {
+                    "$ref": "#/entities/Pokemon"
+                }
+            },
+            "pokemonCount": {
+                "type": "number",
+                "description": "The number of Pokémon currently in this shard."
             },
             "createdAt": {
                 "type": "number"
             }
         },
-        "required": ["shardId", "pokemon", "createdAt"]
+        "required": ["shardId", "pokemonMap", "pokemonCount", "createdAt"]
     },
     "Follow": {
         "title": "Follow Relationship",
@@ -176,7 +183,7 @@
     },
     "/users/{userId}/pokemonShards/{shardId}": {
         "schema": { "$ref": "#/entities/PokemonCollectionShard" },
-        "description": "Stores shards of a user's Pokémon collection. Each document contains an array of Pokémon."
+        "description": "Stores shards of a user's Pokémon collection. Each document contains a map of Pokémon."
     },
     "/users/{userId}/following/{followedUserId}": {
       "schema": {

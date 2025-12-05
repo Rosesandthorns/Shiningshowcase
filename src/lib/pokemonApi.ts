@@ -76,8 +76,11 @@ export async function getAllPokemon(firestore: Firestore, userId: string): Promi
       return [];
     }
     
-    // Flatten the arrays from all shards into a single list
-    const pokemonList = snapshot.docs.flatMap(doc => doc.data().pokemon as Pokemon[]);
+    // Flatten the pokemon from all shard maps into a single list
+    const pokemonList = snapshot.docs.flatMap(doc => {
+        const data = doc.data();
+        return data.pokemonMap ? Object.values(data.pokemonMap) as Pokemon[] : [];
+    });
     
     // Sort the combined list
     pokemonList.sort((a, b) => a.pokedexNumber - b.pokedexNumber || a.speciesName.localeCompare(b.speciesName));

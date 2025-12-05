@@ -5,7 +5,6 @@ import {
     collection, 
     doc, 
     updateDoc,
-    addDoc,
     getDocs,
     writeBatch,
     query,
@@ -13,7 +12,8 @@ import {
     limit,
     type Firestore,
     runTransaction,
-    deleteField
+    deleteField,
+    setDoc
 } from 'firebase/firestore';
 import type { Pokemon } from '@/types/pokemon';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -23,11 +23,6 @@ import { getAuth } from 'firebase/auth';
 const SHARD_SIZE = 500;
 
 export async function addPokemon(firestore: Firestore, userId: string, pokemonData: Omit<Pokemon, 'id' | 'shinyViewed' | 'userId'>): Promise<void> {
-    const auth = getAuth(firestore.app);
-    if (!auth.currentUser || auth.currentUser.uid !== userId) {
-        throw new Error("You must be logged in to add a Pokémon.");
-    }
-    
     const shardsRef = collection(firestore, 'users', userId, 'pokemonShards');
 
     const newPokemonId = doc(collection(firestore, 'temp')).id;
@@ -39,43 +34,42 @@ export async function addPokemon(firestore: Firestore, userId: string, pokemonDa
     };
     
     try {
-        await runTransaction(firestore, async (transaction) => {
-            const lastShardQuery = query(shardsRef, orderBy('shardId', 'desc'), limit(1));
-            const lastShardSnapshot = await transaction.get(lastShardQuery.withConverter({
-                fromFirestore: (snapshot): any => snapshot.data(),
-                toFirestore: (modelObject) => modelObject
-            }));
+        // Query for the last shard to see if it has space.
+        const lastShardQuery = query(shardsRef, orderBy('shardId', 'desc'), limit(1));
+        const lastShardSnapshot = await getDocs(lastShardQuery);
 
-            if (lastShardSnapshot.empty || lastShardSnapshot.docs[0].data().pokemonCount >= SHARD_SIZE) {
-                // Create a new shard
-                const newShardId = lastShardSnapshot.empty ? 1 : lastShardSnapshot.docs[0].data().shardId + 1;
-                const newShardRef = doc(shardsRef, String(newShardId));
-                transaction.set(newShardRef, {
-                    shardId: newShardId,
-                    pokemonMap: { [newPokemonId]: newPokemonWithId },
-                    pokemonCount: 1,
-                    createdAt: Date.now(),
-                });
-            } else {
-                // Add to the existing shard
-                const lastShardDoc = lastShardSnapshot.docs[0];
-                const lastShardRef = doc(shardsRef, lastShardDoc.id);
-                const currentCount = lastShardDoc.data().pokemonCount || Object.keys(lastShardDoc.data().pokemonMap).length;
+        if (lastShardSnapshot.empty || lastShardSnapshot.docs[0].data().pokemonCount >= SHARD_SIZE) {
+            // Create a new shard if no shards exist or the last one is full.
+            const newShardId = lastShardSnapshot.empty ? 1 : lastShardSnapshot.docs[0].data().shardId + 1;
+            const newShardRef = doc(shardsRef, String(newShardId));
+            
+            await setDoc(newShardRef, {
+                shardId: newShardId,
+                pokemonMap: { [newPokemonId]: newPokemonWithId },
+                pokemonCount: 1,
+                createdAt: Date.now(),
+            });
 
-                transaction.update(lastShardRef, {
-                    [`pokemonMap.${newPokemonId}`]: newPokemonWithId,
-                    pokemonCount: currentCount + 1,
-                });
-            }
-        });
+        } else {
+            // Add to the existing shard.
+            const lastShardDoc = lastShardSnapshot.docs[0];
+            const lastShardRef = doc(shardsRef, lastShardDoc.id);
+            const currentCount = lastShardDoc.data().pokemonCount || Object.keys(lastShardDoc.data().pokemonMap).length;
+
+            await updateDoc(lastShardRef, {
+                [`pokemonMap.${newPokemonId}`]: newPokemonWithId,
+                pokemonCount: currentCount + 1,
+            });
+        }
     } catch (serverError: any) {
+        // This unified error handling will catch permission issues from setDoc or updateDoc.
         const permissionError = new FirestorePermissionError({
-            path: shardsRef.path,
-            operation: 'create',
+            path: `${shardsRef.path}/{shardId}`,
+            operation: 'create', // Operation is conceptually a 'create' on a sub-object
             requestResourceData: newPokemonWithId,
         } satisfies SecurityRuleContext);
         errorEmitter.emit('permission-error', permissionError);
-        throw serverError;
+        throw serverError; // Re-throw to be caught by the UI form.
     }
 }
 
@@ -158,3 +152,4 @@ export async function updatePokemon(firestore: Firestore, userId: string, pokemo
         throw serverError;
     }
 }
+

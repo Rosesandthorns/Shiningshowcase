@@ -72,6 +72,31 @@ interface AddPokemonClientProps {
     firestore: Firestore;
 }
 
+const getGameAbbreviation = (gameName: string): string => {
+    const mapping: { [key: string]: string } = {
+        "Scarlet & Violet": "SV",
+        "Legends: Arceus": "PLA",
+        "Brilliant Diamond & Shining Pearl": "BDSP",
+        "Sword & Shield": "SwSh",
+        "Let's Go, Pikachu & Eevee": "LGPE",
+        "Ultra Sun & Ultra Moon": "USUM",
+        "Sun & Moon": "SM",
+        "Omega Ruby & Alpha Sapphire": "ORAS",
+        "X & Y": "XY",
+        "Black 2 & White 2": "B2W2",
+        "Black & White": "BW",
+        "HeartGold & SoulSilver": "HGSS",
+        "Diamond, Pearl & Platinum": "DPP",
+        "FireRed & LeafGreen": "FRLG",
+        "Ruby, Sapphire & Emerald": "RSE",
+        "Gold, Silver & Crystal": "GSC",
+        "Red, Blue & Yellow": "RBY",
+        "Pokémon GO": "PoGo"
+    };
+    return mapping[gameName] || gameName;
+};
+
+
 export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
     const [currentStep, setCurrentStep] = useState(0);
     const [formData, setFormData] = useState<FormData>({});
@@ -180,6 +205,12 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
     const handleSubmit = async (finalData: FormData) => {
         setIsLoading(true);
         try {
+            const userTags = finalData.tags ? finalData.tags.split(',').map((t: string) => t.trim()).filter((t: string) => t) : [];
+            const typeTags = formSpecificApiData.types.map((t: any) => t.type.name);
+            const gameTag = getGameAbbreviation(finalData.gameOrigin);
+
+            const combinedTags = [...new Set([...userTags, ...typeTags, gameTag])];
+
             await addPokemon(firestore, user.uid, {
                 name: finalData.nickname,
                 pokedexNumber: apiData.id, // Always use the base species ID
@@ -197,7 +228,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                 ball: finalData.ball,
                 gender: finalData.gender,
                 moveset: finalData.moveset,
-                tags: finalData.tags ? finalData.tags.split(',').map((t: string) => t.trim()).filter((t: string) => t) : [],
+                tags: combinedTags,
                 caughtAt: Date.now(),
             });
             
@@ -541,7 +572,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                                     <FormItem>
                                     <FormLabel>Tags</FormLabel>
                                     <FormControl><Input placeholder="e.g., favorite, starter, legendary (comma separated)" {...field} /></FormControl>
-                                    <FormDescription>Separate tags with a comma.</FormDescription>
+                                    <FormDescription>Separate tags with a comma. Type and game tags will be added automatically.</FormDescription>
                                     <FormMessage />
                                     </FormItem>
                                 )}
@@ -589,6 +620,8 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
         </Card>
     );
 }
+
+    
 
     
 

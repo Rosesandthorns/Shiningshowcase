@@ -180,10 +180,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
     const handleSubmit = async (finalData: FormData) => {
         setIsLoading(true);
         try {
-            if (!firestore) {
-              throw new Error("Firestore is not initialized.");
-            }
-            const newPokemonData: Omit<PokemonType, 'id' | 'userId' | 'shinyViewed'> = {
+            await addPokemon(firestore, user.uid, {
                 name: finalData.nickname,
                 pokedexNumber: apiData.id, // Always use the base species ID
                 speciesName: formSpecificApiData.name, // Use the form-specific name
@@ -202,9 +199,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                 moveset: finalData.moveset,
                 tags: finalData.tags ? finalData.tags.split(',').map((t: string) => t.trim()).filter((t: string) => t) : [],
                 caughtAt: Date.now(),
-            };
-            
-            await addPokemon(firestore, user.uid, newPokemonData);
+            });
             
             toast({
                 title: 'Pokémon Added!',
@@ -489,14 +484,16 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                                                             {moveset.map(move => (
                                                                 <Badge key={move} variant="secondary" className="capitalize">
                                                                     {move.replace('-', ' ')}
-                                                                    <button
-                                                                        className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                                                    <span
+                                                                        role="button"
+                                                                        aria-label={`Remove ${move}`}
+                                                                        className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer"
                                                                         onClick={(e) => {
                                                                             e.preventDefault();
                                                                             e.stopPropagation();
                                                                             field.onChange(moveset.filter(m => m !== move));
                                                                         }}
-                                                                    ><X className="h-3 w-3" /></button>
+                                                                    ><X className="h-3 w-3" /></span>
                                                                 </Badge>
                                                             ))}
                                                         </div>
@@ -592,5 +589,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
         </Card>
     );
 }
+
+    
 
     

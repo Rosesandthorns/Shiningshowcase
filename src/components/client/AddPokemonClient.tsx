@@ -73,6 +73,7 @@ interface AddPokemonClientProps {
 }
 
 const getGameAbbreviation = (gameName: string): string => {
+    if (!gameName) return '';
     const mapping: { [key: string]: string } = {
         "Scarlet & Violet": "SV",
         "Legends: Arceus": "PLA",
@@ -209,7 +210,12 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
             const typeTags = formSpecificApiData.types.map((t: any) => t.type.name);
             const gameTag = getGameAbbreviation(finalData.gameOrigin);
 
-            const combinedTags = [...new Set([...userTags, ...typeTags, gameTag])];
+            const autoTags = [...typeTags];
+            if (gameTag) {
+                autoTags.push(gameTag);
+            }
+            
+            const combinedTags = [...new Set([...userTags, ...autoTags])];
 
             await addPokemon(firestore, user.uid, {
                 name: finalData.nickname,
@@ -593,7 +599,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                                     <p><strong>Gender:</strong> {formData.gender}</p>
                                     <p><strong>Origin:</strong> {formData.gameOrigin}</p>
                                     <p><strong>Ball:</strong> {formData.ball}</p>
-                                    <p className="col-span-2"><strong>Moves:</strong> {formData.moveset.join(', ')}</p>
+                                    <p className="col-span-2"><strong>Moves:</strong> {Array.isArray(formData.moveset) ? formData.moveset.join(', ') : ''}</p>
                                     <p className="col-span-2"><strong>Tags:</strong> {formData.tags || 'None'}</p>
                                 </div>
                             </div>
@@ -620,9 +626,5 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
         </Card>
     );
 }
-
-    
-
-    
 
     

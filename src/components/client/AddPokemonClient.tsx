@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -182,16 +181,32 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
         const speciesName = selectedValue;
         form.setValue('speciesName', speciesName);
         setPopoverOpen(false);
-
         setIsLoading(true);
+
         try {
-            const apiDetails = await getPokemonDetailsByName(speciesName.toLowerCase().replace(/[\s.'é]+/g, '-'));
-            setApiData(apiDetails);
-            setFormSpecificApiData(apiDetails);
-            form.setValue('nickname', apiDetails.name.charAt(0).toUpperCase() + apiDetails.name.slice(1));
+            // Step 1: Fetch the high-level species data to get variety info
+            const speciesData = await getPokemonDetailsByName(speciesName.toLowerCase().replace(/[\\s.'é]+/g, '-'));
+            setApiData(speciesData); // This holds species-level data like evolution chain, varieties, etc.
+
+            // Step 2: Find the URL for the default Pokémon form from the species data
+            const defaultVariety = speciesData.varieties?.find((v: any) => v.is_default);
+            if (!defaultVariety) {
+                toast({ variant: 'destructive', title: 'Error', description: "Could not find default data for this Pokémon." });
+                setIsLoading(false);
+                return;
+            }
+
+            // Step 3: Fetch the detailed data for the default form (this has sprites, types, etc.)
+            const formDetails = await getPokemonDetailsByUrl(defaultVariety.pokemon.url);
+            setFormSpecificApiData(formDetails); // This holds the data for the specific form
+
+            // Step 4: Populate the form with the correct, detailed data
+            form.setValue('nickname', formDetails.name.charAt(0).toUpperCase() + formDetails.name.slice(1));
             form.setValue('level', 50);
-            setCurrentStep(1); // Auto-advance to next step
+            setCurrentStep(1); // Auto-advance to the next step
+
         } catch (error) {
+            console.error("Error fetching Pokémon details:", error);
             toast({ variant: 'destructive', title: 'Error', description: 'Could not find details for that Pokémon.' });
         } finally {
             setIsLoading(false);
@@ -566,8 +581,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                                         </Popover>
                                     <FormMessage />
                                     </FormItem>
-                                )}
-                                />
+                                )}/>
                         )}
                         
                         {steps[currentStep].id === 'tags' && (
@@ -581,8 +595,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                                     <FormDescription>Separate tags with a comma. Type and game tags will be added automatically.</FormDescription>
                                     <FormMessage />
                                     </FormItem>
-                                )}
-                            />
+                                )}/>
                         )}
 
                         {steps[currentStep].id === 'review' && (
@@ -616,15 +629,3 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                                 </Button>
                             ) : (
                                 <Button type="submit" disabled={isLoading}>
-                                    {isLoading ? 'Saving...' : 'Add to Collection'}
-                                </Button>
-                            )}
-                        </div>
-                    </form>
-                </Form>
-            </CardContent>
-        </Card>
-    );
-}
-
-    

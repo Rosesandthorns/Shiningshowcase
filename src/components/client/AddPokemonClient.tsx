@@ -26,7 +26,6 @@ import { ChevronsUpDown, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '../ui/badge';
 
-
 const steps = [
     { id: 'species', title: 'Pokémon Species' },
     { id: 'details', title: 'Core Details' },
@@ -60,7 +59,6 @@ const movesSchema = z.object({
 const tagsSchema = z.object({
     tags: z.string().optional(),
 });
-
 
 type FormData = {
     [key: string]: any;
@@ -96,13 +94,12 @@ const getGameAbbreviation = (gameName: string): string => {
     return mapping[gameName] || gameName;
 };
 
-
 export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
     const [currentStep, setCurrentStep] = useState(0);
     const [formData, setFormData] = useState<FormData>({});
     const [isLoading, setIsLoading] = useState(false);
-    const [apiData, setApiData] = useState<any>(null); // Holds species data
-    const [formSpecificApiData, setFormSpecificApiData] = useState<any>(null); // Holds data for the selected form
+    const [apiData, setApiData] = useState<any>(null); // species-level data (pokemon-species)
+    const [formSpecificApiData, setFormSpecificApiData] = useState<any>(null); // detailed pokemon data (pokemon)
     const [fullPokedex, setFullPokedex] = useState<PokedexEntry[]>([]);
     const [filteredPokedex, setFilteredPokedex] = useState<PokedexEntry[]>([]);
     const [popoverOpen, setPopoverOpen] = useState(false);
@@ -151,6 +148,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
         }
     });
 
+    // Keep filtered list up to date with the typed value
     useEffect(() => {
         if (commandValue) {
             const results = fullPokedex.filter(p =>
@@ -161,7 +159,6 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
             setFilteredPokedex(fullPokedex);
         }
     }, [commandValue, fullPokedex]);
-
 
     const handleNext = async (data: any) => {
         form.clearErrors();
@@ -176,19 +173,29 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
             await handleSubmit(newFormData);
         }
     };
-    
+
+    const normalizeSpeciesForApi = (speciesName: string) => {
+        // replace spaces and common punctuation with hyphens, lowercase; handle common diacritics roughly
+        return speciesName
+            .toLowerCase()
+            .replace(/[’'`.]/g, '')
+            .replace(/[\s]+/g, '-')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, ''); // strip diacritics
+    };
+
     const handleSelectSpecies = async (selectedValue: string) => {
         const speciesName = selectedValue;
-        form.setValue('speciesName', speciesName);
+        form.setValue('speciesName', speciesName.charAt(0).toUpperCase() + speciesName.slice(1));
         setPopoverOpen(false);
         setIsLoading(true);
 
         try {
-            // Step 1: Fetch the high-level species data to get variety info
-            const speciesData = await getPokemonDetailsByName(speciesName.toLowerCase().replace(/[\\s.'é]+/g, '-'));
-            setApiData(speciesData); // This holds species-level data like evolution chain, varieties, etc.
+            // Step 1: Fetch species-level data (contains varieties)
+            const speciesData = await getPokemonDetailsByName(normalizeSpeciesForApi(speciesName));
+            setApiData(speciesData); // species-level data
 
-            // Step 2: Find the URL for the default Pokémon form from the species data
+            // Step 2: Find the default variety and fetch its detailed pokemon data
             const defaultVariety = speciesData.varieties?.find((v: any) => v.is_default);
             if (!defaultVariety) {
                 toast({ variant: 'destructive', title: 'Error', description: "Could not find default data for this Pokémon." });
@@ -196,15 +203,13 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                 return;
             }
 
-            // Step 3: Fetch the detailed data for the default form (this has sprites, types, etc.)
             const formDetails = await getPokemonDetailsByUrl(defaultVariety.pokemon.url);
-            setFormSpecificApiData(formDetails); // This holds the data for the specific form
+            setFormSpecificApiData(formDetails);
 
-            // Step 4: Populate the form with the correct, detailed data
+            // Set reasonable defaults
             form.setValue('nickname', formDetails.name.charAt(0).toUpperCase() + formDetails.name.slice(1));
             form.setValue('level', 50);
             setCurrentStep(1); // Auto-advance to the next step
-
         } catch (error) {
             console.error("Error fetching Pokémon details:", error);
             toast({ variant: 'destructive', title: 'Error', description: 'Could not find details for that Pokémon.' });
@@ -213,38 +218,37 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
         }
     };
 
-
     const handleBack = () => {
-        setCurrentStep(currentStep - 1);
+        if (currentStep > 0) setCurrentStep(currentStep - 1);
     };
 
     const handleSubmit = async (finalData: FormData) => {
         setIsLoading(true);
         try {
             const userTags = finalData.tags ? finalData.tags.split(',').map((t: string) => t.trim()).filter((t: string) => t) : [];
-            const typeTags = formSpecificApiData.types.map((t: any) => t.type.name);
+            const typeTags = (formSpecificApiData?.types || []).map((t: any) => t.type.name);
             const gameTag = getGameAbbreviation(finalData.gameOrigin);
 
             const autoTags = [...typeTags];
             if (gameTag) {
                 autoTags.push(gameTag);
             }
-            
+
             const combinedTags = [...new Set([...userTags, ...autoTags])];
 
             await addPokemon(firestore, user.uid, {
                 name: finalData.nickname,
-                pokedexNumber: apiData.id, // Always use the base species ID
-                speciesName: formSpecificApiData.name, // Use the form-specific name
+                pokedexNumber: apiData?.id ?? null,
+                speciesName: formSpecificApiData?.name ?? form.getValues('speciesName'),
                 sprites: {
-                    default: formSpecificApiData.sprites.front_default,
-                    shiny: formSpecificApiData.sprites.front_shiny,
+                    default: formSpecificApiData?.sprites?.front_default ?? null,
+                    shiny: formSpecificApiData?.sprites?.front_shiny ?? null,
                 },
-                types: formSpecificApiData.types.map((t: any) => t.type.name),
-                abilities: formSpecificApiData.abilities.map((a: any) => a.ability.name),
+                types: (formSpecificApiData?.types || []).map((t: any) => t.type.name),
+                abilities: (formSpecificApiData?.abilities || []).map((a: any) => a.ability.name),
                 level: finalData.level,
                 nature: finalData.nature,
-                form: finalData.form || formSpecificApiData.name,
+                form: finalData.form || formSpecificApiData?.name || '',
                 gameOrigin: finalData.gameOrigin,
                 ball: finalData.ball,
                 gender: finalData.gender,
@@ -252,17 +256,17 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                 tags: combinedTags,
                 caughtAt: Date.now(),
             });
-            
+
             toast({
                 title: 'Pokémon Added!',
                 description: `${finalData.nickname} has been added to your collection.`,
             });
             router.push(`/profile/${user.uid}/list`);
         } catch (error: any) {
-             toast({
+            toast({
                 variant: 'destructive',
                 title: 'Error Adding Pokémon',
-                description: error.message || 'An unknown error occurred.',
+                description: error?.message || 'An unknown error occurred.',
             });
         } finally {
             setIsLoading(false);
@@ -273,17 +277,24 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
         form.setValue('form', value);
         setIsLoading(true);
         try {
-            const selectedVariety = apiData?.varieties.find((v: any) => v.pokemon.name === value);
+            const selectedVariety = apiData?.varieties?.find((v: any) => v.pokemon.name === value);
             if (selectedVariety) {
                 const formDetails = await getPokemonDetailsByUrl(selectedVariety.pokemon.url);
                 setFormSpecificApiData(formDetails);
             } else {
-                 setFormSpecificApiData(apiData); // Fallback to base data
+                // fallback to default variety details if possible
+                const defaultVariety = apiData?.varieties?.find((v: any) => v.is_default);
+                if (defaultVariety) {
+                    const formDetails = await getPokemonDetailsByUrl(defaultVariety.pokemon.url);
+                    setFormSpecificApiData(formDetails);
+                } else {
+                    setFormSpecificApiData(apiData); // last resort
+                }
             }
         } catch (error) {
             console.error("Failed to fetch form details:", error);
             toast({ variant: 'destructive', title: 'Could not load form data.' });
-            setFormSpecificApiData(apiData); // Fallback to base data on error
+            setFormSpecificApiData(apiData);
         } finally {
             setIsLoading(false);
         }
@@ -291,40 +302,36 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
 
     const progress = ((currentStep + 1) / steps.length) * 100;
     const moveset = form.watch('moveset') || [];
-    
+
     // Use the form-specific data if available, otherwise use base species data
     const movesDataSource = formSpecificApiData || apiData;
     const availableMoves = (movesDataSource?.moves || [])
         .filter((move: any) => !moveset.includes(move.move.name))
         .filter((move: any) => {
-            const searchTerm = movesSearch.toLowerCase();
-            // Match if search term is in the move name, ignoring hyphens for searching
-            return move.move.name.replace(/-/g, ' ').includes(searchTerm);
+            const searchTerm = movesSearch.toLowerCase().replace(/-/g, ' ');
+            const moveName = (move.move.name || '').toLowerCase().replace(/-/g, ' ');
+            return moveName.includes(searchTerm);
         });
 
-
     const availableForms = apiData?.varieties?.filter((v: any) => {
-      // Exclude gender forms, mega forms, gmax forms etc. - we want regional forms primarily.
-      const name = v.pokemon.name.toLowerCase();
-      const baseName = apiData.name.toLowerCase();
-      if (name === baseName) return true; // Include the default form
-      
-      const formDetails = name.replace(baseName + '-', '');
-
-      if(apiData.form_names?.find((fn: any) => fn.name.toLowerCase() === formDetails && fn.language.name === 'en')) {
-        return true;
-      }
-
-      // Fallback for things like regional forms that aren't in form_names
-      if (name.includes('-alola') || name.includes('-galar') || name.includes('-hisui') || name.includes('-paldea')) {
-          return true;
-      }
-      
-      return false;
+        // Exclude mega/gmax/gender-differentiated forms; include regional and named forms
+        const name = v.pokemon.name.toLowerCase();
+        const baseName = apiData.name?.toLowerCase?.() ?? '';
+        if (!baseName) return false;
+        if (name === baseName) return true; // include default
+        const formDetails = name.replace(baseName + '-', '');
+        if (Array.isArray(apiData.form_names) && apiData.form_names.find((fn: any) => fn.name.toLowerCase() === formDetails && fn.language.name === 'en')) {
+            return true;
+        }
+        if (name.includes('-alola') || name.includes('-galar') || name.includes('-hisui') || name.includes('-paldea') || name.includes('-hisui')) {
+            return true;
+        }
+        return false;
     }) || [];
 
     const formatFormName = (varietyName: string) => {
-        const baseName = apiData.name;
+        const baseName = apiData?.name ?? '';
+        if (!baseName) return varietyName.charAt(0).toUpperCase() + varietyName.slice(1);
         if (varietyName.startsWith(baseName + '-')) {
             return varietyName.substring(baseName.length + 1)
                 .split('-')
@@ -333,7 +340,6 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
         }
         return varietyName.charAt(0).toUpperCase() + varietyName.slice(1);
     };
-
 
     return (
         <Card className="w-full max-w-2xl mx-auto shadow-lg">
@@ -347,50 +353,51 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                     <form onSubmit={form.handleSubmit(handleNext)} className="space-y-6">
                         {steps[currentStep].id === 'species' && (
                             <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            role="combobox"
-                                            aria-expanded={popoverOpen}
-                                            className="w-full justify-between"
-                                        >
-                                            {form.watch('speciesName') || "Select Pokémon..."}
-                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-[--radix-popover-trigger-width] max-h-[--radix-popover-content-available-height] p-0">
-                                        <Command>
-                                            <CommandInput 
-                                                placeholder="Search Pokémon..."
-                                                value={commandValue}
-                                                onValueChange={setCommandValue}
-                                            />
-                                            <CommandEmpty>No Pokémon found.</CommandEmpty>
-                                            <CommandList>
-                                                <CommandGroup>
-                                                    {filteredPokedex.map((p) => (
-                                                        <CommandItem
-                                                            key={p.pokedexNumber}
-                                                            value={p.speciesName}
-                                                            onSelect={(currentValue) => {
-                                                                form.setValue('speciesName', currentValue.charAt(0).toUpperCase() + currentValue.slice(1));
-                                                                handleSelectSpecies(currentValue);
-                                                            }}
-                                                        >
-                                                            <Check
-                                                                className={cn(
-                                                                    "mr-2 h-4 w-4",
-                                                                    form.getValues('speciesName')?.toLowerCase() === p.speciesName.toLowerCase() ? "opacity-100" : "opacity-0"
-                                                                )}
-                                                                />
-                                                            {p.speciesName}
-                                                        </CommandItem>
-                                                    ))}
-                                                </CommandGroup>
-                                            </CommandList>
-                                        </Command>
-                                    </PopoverContent>
-                                </Popover>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        role="combobox"
+                                        aria-expanded={popoverOpen}
+                                        className="w-full justify-between"
+                                    >
+                                        {form.watch('speciesName') || "Select Pokémon..."}
+                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[--radix-popover-trigger-width] max-h-[60vh] p-0">
+                                    <Command>
+                                        <CommandInput
+                                            placeholder="Search Pokémon..."
+                                            value={commandValue}
+                                            onValueChange={setCommandValue}
+                                        />
+                                        <CommandEmpty>No Pokémon found.</CommandEmpty>
+                                        <CommandList>
+                                            <CommandGroup>
+                                                {filteredPokedex.map((p) => (
+                                                    <CommandItem
+                                                        key={p.pokedexNumber}
+                                                        value={p.speciesName}
+                                                        onSelect={(currentValue) => {
+                                                            const normalized = currentValue;
+                                                            form.setValue('speciesName', normalized.charAt(0).toUpperCase() + normalized.slice(1));
+                                                            handleSelectSpecies(normalized);
+                                                        }}
+                                                    >
+                                                        <Check
+                                                            className={cn(
+                                                                "mr-2 h-4 w-4",
+                                                                form.getValues('speciesName')?.toLowerCase() === p.speciesName.toLowerCase() ? "opacity-100" : "opacity-0"
+                                                            )}
+                                                        />
+                                                        {p.speciesName}
+                                                    </CommandItem>
+                                                ))}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
                         )}
 
                         {steps[currentStep].id === 'details' && (
@@ -406,31 +413,31 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                                         </FormItem>
                                     )}
                                 />
-                                
+
                                 {availableForms.length > 1 && (
                                     <FormField
-                                    control={form.control}
-                                    name="form"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Form</FormLabel>
-                                            <Select onValueChange={(value) => handleFormChange(value)} defaultValue={field.value}>
-                                                <FormControl>
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Select a form" />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent>
-                                                    {availableForms.map((v: any) => (
-                                                        <SelectItem key={v.pokemon.name} value={v.pokemon.name}>
-                                                            {formatFormName(v.pokemon.name)}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
+                                        control={form.control}
+                                        name="form"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Form</FormLabel>
+                                                <Select onValueChange={(value) => handleFormChange(value)} defaultValue={field.value}>
+                                                    <FormControl>
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Select a form" />
+                                                        </SelectTrigger>
+                                                    </FormControl>
+                                                    <SelectContent>
+                                                        {availableForms.map((v: any) => (
+                                                            <SelectItem key={v.pokemon.name} value={v.pokemon.name}>
+                                                                {formatFormName(v.pokemon.name)}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
                                     />
                                 )}
 
@@ -440,7 +447,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Level</FormLabel>
-                                            <FormControl><Input type="number" min="1" max="100" placeholder="1-100" {...field} /></FormControl>
+                                            <FormControl><Input type="number" min={1} max={100} placeholder="1-100" {...field} /></FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -469,7 +476,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
 
                         {steps[currentStep].id === 'origin' && (
                             <>
-                            <FormField
+                                <FormField
                                     control={form.control}
                                     name="gameOrigin"
                                     render={({ field }) => (
@@ -527,25 +534,27 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                                 name="moveset"
                                 render={({ field }) => (
                                     <FormItem>
-                                    <FormLabel>Moves (select up to 4)</FormLabel>
-                                    <Popover open={openMoves} onOpenChange={setOpenMoves}>
+                                        <FormLabel>Moves (select up to 4)</FormLabel>
+                                        <Popover open={openMoves} onOpenChange={setOpenMoves}>
                                             <PopoverTrigger asChild>
                                                 <Button variant="outline" className="w-full justify-start h-auto min-h-10">
                                                     {moveset.length > 0 ? (
                                                         <div className="flex gap-1 flex-wrap">
                                                             {moveset.map(move => (
-                                                                <Badge key={move} variant="secondary" className="capitalize">
-                                                                    {move.replace('-', ' ')}
-                                                                    <span
-                                                                        role="button"
+                                                                <Badge key={move} variant="secondary" className="capitalize flex items-center gap-2">
+                                                                    <span className="truncate">{move.replace('-', ' ')}</span>
+                                                                    <button
+                                                                        type="button"
                                                                         aria-label={`Remove ${move}`}
-                                                                        className="ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer"
+                                                                        className="ml-1 rounded-full p-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2"
                                                                         onClick={(e) => {
                                                                             e.preventDefault();
                                                                             e.stopPropagation();
                                                                             field.onChange(moveset.filter(m => m !== move));
                                                                         }}
-                                                                    ><X className="h-3 w-3" /></span>
+                                                                    >
+                                                                        <X className="h-3 w-3" />
+                                                                    </button>
                                                                 </Badge>
                                                             ))}
                                                         </div>
@@ -554,9 +563,9 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                                             </PopoverTrigger>
                                             <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
                                                 <Command>
-                                                    <CommandInput 
-                                                        placeholder="Search moves..." 
-                                                        value={movesSearch} 
+                                                    <CommandInput
+                                                        placeholder="Search moves..."
+                                                        value={movesSearch}
                                                         onValueChange={setMovesSearch}
                                                     />
                                                     <CommandList>
@@ -579,34 +588,40 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                                                 </Command>
                                             </PopoverContent>
                                         </Popover>
-                                    <FormMessage />
+                                        <FormMessage />
                                     </FormItem>
-                                )}/>
+                                )} />
                         )}
-                        
+
                         {steps[currentStep].id === 'tags' && (
                             <FormField
                                 control={form.control}
                                 name="tags"
                                 render={({ field }) => (
                                     <FormItem>
-                                    <FormLabel>Tags</FormLabel>
-                                    <FormControl><Input placeholder="e.g., favorite, starter, legendary (comma separated)" {...field} /></FormControl>
-                                    <FormDescription>Separate tags with a comma. Type and game tags will be added automatically.</FormDescription>
-                                    <FormMessage />
+                                        <FormLabel>Tags</FormLabel>
+                                        <FormControl><Input placeholder="e.g., favorite, starter, legendary (comma separated)" {...field} /></FormControl>
+                                        <FormDescription>Separate tags with a comma. Type and game tags will be added automatically.</FormDescription>
+                                        <FormMessage />
                                     </FormItem>
-                                )}/>
+                                )} />
                         )}
 
                         {steps[currentStep].id === 'review' && (
                             <div className="space-y-4 rounded-lg border p-4">
                                 <div className="flex justify-center">
-                                    <Image src={formSpecificApiData?.sprites?.front_shiny || apiData?.sprites?.front_shiny || 'https://placehold.co/128x128.png'} alt={formData.nickname || 'Pokémon'} width={128} height={128} />
+                                    <Image
+                                        src={formSpecificApiData?.sprites?.front_shiny || apiData?.sprites?.front_shiny || 'https://placehold.co/128x128.png'}
+                                        alt={formData.nickname || 'Pokémon'}
+                                        width={128}
+                                        height={128}
+                                        className="object-contain"
+                                    />
                                 </div>
                                 <h3 className="text-center text-lg font-bold">{formData.nickname}</h3>
                                 <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                                    <p><strong>Species:</strong> {formSpecificApiData?.name}</p>
-                                    <p><strong>Pokédex #:</strong> {apiData?.id}</p>
+                                    <p><strong>Species:</strong> {formSpecificApiData?.name ?? form.getValues('speciesName')}</p>
+                                    <p><strong>Pokédex #:</strong> {apiData?.id ?? '—'}</p>
                                     <p><strong>Level:</strong> {formData.level}</p>
                                     <p><strong>Nature:</strong> {formData.nature}</p>
                                     <p><strong>Gender:</strong> {formData.gender}</p>
@@ -617,7 +632,6 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                                 </div>
                             </div>
                         )}
-
 
                         <div className="flex justify-between pt-4">
                             <Button type="button" variant="outline" onClick={handleBack} disabled={currentStep === 0 || isLoading}>

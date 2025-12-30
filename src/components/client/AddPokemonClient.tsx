@@ -72,6 +72,7 @@ interface AddPokemonClientProps {
 const getGameAbbreviation = (gameName: string): string => {
     if (!gameName) return '';
     const mapping: { [key: string]: string } = {
+        "Legends: ZA": "PLZA",
         "Scarlet & Violet": "SV",
         "Legends: Arceus": "PLA",
         "Brilliant Diamond & Shining Pearl": "BDSP",

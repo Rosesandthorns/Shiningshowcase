@@ -1,4 +1,5 @@
 export const games = [
+    "Legends: ZA",
     "Scarlet & Violet",
     "Legends: Arceus",
     "Brilliant Diamond & Shining Pearl",

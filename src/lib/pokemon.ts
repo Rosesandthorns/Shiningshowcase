@@ -116,6 +116,22 @@ export async function deletePokemon(firestore: Firestore, userId: string, pokemo
     }
 }
 
+export async function getAllPokemon(firestore: Firestore, userId: string): Promise<Pokemon[]> {
+    const shardsRef = collection(firestore, 'users', userId, 'pokemonShards');
+    const querySnapshot = await getDocs(shardsRef);
+
+    let allPokemon: Pokemon[] = [];
+    querySnapshot.forEach(shardDoc => {
+        const shardData = shardDoc.data();
+        if (shardData.pokemonMap) {
+            const pokemonFromShard = Object.values(shardData.pokemonMap) as Pokemon[];
+            allPokemon = [...allPokemon, ...pokemonFromShard];
+        }
+    });
+
+    return allPokemon;
+}
+
 export async function updatePokemon(firestore: Firestore, userId: string, pokemonId: string, data: Partial<Pokemon>): Promise<void> {
     const auth = getAuth(firestore.app);
     if (!auth.currentUser || auth.currentUser.uid !== userId) {

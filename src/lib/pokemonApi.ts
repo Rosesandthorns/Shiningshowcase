@@ -2,6 +2,7 @@
 import type { Pokemon, PokedexEntry } from '@/types/pokemon';
 import type { UserProfile } from '@/types/user';
 import { collection, getDocs, doc, getDoc, query, where, limit, type Firestore } from 'firebase/firestore';
+import { gameToPokedexMap } from './game-data';
 
 
 // In-memory cache with timestamps
@@ -59,6 +60,11 @@ async function fetchWithCache(url: string): Promise<any> {
 export async function getPokemonDetailsByName(name: string): Promise<any> {
     const speciesUrl = `https://pokeapi.co/api/v2/pokemon-species/${name.toLowerCase().replace(/[\s.'é]+/g, '-')}`;
     return await fetchWithCache(speciesUrl);
+}
+
+export async function getPokemonDetails(name: string): Promise<any> {
+    const url = `https://pokeapi.co/api/v2/pokemon/${name}`;
+    return await fetchWithCache(url);
 }
 
 export async function getPokemonDetailsByUrl(url: string): Promise<any> {
@@ -220,6 +226,16 @@ export async function getNationalPokedex(): Promise<PokedexEntry[]> {
         }
         return [];
     }
+}
+
+export async function getPokemonByGame(game: string): Promise<string[]> {
+    const pokedexName = gameToPokedexMap[game];
+    if (!pokedexName) return [];
+
+    const pokedexUrl = `https://pokeapi.co/api/v2/pokedex/${pokedexName}`;
+    const data = await fetchWithCache(pokedexUrl);
+
+    return data.pokemon_entries.map((entry: any) => entry.pokemon_species.name);
 }
 
 export async function getUserIdFromDisplayName(firestore: Firestore, displayName: string): Promise<string | null> {

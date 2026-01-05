@@ -13,8 +13,10 @@ import { EditProfileClient } from '@/components/client/EditProfileClient';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { useEffect, useState } from 'react';
-import { doc, getDoc, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc } from 'firebase/firestore';
 import { followUser, unfollowUser } from '@/lib/social';
+import type { Pokemon } from '@/types/pokemon';
+import { PokemonCard } from '../PokemonCard';
 import { useToast } from '@/hooks/use-toast';
 import { UserPlus, UserCheck } from 'lucide-react';
 
@@ -30,6 +32,8 @@ export function ProfilePageClient({ profile }: ProfilePageClientProps) {
   
   const [isFollowing, setIsFollowing] = useState(false);
   const [isFollowLoading, setIsFollowLoading] = useState(true);
+  const [favoritePokemon, setFavoritePokemon] = useState<Pokemon[]>([]);
+  const [isFavoritesLoading, setIsFavoritesLoading] = useState(true);
 
   const isOwner = currentUser && currentUser.uid === profile.uid;
   const canFollow = currentUser && !isOwner;
@@ -47,6 +51,21 @@ export function ProfilePageClient({ profile }: ProfilePageClientProps) {
 
     return () => unsubscribe();
   }, [firestore, currentUser, profile.uid, canFollow]);
+
+  useEffect(() => {
+    if (!firestore || !profile.uid) {
+        setIsFavoritesLoading(false);
+        return;
+    }
+    const pokemonQuery = query(collection(firestore, `users/${profile.uid}/pokemon`), where('tags', 'array-contains', 'Favorite'));
+    const unsubscribe = onSnapshot(pokemonQuery, (snapshot) => {
+        const favorites = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Pokemon));
+        setFavoritePokemon(favorites);
+        setIsFavoritesLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [firestore, profile.uid]);
 
 
   const handleFollowToggle = async () => {
@@ -166,6 +185,26 @@ export function ProfilePageClient({ profile }: ProfilePageClientProps) {
               </Button>
             )}
           </div>
+          {isFavoritesLoading && (
+            <div className="mt-6">
+              <div className="h-8 bg-muted rounded w-1/3 mx-auto mt-4"></div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+                <div className="h-48 bg-muted rounded"></div>
+                <div className="h-48 bg-muted rounded"></div>
+                <div className="h-48 bg-muted rounded"></div>
+              </div>
+            </div>
+          )}
+          {!isFavoritesLoading && favoritePokemon.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-xl font-bold text-center">Favorite Hunts</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+                {favoritePokemon.map(pokemon => (
+                  <PokemonCard key={pokemon.id} pokemon={pokemon} />
+                ))}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

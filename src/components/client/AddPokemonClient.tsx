@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -20,11 +20,13 @@ import { addPokemon } from '@/lib/pokemon';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { games, natures } from '@/lib/pokemon-data';
+import { pokeballs } from '@/lib/pokeballs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { ChevronsUpDown, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '../ui/badge';
+import { Checkbox } from '../ui/checkbox';
 
 const steps = [
     { id: 'species', title: 'Pokémon Species' },
@@ -58,11 +60,14 @@ const movesSchema = z.object({
 
 const tagsSchema = z.object({
     tags: z.string().optional(),
+    alpha: z.boolean().optional(),
+    favorite: z.boolean().optional(),
+    gmax: z.boolean().optional(),
 });
 
-type FormData = {
-    [key: string]: any;
-};
+const formSchema = speciesSchema.merge(detailsSchema).merge(originSchema).merge(movesSchema).merge(tagsSchema);
+
+type FormData = z.infer<typeof formSchema>;
 
 interface AddPokemonClientProps {
     user: User;
@@ -95,11 +100,31 @@ const getGameAbbreviation = (gameName: string): string => {
     return mapping[gameName] || gameName;
 };
 
+const toTitleCase = (str: string) => {
+    if (!str) return '';
+    return str.replace(/-/g, ' ').replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+};
+
 export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
     const [currentStep, setCurrentStep] = useState(0);
-    const [formData, setFormData] = useState<FormData>({});
+    const [formData, setFormData] = useState<FormData>({
+        speciesName: '',
+        nickname: '',
+        level: 50,
+        nature: '',
+        form: '',
+        gameOrigin: '',
+        ball: '',
+        gender: 'genderless',
+        moveset: [],
+        tags: '',
+        alpha: false,
+        favorite: false,
+        gmax: false,
+    });
     const [isLoading, setIsLoading] = useState(false);
     const [apiData, setApiData] = useState<any>(null); // species-level data (pokemon-species)
+    const [genderRatio, setGenderRatio] = useState<number>(-1); // -1 for genderless, otherwise female ratio
     const [formSpecificApiData, setFormSpecificApiData] = useState<any>(null); // detailed pokemon data (pokemon)
     const [fullPokedex, setFullPokedex] = useState<PokedexEntry[]>([]);
     const [filteredPokedex, setFilteredPokedex] = useState<PokedexEntry[]>([]);
@@ -132,9 +157,8 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
         fetchPokedex();
     }, [toast]);
 
-    const schemas = [speciesSchema, detailsSchema, originSchema, movesSchema, tagsSchema, z.object({})];
-    const form = useForm({
-        resolver: zodResolver(schemas[currentStep]),
+    const form = useForm<FormData>({
+        resolver: zodResolver(formSchema),
         defaultValues: {
             speciesName: '',
             nickname: '',
@@ -146,6 +170,9 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
             gender: 'genderless',
             moveset: [],
             tags: '',
+            alpha: false,
+            favorite: false,
+            gmax: false,
         }
     });
 
@@ -195,6 +222,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
             // Step 1: Fetch species-level data (contains varieties)
             const speciesData = await getPokemonDetailsByName(normalizeSpeciesForApi(speciesName));
             setApiData(speciesData); // species-level data
+            setGenderRatio(speciesData.gender_rate);
 
             // Step 2: Find the default variety and fetch its detailed pokemon data
             const defaultVariety = speciesData.varieties?.find((v: any) => v.is_default);
@@ -210,6 +238,17 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
             // Set reasonable defaults
             form.setValue('nickname', formDetails.name.charAt(0).toUpperCase() + formDetails.name.slice(1));
             form.setValue('level', 50);
+
+            if (speciesData.gender_rate === -1) {
+                form.setValue('gender', 'genderless');
+            } else if (speciesData.gender_rate === 0) {
+                form.setValue('gender', 'male');
+            } else if (speciesData.gender_rate === 8) {
+                form.setValue('gender', 'female');
+            } else {
+                form.setValue('gender', 'male'); // Default to male for mixed gender
+            }
+
             setCurrentStep(1); // Auto-advance to the next step
         } catch (error) {
             console.error("Error fetching Pokémon details:", error);
@@ -231,9 +270,10 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
             const gameTag = getGameAbbreviation(finalData.gameOrigin);
 
             const autoTags = [...typeTags];
-            if (gameTag) {
-                autoTags.push(gameTag);
-            }
+            if (gameTag) autoTags.push(gameTag);
+            if (finalData.alpha) autoTags.push('Alpha');
+            if (finalData.favorite) autoTags.push('Favorite');
+            if (finalData.gmax) autoTags.push('G-Max');
 
             const combinedTags = [...new Set([...userTags, ...autoTags])];
 
@@ -303,6 +343,20 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
 
     const progress = ((currentStep + 1) / steps.length) * 100;
     const moveset = form.watch('moveset') || [];
+
+    const canGmax = useMemo(() => {
+        return apiData?.varieties?.some((v: any) => v.pokemon.name.includes('-gmax'));
+    }, [apiData]);
+
+    const genderOptions = useMemo(() => {
+        if (genderRatio === -1) return [{ value: 'genderless', label: 'Genderless' }];
+        if (genderRatio === 0) return [{ value: 'male', label: 'Male' }];
+        if (genderRatio === 8) return [{ value: 'female', label: 'Female' }];
+        return [
+            { value: 'male', label: 'Male' },
+            { value: 'female', label: 'Female' },
+        ];
+    }, [genderRatio]);
 
     // Use the form-specific data if available, otherwise use base species data
     const movesDataSource = formSpecificApiData || apiData;
@@ -501,7 +555,14 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Pokéball</FormLabel>
-                                            <FormControl><Input placeholder="e.g., Master Ball" {...field} /></FormControl>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger><SelectValue placeholder="Select a Pokéball" /></SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    {pokeballs.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+                                                </SelectContent>
+                                            </Select>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -512,14 +573,14 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Gender</FormLabel>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={genderOptions.length === 1}>
                                                 <FormControl>
                                                     <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
                                                 </FormControl>
                                                 <SelectContent>
-                                                    <SelectItem value="male">Male</SelectItem>
-                                                    <SelectItem value="female">Female</SelectItem>
-                                                    <SelectItem value="genderless">Genderless</SelectItem>
+                                                    {genderOptions.map(option => (
+                                                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                                                    ))}
                                                 </SelectContent>
                                             </Select>
                                             <FormMessage />
@@ -536,6 +597,7 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Moves (select up to 4)</FormLabel>
+                                        {moveset.length < 4 && (
                                         <Popover open={openMoves} onOpenChange={setOpenMoves}>
                                             <PopoverTrigger asChild>
                                                 <Button variant="outline" className="w-full justify-start h-auto min-h-10">
@@ -589,23 +651,89 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                                                 </Command>
                                             </PopoverContent>
                                         </Popover>
+                                        )}
+                                        {moveset.length > 0 && (
+                                            <div className="flex gap-1 flex-wrap mt-2">
+                                                {moveset.map(move => (
+                                                    <Badge key={move} variant="secondary" className="capitalize flex items-center gap-2">
+                                                        <span className="truncate">{move.replace('-', ' ')}</span>
+                                                        <button
+                                                            type="button"
+                                                            aria-label={`Remove ${move}`}
+                                                            className="ml-1 rounded-full p-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2"
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                e.stopPropagation();
+                                                                field.onChange(moveset.filter(m => m !== move));
+                                                            }}
+                                                        >
+                                                            <X className="h-3 w-3" />
+                                                        </button>
+                                                    </Badge>
+                                                ))}
+                                            </div>
+                                        )}
                                         <FormMessage />
                                     </FormItem>
                                 )} />
                         )}
 
                         {steps[currentStep].id === 'tags' && (
-                            <FormField
-                                control={form.control}
-                                name="tags"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Tags</FormLabel>
-                                        <FormControl><Input placeholder="e.g., favorite, starter, legendary (comma separated)" {...field} /></FormControl>
-                                        <FormDescription>Separate tags with a comma. Type and game tags will be added automatically.</FormDescription>
-                                        <FormMessage />
-                                    </FormItem>
-                                )} />
+                            <div className="space-y-4">
+                                <FormField
+                                    control={form.control}
+                                    name="alpha"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                                            <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                            <div className="space-y-1 leading-none">
+                                                <FormLabel>Alpha</FormLabel>
+                                                <FormDescription>Mark this Pokémon as an Alpha Pokémon.</FormDescription>
+                                            </div>
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="favorite"
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                                            <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                            <div className="space-y-1 leading-none">
+                                                <FormLabel>Favorite</FormLabel>
+                                                <FormDescription>Mark this Pokémon as a favorite.</FormDescription>
+                                            </div>
+                                        </FormItem>
+                                    )}
+                                />
+                                {canGmax && (
+                                    <FormField
+                                        control={form.control}
+                                        name="gmax"
+                                        render={({ field }) => (
+                                            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                                                <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                                <div className="space-y-1 leading-none">
+                                                    <FormLabel>G-Max</FormLabel>
+                                                    <FormDescription>Mark this Pokémon as capable of Gigantamaxing.</FormDescription>
+                                                </div>
+                                            </FormItem>
+                                        )}
+                                    />
+                                )}
+                                <FormField
+                                    control={form.control}
+                                    name="tags"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Additional Tags</FormLabel>
+                                            <FormControl><Input placeholder="e.g., starter, legendary (comma separated)" {...field} /></FormControl>
+                                            <FormDescription>Separate tags with a comma. Type and game tags will be added automatically.</FormDescription>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
                         )}
 
                         {steps[currentStep].id === 'review' && (
@@ -621,14 +749,14 @@ export function AddPokemonClient({ user, firestore }: AddPokemonClientProps) {
                                 </div>
                                 <h3 className="text-center text-lg font-bold">{formData.nickname}</h3>
                                 <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                                    <p><strong>Species:</strong> {formSpecificApiData?.name ?? form.getValues('speciesName')}</p>
+                                    <p><strong>Species:</strong> {toTitleCase(formSpecificApiData?.name ?? form.getValues('speciesName'))}</p>
                                     <p><strong>Pokédex #:</strong> {apiData?.id ?? '—'}</p>
                                     <p><strong>Level:</strong> {formData.level}</p>
                                     <p><strong>Nature:</strong> {formData.nature}</p>
-                                    <p><strong>Gender:</strong> {formData.gender}</p>
+                                    <p><strong>Gender:</strong> {toTitleCase(formData.gender)}</p>
                                     <p><strong>Origin:</strong> {formData.gameOrigin}</p>
                                     <p><strong>Ball:</strong> {formData.ball}</p>
-                                    <p className="col-span-2"><strong>Moves:</strong> {Array.isArray(formData.moveset) ? formData.moveset.join(', ') : ''}</p>
+                                    <p className="col-span-2"><strong>Moves:</strong> {Array.isArray(formData.moveset) ? formData.moveset.map(toTitleCase).join(', ') : ''}</p>
                                     <p className="col-span-2"><strong>Tags:</strong> {formData.tags || 'None'}</p>
                                 </div>
                             </div>

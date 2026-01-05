@@ -112,7 +112,7 @@ export function PokemonCard({ pokemon, displayFullDetail = false, isInEvolutionL
   const hasRockTag = lowerCaseTags.includes('rock');
   const hasDarkTag = lowerCaseTags.includes('dark');
 
-  const emberTypes = ['red', 'orange', 'yellow'];
+  const emberTypes: ('red' | 'orange' | 'yellow')[] = ['red', 'orange', 'yellow'];
 
   const animatedTagsCount = [
     hasWaterTag, hasFireTag, hasGrassTag, hasGhostTag, hasFairyTag, 

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ThemeToggle } from './ThemeToggle';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { ChevronDown, LogIn, LogOut, LayoutList, BarChart2, Target, UserSearch, User as UserIcon, PlusCircle, Users } from 'lucide-react';
+import { ChevronDown, LogIn, LogOut, LayoutList, BarChart2, Target, UserSearch, User as UserIcon, PlusCircle, Users, Trophy } from 'lucide-react';
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
@@ -52,6 +52,7 @@ export function Header() {
           )}
           <Link href="/community" className="text-sm md:text-base hover:underline hidden md:inline">Community</Link>
           <Link href="/hunts" className="text-sm md:text-base hover:underline hidden md:inline">Hunts</Link>
+          <Link href="/bingo" className="text-sm md:text-base hover:underline hidden md:inline">Bingo</Link>
           
           <DropdownMenu>
             <DropdownMenuTrigger className="flex items-center text-sm md:text-base hover:underline outline-none">
@@ -99,6 +100,12 @@ export function Header() {
                     <Link href="/community">
                       <Users className="mr-2 h-4 w-4" />
                       Community
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/bingo">
+                      <Trophy className="mr-2 h-4 w-4" />
+                      Bingo
                     </Link>
                   </DropdownMenuItem>
                 </>

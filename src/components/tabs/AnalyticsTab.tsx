@@ -16,6 +16,11 @@ const generationRanges: Record<string, { start: number; end: number, total: numb
     Paldea: { start: 906, end: 1025, total: 120 },
 };
 
+const toTitleCase = (str: string) => {
+    if (!str) return '';
+    return str.replace(/-/g, ' ').replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+};
+
 function calculateAnalytics(allPokemon: Pokemon[]) {
     // Type Frequency
     const typeCounts = allPokemon.flatMap(p => p.types).reduce((acc, type) => {
@@ -84,9 +89,9 @@ function calculateAnalytics(allPokemon: Pokemon[]) {
     const averageMoves = allPokemon.length > 0 ? totalMoves / allPokemon.length : 0;
 
     return {
-        mostCommonType,
-        rarestType,
-        typeChartData: sortedTypes.map(([name, value]) => ({ name, value })).slice(0, 8),
+        mostCommonType: toTitleCase(mostCommonType),
+        rarestType: toTitleCase(rarestType),
+        typeChartData: sortedTypes.map(([name, value]) => ({ name: toTitleCase(name), value })).slice(0, 8),
         rarestGame,
         alphaCount,
         genCompletion,
@@ -95,7 +100,7 @@ function calculateAnalytics(allPokemon: Pokemon[]) {
         evolutionLineCompletion: 0, // Placeholder
         remainingShinies,
         duplicateShinies: totalDuplicates,
-        mostCommonDuplicate,
+        mostCommonDuplicate: toTitleCase(mostCommonDuplicate),
         averageLevel,
         averageMoves,
     };

@@ -8,8 +8,12 @@ export const easyGames = ['Sword & Shield', 'Scarlet & Violet', 'Legends: Arceus
 export const hardGames = ['Sword & Shield', 'Brilliant Diamond & Shining Pearl', "Let's Go, Pikachu & Eevee", 'Ultra Sun & Ultra Moon', 'Sun & Moon', 'Omega Ruby & Alpha Sapphire', 'X & Y', 'Black 2 & White 2', 'Black & White', 'HeartGold & SoulSilver', 'Diamond, Pearl & Platinum', 'FireRed & LeafGreen', 'Ruby, Sapphire & Emerald', 'Gold, Silver & Crystal', 'Red, Blue & Yellow'];
 
 export async function generateBingoCard(ownedGames: string[], shinyPokemon: Pokemon[], allPokemon: PokedexEntry[]) {
-    const ownedEasyGames = ownedGames.filter(g => easyGames.includes(g));
+    let ownedEasyGames = ownedGames.filter(g => easyGames.includes(g));
     const ownedHardGames = ownedGames.filter(g => hardGames.includes(g));
+
+    if (ownedGames.includes('Brilliant Diamond & Shining Pearl')) {
+        ownedEasyGames = easyGames;
+    }
 
     const [easyGamePokemon, hardGamePokemon] = await Promise.all([
         Promise.all(ownedEasyGames.map(g => getPokemonByGame(g))).then(res => res.flat()),

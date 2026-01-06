@@ -3,6 +3,7 @@ import type { Pokemon, PokedexEntry } from '@/types/pokemon';
 import type { UserProfile } from '@/types/user';
 import { collection, getDocs, doc, getDoc, query, where, limit, type Firestore } from 'firebase/firestore';
 import { gameToPokedexMap } from './game-data';
+import { throttledFetch } from './apiThrottler';
 
 
 // In-memory cache with timestamps
@@ -39,7 +40,7 @@ async function fetchWithCache(url: string): Promise<any> {
     }
 
     try {
-        const response = await fetch(url);
+        const response = await throttledFetch(url);
         if (!response.ok) {
             throw new Error(`API call failed for ${url}: ${response.status}`);
         }
